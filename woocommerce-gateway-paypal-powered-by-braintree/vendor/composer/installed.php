@@ -1,0 +1,41 @@
+<?php return array(
+    'root' => array(
+        'name' => 'woocommerce/woocommerce-gateway-paypal-powered-by-braintree',
+        'pretty_version' => 'dev-trunk',
+        'version' => 'dev-trunk',
+        'reference' => '842bf67d78344cfcf6e6aa0118603de3cdb45db8',
+        'type' => 'wordpress-plugin',
+        'install_path' => __DIR__ . '/../../',
+        'aliases' => array(),
+        'dev' => false,
+    ),
+    'versions' => array(
+        'braintree/braintree_php' => array(
+            'pretty_version' => '6.7.0',
+            'version' => '6.7.0.0',
+            'reference' => '3406aa331c3eb5ac38aecb135389897dd50f35a1',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../braintree/braintree_php',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
+        'skyverge/wc-plugin-framework' => array(
+            'pretty_version' => '5.12.0',
+            'version' => '5.12.0.0',
+            'reference' => '1c82f0586ffd349a6984f0290bbb34cf5ac413c0',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../skyverge/wc-plugin-framework',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
+        'woocommerce/woocommerce-gateway-paypal-powered-by-braintree' => array(
+            'pretty_version' => 'dev-trunk',
+            'version' => 'dev-trunk',
+            'reference' => '842bf67d78344cfcf6e6aa0118603de3cdb45db8',
+            'type' => 'wordpress-plugin',
+            'install_path' => __DIR__ . '/../../',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
+    ),
+);
