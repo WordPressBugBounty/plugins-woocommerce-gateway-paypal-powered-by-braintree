@@ -4,7 +4,7 @@ Tags: ecommerce, e-commerce, commerce, woothemes, wordpress ecommerce, store, sa
 Requires at least: 6.3
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 3.2.0
+Stable tag: 3.2.1
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
@@ -106,6 +106,11 @@ If not, please get in touch with us through the [plugin forums](https://wordpres
 6. Checkout with PayPal directly from the product page
 
 == Changelog ==
+
+= 3.2.1 - 2024-09-23 =
+* Fix - Update documentation link that was incorrect.
+* Dev - Bump WooCommerce "tested up to" version 9.3.
+* Dev - Bump WooCommerce minimum supported version to 9.1.
 
 = 3.2.0 - 2024-08-13 =
 * Add - Support for Apple Pay when purchasing Subscription products.

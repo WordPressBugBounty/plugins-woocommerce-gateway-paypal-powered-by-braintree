@@ -3,7 +3,7 @@
         'name' => 'woocommerce/woocommerce-gateway-paypal-powered-by-braintree',
         'pretty_version' => 'dev-trunk',
         'version' => 'dev-trunk',
-        'reference' => '842bf67d78344cfcf6e6aa0118603de3cdb45db8',
+        'reference' => '2e831386c790e66bebb4162d730e79e07026d24e',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -31,7 +31,7 @@
         'woocommerce/woocommerce-gateway-paypal-powered-by-braintree' => array(
             'pretty_version' => 'dev-trunk',
             'version' => 'dev-trunk',
-            'reference' => '842bf67d78344cfcf6e6aa0118603de3cdb45db8',
+            'reference' => '2e831386c790e66bebb4162d730e79e07026d24e',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

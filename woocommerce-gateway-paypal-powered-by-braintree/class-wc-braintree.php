@@ -505,7 +505,7 @@ class WC_Braintree extends Framework\SV_WC_Payment_Gateway_Plugin {
 							sprintf( esc_html__( '%1$s: Heads up! Your %2$s dynamic descriptor is invalid and will not be used. Need help? See the %3$sdocumentation%4$s.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
 								'<strong>' . esc_html( $gateway->get_method_title() ) . '</strong>',
 								'<strong>' . esc_html( $type ) . '</strong>',
-								'<a target="_blank" href="https://docs.woocommerce.com/document/woocommerce-gateway-paypal-powered-by-braintree/#section-21">',
+								'<a target="_blank" href="https://woocommerce.com/document/woocommerce-gateway-paypal-powered-by-braintree/#dynamic-descriptors-setup">',
 								'</a>'
 							), $gateway->get_id() . '-' . $type . '-dynamic-descriptor-notice', array( 'notice_class' => 'error' )
 						);
