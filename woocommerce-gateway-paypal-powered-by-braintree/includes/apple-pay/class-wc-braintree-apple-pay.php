@@ -67,6 +67,28 @@ class Apple_Pay extends Framework\SV_WC_Payment_Gateway_Apple_Pay {
 			remove_action( 'woocommerce_proceed_to_checkout', array( $this->frontend, 'maybe_render_external_checkout' ) );
 			add_action( 'woocommerce_proceed_to_checkout', array( $this->frontend, 'maybe_render_external_checkout' ), 30 );
 		}
+
+		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_assets' ) );
+	}
+
+	/**
+	 * Enqueues assets for the Apple Pay button CSS.
+	 *
+	 * @since 3.2.2
+	 */
+	public function enqueue_assets() {
+		if ( 'yes' !== get_option( 'sv_wc_apple_pay_enabled' ) ) {
+			return;
+		}
+
+		$css_path = $this->get_plugin()->get_plugin_path() . '/assets/css/frontend/wc-apply-pay.min.css';
+		$version  = $this->get_plugin()->get_assets_version();
+
+		if ( is_readable( $css_path ) ) {
+			$css_url = $this->get_plugin()->get_plugin_url() . '/assets/css/frontend/wc-apply-pay.min.css';
+
+			wp_enqueue_style( 'wc-braintree-apply-pay', $css_url, array(), $version );
+		}
 	}
 
 	/**

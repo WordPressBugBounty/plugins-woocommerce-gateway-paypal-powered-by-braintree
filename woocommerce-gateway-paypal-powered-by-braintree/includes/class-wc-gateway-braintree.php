@@ -1873,14 +1873,42 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 					'redirect' => $this->get_return_url( $order ),
 				);
 
-				$messages = $this->get_notices_as_user_messages();
+				$messages = array();
+
+				/*
+				 * Only get user messages if the session is available.
+				 *
+				 * The get_notices_as_user_messages() method makes use of the wc_get_notices()
+				 * function which assumes the presence of the WC session. This code may be called
+				 * in an admin context where the session is not available.
+				 *
+				 * See https://github.com/woocommerce/woocommerce/issues/48023
+				 * See https://github.com/woocommerce/woocommerce-gateway-paypal-powered-by-braintree/issues/614
+				 */
+				if ( isset( WC()->session ) ) {
+					$messages = $this->get_notices_as_user_messages();
+				}
 
 				if ( $this->debug_checkout() && $messages ) {
 					$result['message'] = ! empty( $messages ) ? implode( "\n", $messages ) : '';
 				}
 			} else {
 
-				$messages = $this->get_notices_as_user_messages();
+				$messages = array();
+
+				/*
+				 * Only get user messages if the session is available.
+				 *
+				 * The get_notices_as_user_messages() method makes use of the wc_get_notices()
+				 * function which assumes the presence of the WC session. This code may be called
+				 * in an admin context where the session is not available.
+				 *
+				 * See https://github.com/woocommerce/woocommerce/issues/48023
+				 * See https://github.com/woocommerce/woocommerce-gateway-paypal-powered-by-braintree/issues/614
+				 */
+				if ( isset( WC()->session ) ) {
+					$messages = $this->get_notices_as_user_messages();
+				}
 
 				$result = array(
 					'result'  => 'failure',

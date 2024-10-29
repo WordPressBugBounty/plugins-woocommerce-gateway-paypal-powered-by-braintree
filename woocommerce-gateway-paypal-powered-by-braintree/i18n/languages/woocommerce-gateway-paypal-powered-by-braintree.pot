@@ -2,11 +2,11 @@
 # This file is distributed under the same license as the Braintree for WooCommerce Payment Gateway package.
 msgid ""
 msgstr ""
-"Project-Id-Version: Braintree for WooCommerce Payment Gateway 3.2.1\n"
+"Project-Id-Version: Braintree for WooCommerce Payment Gateway 3.2.2\n"
 "Report-Msgid-Bugs-To: "
 "https://wordpress.org/support/plugin/woocommerce-gateway-paypal-powered-by-"
 "braintree\n"
-"POT-Creation-Date: 2024-09-23 14:35:00+00:00\n"
+"POT-Creation-Date: 2024-10-28 13:40:17+00:00\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -148,32 +148,36 @@ msgstr ""
 msgid "Required PayPal token is missing or empty!"
 msgstr ""
 
-#: includes/apple-pay/class-wc-braintree-apple-pay.php:94
+#: includes/apple-pay/class-wc-braintree-apple-pay-frontend.php:210
+msgid "Express checkout"
+msgstr ""
+
+#: includes/apple-pay/class-wc-braintree-apple-pay.php:116
 msgid "Not available for pre-order products that are set to charge upon release."
 msgstr ""
 
-#: includes/apple-pay/class-wc-braintree-apple-pay.php:99
+#: includes/apple-pay/class-wc-braintree-apple-pay.php:121
 msgid "Buy Now is only available for simple and subscription products"
 msgstr ""
 
-#: includes/apple-pay/class-wc-braintree-apple-pay.php:104
+#: includes/apple-pay/class-wc-braintree-apple-pay.php:126
 msgid "Product is not available for purchase."
 msgstr ""
 
-#: includes/apple-pay/class-wc-braintree-apple-pay.php:150
+#: includes/apple-pay/class-wc-braintree-apple-pay.php:172
 msgid "Cart contains pre-orders."
 msgstr ""
 
-#: includes/apple-pay/class-wc-braintree-apple-pay.php:156
+#: includes/apple-pay/class-wc-braintree-apple-pay.php:178
 msgid "Apple Pay cannot be used for multiple shipments."
 msgstr ""
 
-#: includes/apple-pay/class-wc-braintree-apple-pay.php:207
+#: includes/apple-pay/class-wc-braintree-apple-pay.php:229
 #: vendor/skyverge/wc-plugin-framework/woocommerce/payment-gateway/External_Checkout/apple-pay/class-sv-wc-payment-gateway-apple-pay.php:153
 msgid "Apple Pay payment authorized."
 msgstr ""
 
-#: includes/apple-pay/class-wc-braintree-apple-pay.php:244
+#: includes/apple-pay/class-wc-braintree-apple-pay.php:266
 #: vendor/skyverge/wc-plugin-framework/woocommerce/payment-gateway/External_Checkout/apple-pay/class-sv-wc-payment-gateway-apple-pay.php:187
 #. translators: Placeholders: %s - the error message
 msgid "Apple Pay payment failed. %s"
@@ -773,12 +777,12 @@ msgstr ""
 msgid "Production"
 msgstr ""
 
-#: includes/class-wc-gateway-braintree.php:1887
+#: includes/class-wc-gateway-braintree.php:1915
 #: vendor/skyverge/wc-plugin-framework/woocommerce/payment-gateway/class-sv-wc-payment-gateway-direct.php:447
 msgid "The transaction failed."
 msgstr ""
 
-#: includes/class-wc-gateway-braintree.php:1929
+#: includes/class-wc-gateway-braintree.php:1957
 #: vendor/skyverge/wc-plugin-framework/woocommerce/payment-gateway/class-sv-wc-payment-gateway.php:2334
 #. translators: Placeholders: %s - payment gateway title (such as
 #. Authorize.net, Braintree, etc)
@@ -2566,6 +2570,12 @@ msgstr ""
 msgid "http://woocommerce.com/"
 msgstr ""
 
+#: includes/apple-pay/class-wc-braintree-apple-pay-frontend.php:202
+#: vendor/skyverge/wc-plugin-framework/woocommerce/payment-gateway/External_Checkout/apple-pay/class-sv-wc-payment-gateway-apple-pay-frontend.php:179
+msgctxt "Apple Pay"
+msgid "Buy with"
+msgstr ""
+
 #: includes/class-wc-gateway-braintree-paypal.php:317
 msgctxt "button shape option"
 msgid "Pill"
@@ -2774,11 +2784,6 @@ msgstr ""
 #: vendor/skyverge/wc-plugin-framework/woocommerce/payment-gateway/External_Checkout/apple-pay/class-sv-wc-payment-gateway-apple-pay-admin.php:94
 msgctxt "For the merchant to accept Apple Pay payments"
 msgid "Accept Apple Pay"
-msgstr ""
-
-#: vendor/skyverge/wc-plugin-framework/woocommerce/payment-gateway/External_Checkout/apple-pay/class-sv-wc-payment-gateway-apple-pay-frontend.php:179
-msgctxt "Apple Pay"
-msgid "Buy with"
 msgstr ""
 
 #: vendor/skyverge/wc-plugin-framework/woocommerce/payment-gateway/admin/class-sv-wc-payment-gateway-admin-order.php:132

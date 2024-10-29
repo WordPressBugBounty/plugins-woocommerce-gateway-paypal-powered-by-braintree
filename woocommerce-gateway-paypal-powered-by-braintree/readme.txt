@@ -1,10 +1,10 @@
 === Braintree for WooCommerce Payment Gateway ===
 Contributors: woocommerce, automattic, skyverge
 Tags: ecommerce, e-commerce, commerce, woothemes, wordpress ecommerce, store, sales, sell, shop, shopping, cart, checkout, configurable, paypal, braintree
-Requires at least: 6.3
+Requires at least: 6.5
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 3.2.1
+Stable tag: 3.2.2
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
@@ -106,6 +106,16 @@ If not, please get in touch with us through the [plugin forums](https://wordpres
 6. Checkout with PayPal directly from the product page
 
 == Changelog ==
+
+= 3.2.2 - 2024-10-28 =
+* Fix - Fatal error processing admin subscription renewals when using legacy order storage.
+* Fix - Apple Pay styling issues on Product and Cart pages.
+* Fix - PayPal button width on the Product page.
+* Tweak - Change "Buy with Apple Pay" text to "Subscribe with Apple Pay" for Subscription products.
+* Dev - Bump WooCommerce "tested up to" version 9.4.
+* Dev - Bump WooCommerce minimum supported version to 9.2.
+* Dev - Bump WordPress minimum supported version to 6.5.
+* Dev - Ensure that E2E tests pass in the latest WooCommerce version.
 
 = 3.2.1 - 2024-09-23 =
 * Fix - Update documentation link that was incorrect.

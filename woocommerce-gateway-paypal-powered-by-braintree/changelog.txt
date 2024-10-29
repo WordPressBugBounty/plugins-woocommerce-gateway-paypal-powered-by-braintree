@@ -1,5 +1,15 @@
 *** Changelog ***
 
+= 3.2.2 - 2024-10-28 =
+* Fix - Fatal error processing admin subscription renewals when using legacy order storage.
+* Fix - Apple Pay styling issues on Product and Cart pages.
+* Fix - PayPal button width on the Product page.
+* Tweak - Change "Buy with Apple Pay" text to "Subscribe with Apple Pay" for Subscription products.
+* Dev - Bump WooCommerce "tested up to" version 9.4.
+* Dev - Bump WooCommerce minimum supported version to 9.2.
+* Dev - Bump WordPress minimum supported version to 6.5.
+* Dev - Ensure that E2E tests pass in the latest WooCommerce version.
+
 = 3.2.1 - 2024-09-23 =
 * Fix - Update documentation link that was incorrect.
 * Dev - Bump WooCommerce "tested up to" version 9.3.

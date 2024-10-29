@@ -164,4 +164,58 @@ class Frontend extends Framework\SV_WC_Payment_Gateway_Apple_Pay_Frontend {
 
 		return parent::should_init_on_checkout_page( $locations );
 	}
+
+	/**
+	 * Renders an Apple Pay button.
+	 *
+	 * @since 3.2.2
+	 */
+	public function render_button() {
+
+		$button_text = '';
+		$classes     = array(
+			'sv-wc-apple-pay-button',
+		);
+
+		switch ( $this->get_handler()->get_button_style() ) {
+
+			case 'black':
+				$classes[] = 'apple-pay-button-black';
+				break;
+
+			case 'white':
+				$classes[] = 'apple-pay-button-white';
+				break;
+
+			case 'white-with-line':
+				$classes[] = 'apple-pay-button-white-with-line';
+				break;
+		}
+
+		if ( $this->is_tokenization_forced() ) {
+			$classes[] = 'apple-pay-button-subscription';
+		}
+
+		// if on the single product page, add some text.
+		if ( is_product() ) {
+			$classes[]   = 'apple-pay-button-buy-now';
+			$button_text = _x( 'Buy with', 'Apple Pay', 'woocommerce-gateway-paypal-powered-by-braintree' );
+		}
+
+		if ( $button_text ) {
+			$classes[] = 'apple-pay-button-with-text';
+		}
+
+		if ( is_checkout() ) {
+			printf( '<span class="wc-braintree-express-payment-title">%s</span>', esc_html__( 'Express checkout', 'woocommerce-gateway-paypal-powered-by-braintree' ) );
+		}
+
+		echo '<button class="' . implode( ' ', array_map( 'sanitize_html_class', $classes ) ) . '" lang="' . esc_attr( substr( get_locale(), 0, 2 ) ) . '">';
+
+		if ( $button_text ) {
+			echo '<span class="text">' . esc_html( $button_text ) . '</span><span class="logo"></span>';
+		}
+
+		echo '</button>';
+	}
 }
