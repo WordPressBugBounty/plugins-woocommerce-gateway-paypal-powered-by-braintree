@@ -1,17 +1,16 @@
 <?php
 
-namespace SkyVerge\WooCommerce\PluginFramework\v5_12_0\Payment_Gateway\Blocks;
+namespace SkyVerge\WooCommerce\PluginFramework\v5_12_7\Payment_Gateway\Blocks;
 
-use Automattic\WooCommerce\Blocks\Integrations\IntegrationInterface;
+use Automattic\WooCommerce\Blocks\Package as WooCommerceBlocks;
 use Automattic\WooCommerce\Blocks\Payments\PaymentMethodRegistry;
-use SkyVerge\WooCommerce\PluginFramework\v5_12_0\Blocks\Blocks_Handler;
-use SkyVerge\WooCommerce\PluginFramework\v5_12_0\SV_WC_Payment_Gateway;
-use SkyVerge\WooCommerce\PluginFramework\v5_12_0\SV_WC_Payment_Gateway_Plugin;
+use SkyVerge\WooCommerce\PluginFramework\v5_12_7\Blocks\Blocks_Handler;
+use SkyVerge\WooCommerce\PluginFramework\v5_12_7\SV_WC_Payment_Gateway_Plugin;
 
 
 use function Patchwork\Redefinitions\LanguageConstructs\_require_once;
 
-if ( ! class_exists( '\\SkyVerge\\WooCommerce\\PluginFramework\\v5_12_0\\Payment_Gateway\Blocks\\Gateway_Blocks_Handler' ) ) :
+if ( ! class_exists( '\\SkyVerge\\WooCommerce\\PluginFramework\\v5_12_7\\Payment_Gateway\Blocks\\Gateway_Blocks_Handler' ) ) :
 
 /**
  * Extends the base {@see Blocks_Handler} for supporting WooCommerce Blocks in payment gateways.
@@ -23,6 +22,7 @@ if ( ! class_exists( '\\SkyVerge\\WooCommerce\\PluginFramework\\v5_12_0\\Payment
  * @property Gateway_Checkout_Block_Integration $checkout_Block_Integration
  * @property SV_WC_Payment_Gateway_Plugin $plugin
  */
+#[\AllowDynamicProperties]
 class Gateway_Blocks_Handler extends Blocks_Handler {
 
 
@@ -50,7 +50,7 @@ class Gateway_Blocks_Handler extends Blocks_Handler {
 	 */
 	public function handle_blocks_integration() : void {
 
-		if ( ! class_exists( PaymentMethodRegistry::class ) ) {
+		if ( ! class_exists( PaymentMethodRegistry::class ) || ! class_exists( WooCommerceBlocks::class ) || ! version_compare( WooCommerceBlocks::get_version(), '4.4.0', '>' ) ) {
 			return;
 		}
 
@@ -59,7 +59,7 @@ class Gateway_Blocks_Handler extends Blocks_Handler {
 			/** @var SV_WC_Payment_Gateway_Plugin $plugin */
 			$plugin = $this->plugin;
 
-			require_once( $plugin->get_framework_path() . '/payment-gateway/Blocks/Gateway_Checkout_Block_Integration.php' );
+			require_once( $plugin->get_payment_gateway_framework_path() . '/Blocks/Gateway_Checkout_Block_Integration.php' );
 
 			foreach ( $plugin->get_gateways() as $gateway ) {
 

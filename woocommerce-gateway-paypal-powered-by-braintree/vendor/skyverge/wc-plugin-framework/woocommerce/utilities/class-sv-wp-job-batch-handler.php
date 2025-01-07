@@ -18,15 +18,15 @@
  *
  * @package   SkyVerge/WooCommerce/Utilities
  * @author    SkyVerge
- * @copyright Copyright (c) 2017-2023, SkyVerge, Inc.
+ * @copyright Copyright (c) 2017-2024, SkyVerge, Inc.
  * @license   http://www.gnu.org/licenses/gpl-3.0.html GNU General Public License v3.0
  */
 
- namespace SkyVerge\WooCommerce\PluginFramework\v5_12_0;
+ namespace SkyVerge\WooCommerce\PluginFramework\v5_12_7;
 
  defined( 'ABSPATH' ) or exit;
 
- if ( ! class_exists( '\\SkyVerge\\WooCommerce\\PluginFramework\\v5_12_0\\SV_WP_Job_Batch_Handler' ) ) :
+ if ( ! class_exists( '\\SkyVerge\\WooCommerce\\PluginFramework\\v5_12_7\\SV_WP_Job_Batch_Handler' ) ) :
 
 
 /**
@@ -37,6 +37,7 @@
  *
  * @since 4.8.0
  */
+#[\AllowDynamicProperties]
 class SV_WP_Job_Batch_Handler {
 
 

@@ -80,7 +80,8 @@ class CustomerGateway
      *     'email' => 'john@smith.com',
      *     'website' => 'www.smithco.com',
      *     'fax' => '419-555-1234',
-     *     'phone' => '614-555-1234'
+     *     'phone' => '614-555-1234',
+     *     'internationalPhone' => array('countryCode' => '1', 'nationalNumber' => '3121234567')
      *   ));
      *   if($result->success) {
      *     echo 'Created customer ' . $result->customer->id;
@@ -126,7 +127,8 @@ class CustomerGateway
         unset($creditCardSignature[array_search('customerId', $creditCardSignature)]);
         $signature = [
             'id', 'company', 'email', 'fax', 'firstName',
-            'lastName', 'phone', 'website', 'deviceData', 'paymentMethodNonce',
+            'lastName', 'phone', ['internationalPhone' => ['countryCode', 'nationalNumber']],
+            'website', 'deviceData', 'paymentMethodNonce',
             ['riskData' =>
                 ['customerBrowser', 'customerIp']
             ],
@@ -150,7 +152,7 @@ class CustomerGateway
                             'firstName', 'lastName', 'company', 'countryName',
                             'countryCodeAlpha2', 'countryCodeAlpha3', 'countryCodeNumeric',
                             'extendedAddress', 'locality', 'postalCode', 'region',
-                            'streetAddress'],
+                            'streetAddress', 'phoneNumber', ['internationalPhone' => ['countryCode', 'nationalNumber']]],
                     ],
                 ]]
             ]],
@@ -168,6 +170,7 @@ class CustomerGateway
         $creditCardSignature = CreditCardGateway::updateSignature();
 
         foreach ($creditCardSignature as $key => $value) {
+            // phpcs:ignore
             if (is_array($value) and array_key_exists('options', $value)) {
                 array_push($creditCardSignature[$key]['options'], 'updateExistingToken');
             }
@@ -175,7 +178,8 @@ class CustomerGateway
 
         $signature = [
             'id', 'company', 'email', 'fax', 'firstName',
-            'lastName', 'phone', 'website', 'deviceData',
+            'lastName', 'phone', ['internationalPhone' => ['countryCode', 'nationalNumber']],
+            'website', 'deviceData',
             'paymentMethodNonce', 'defaultPaymentMethodToken',
             ['creditCard' => $creditCardSignature],
             ['customFields' => ['_anyKey_']],
@@ -197,7 +201,7 @@ class CustomerGateway
                             'firstName', 'lastName', 'company', 'countryName',
                             'countryCodeAlpha2', 'countryCodeAlpha3', 'countryCodeNumeric',
                             'extendedAddress', 'locality', 'postalCode', 'region',
-                            'streetAddress'],
+                            'streetAddress', 'phoneNumber', ['internationalPhone' => ['countryCode', 'nationalNumber']]],
                     ],
                 ]],
             ]],
@@ -510,18 +514,19 @@ class CustomerGateway
     }
 
     protected $_attributes = [
-        'addresses'   => '',
-        'company'     => '',
-        'creditCards' => '',
-        'email'       => '',
-        'fax'         => '',
-        'firstName'   => '',
-        'id'          => '',
-        'lastName'    => '',
-        'phone'       => '',
-        'createdAt'   => '',
-        'updatedAt'   => '',
-        'website'     => '',
+        'addresses'          => '',
+        'company'            => '',
+        'createdAt'          => '',
+        'creditCards'        => '',
+        'email'              => '',
+        'fax'                => '',
+        'firstName'          => '',
+        'id'                 => '',
+        'internationalPhone' => '',
+        'lastName'           => '',
+        'phone'              => '',
+        'updatedAt'          => '',
+        'website'            => '',
         ];
 
     // phpcs:ignore PEAR.Commenting.FunctionComment.Missing

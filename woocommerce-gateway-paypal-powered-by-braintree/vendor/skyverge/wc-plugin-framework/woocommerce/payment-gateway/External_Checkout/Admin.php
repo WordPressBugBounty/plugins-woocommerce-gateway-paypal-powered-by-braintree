@@ -18,13 +18,13 @@
  *
  * @package   SkyVerge/WooCommerce/Payment-Gateway/External_Checkout
  * @author    SkyVerge
- * @copyright Copyright (c) 2013-2023, SkyVerge, Inc.
+ * @copyright Copyright (c) 2013-2024, SkyVerge, Inc.
  * @license   http://www.gnu.org/licenses/gpl-3.0.html GNU General Public License v3.0
  */
 
-namespace SkyVerge\WooCommerce\PluginFramework\v5_12_0\Payment_Gateway\External_Checkout;
+namespace SkyVerge\WooCommerce\PluginFramework\v5_12_7\Payment_Gateway\External_Checkout;
 
-use SkyVerge\WooCommerce\PluginFramework\v5_12_0\SV_WC_Helper;
+use SkyVerge\WooCommerce\PluginFramework\v5_12_7\SV_WC_Helper;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -35,6 +35,7 @@ if ( ! class_exists( __NAMESPACE__ . '\\Admin' ) ) :
  *
  * @since 5.10.0
  */
+#[\AllowDynamicProperties]
 abstract class Admin {
 
 

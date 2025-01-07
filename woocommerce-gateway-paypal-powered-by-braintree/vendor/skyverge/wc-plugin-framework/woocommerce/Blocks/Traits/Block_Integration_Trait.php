@@ -1,18 +1,18 @@
 <?php
 
-namespace SkyVerge\WooCommerce\PluginFramework\v5_12_0\Blocks\Traits;
+namespace SkyVerge\WooCommerce\PluginFramework\v5_12_7\Blocks\Traits;
 
 use Automattic\WooCommerce\Blocks\Integrations\IntegrationInterface;
 use GoDaddy\WooCommerce\Poynt\Blocks\Credit_Card_Checkout_Block_Integration;
-use SkyVerge\WooCommerce\PluginFramework\v5_12_0\Blocks\Block_Integration;
-use SkyVerge\WooCommerce\PluginFramework\v5_12_0\Payment_Gateway\Blocks\Gateway_Checkout_Block_Integration;
-use SkyVerge\WooCommerce\PluginFramework\v5_12_0\SV_WC_Payment_Gateway;
-use SkyVerge\WooCommerce\PluginFramework\v5_12_0\SV_WC_Payment_Gateway_Plugin;
-use SkyVerge\WooCommerce\PluginFramework\v5_12_0\SV_WC_Plugin;
-use SkyVerge\WooCommerce\PluginFramework\v5_12_0\SV_WC_Plugin_Exception;
+use SkyVerge\WooCommerce\PluginFramework\v5_12_7\Blocks\Block_Integration;
+use SkyVerge\WooCommerce\PluginFramework\v5_12_7\Payment_Gateway\Blocks\Gateway_Checkout_Block_Integration;
+use SkyVerge\WooCommerce\PluginFramework\v5_12_7\SV_WC_Payment_Gateway;
+use SkyVerge\WooCommerce\PluginFramework\v5_12_7\SV_WC_Payment_Gateway_Plugin;
+use SkyVerge\WooCommerce\PluginFramework\v5_12_7\SV_WC_Plugin;
+use SkyVerge\WooCommerce\PluginFramework\v5_12_7\SV_WC_Plugin_Exception;
 use stdClass;
 
-if ( ! class_exists( '\\SkyVerge\WooCommerce\PluginFramework\v5_12_0\Blocks\Traits\Block_Integration_Trait' ) ) :
+if ( ! class_exists( '\\SkyVerge\WooCommerce\PluginFramework\v5_12_7\Blocks\Traits\Block_Integration_Trait' ) ) :
 
 /**
  * A trait for block integrations.
@@ -164,7 +164,7 @@ trait Block_Integration_Trait {
 		 */
 		return (string) apply_filters( 'wc_' . $this->get_id() . '_'. $this->block_name . '_block_handle', sprintf(
 			'wc-%s-%s-block',
-			$this->plugin->get_id_dasherized(),
+			$this->get_id_dasherized(),
 			$this->block_name
 		), $this );
 	}
@@ -178,9 +178,9 @@ trait Block_Integration_Trait {
 	 * However, it is assumed that gateways supporting a block will use a single script for all the included gateways.
 	 * If this is not the case, then any outlier gateway should override this method or filter out the URL.
 	 *
-	 * @return string
-	 *@since 5.12.0
+	 * @since 5.12.0
 	 *
+	 * @return string
 	 */
 	protected function get_main_script_url() : string {
 
@@ -209,9 +209,9 @@ trait Block_Integration_Trait {
 	 * However, it is assumed that gateways supporting a block will use a single stylesheet for all the included gateways.
 	 * If this is not the case, then any outlier gateway should override this method or filter out the URL.
 	 *
-	 * @return string
-	 *@since 5.12.0
+	 * @since 5.12.0
 	 *
+	 * @return string
 	 */
 	protected function get_main_script_stylesheet_url() : string {
 

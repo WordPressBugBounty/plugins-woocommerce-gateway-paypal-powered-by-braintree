@@ -24,7 +24,7 @@
 
 namespace WC_Braintree;
 
-use SkyVerge\WooCommerce\PluginFramework\v5_12_0 as Framework;
+use SkyVerge\WooCommerce\PluginFramework\v5_12_7 as Framework;
 
 defined( 'ABSPATH' ) or exit;
 

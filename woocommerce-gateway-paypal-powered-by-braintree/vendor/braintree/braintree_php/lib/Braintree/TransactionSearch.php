@@ -8,6 +8,16 @@ namespace Braintree;
 class TransactionSearch
 {
     /*
+     * Create a new range node for cosmos ach return response created at
+     *
+     * @return RangeNode
+     */
+    public static function achReturnResponsesCreatedAt()
+    {
+        return new RangeNode("achReturnResponsesCreatedAt");
+    }
+
+    /*
      * Create a new range node for amount
      *
      * @return RangeNode
@@ -139,6 +149,19 @@ class TransactionSearch
         return new RangeNode("createdAt");
     }
 
+    /*
+     * Create a new multiple value node for created using
+     *
+     * @return MultipleValueNode
+     */
+    public static function createdUsing()
+    {
+        return new MultipleValueNode('created_using', [
+            Transaction::FULL_INFORMATION,
+            Transaction::TOKEN
+        ]);
+    }
+
     // NEXT_MAJOR_VERSION we may want to rename this to just cardholder name
     /*
      * Create a new text node for cardholder name
@@ -148,6 +171,44 @@ class TransactionSearch
     public static function creditCardCardholderName()
     {
         return new TextNode('credit_card_cardholderName');
+    }
+
+    /*
+     * Create a new multiple value node for credit card type
+     *
+     * @return MultipleValueNode
+     */
+    public static function creditCardCardType()
+    {
+        return new MultipleValueNode('credit_card_card_type', [
+            CreditCard::AMEX,
+            CreditCard::CARTE_BLANCHE,
+            CreditCard::CHINA_UNION_PAY,
+            CreditCard::DINERS_CLUB_INTERNATIONAL,
+            CreditCard::DISCOVER,
+            CreditCard::ELO,
+            CreditCard::JCB,
+            CreditCard::LASER,
+            CreditCard::MAESTRO,
+            CreditCard::MASTER_CARD,
+            CreditCard::SOLO,
+            CreditCard::SWITCH_TYPE,
+            CreditCard::VISA,
+            CreditCard::UNKNOWN
+        ]);
+    }
+
+    /*
+     * Create a new multiple value node for credit card customer location
+     *
+     * @return MultipleValueNode
+     */
+    public static function creditCardCustomerLocation()
+    {
+        return new MultipleValueNode('credit_card_customer_location', [
+            CreditCard::INTERNATIONAL,
+            CreditCard::US
+        ]);
     }
 
     /*
@@ -270,6 +331,16 @@ class TransactionSearch
     public static function customerWebsite()
     {
         return new TextNode('customer_website');
+    }
+
+    /*
+     * Create a new multiple value node for debit network
+     *
+     * @return MultipleValueNode
+     */
+    public static function debitNetwork()
+    {
+         return new MultipleValueNode('debit_network', Transaction::allDebitNetworks());
     }
 
     /*
@@ -421,6 +492,16 @@ class TransactionSearch
     }
 
     /*
+     * Create a new multiple value node for reason codes
+     *
+     * @return MultipleValueNode
+     */
+    public static function reasonCode()
+    {
+        return new MultipleValueNode('reason_code');
+    }
+
+    /*
      * Create a new key value node for refund
      *
      * @return KeyValueNode
@@ -428,6 +509,16 @@ class TransactionSearch
     public static function refund()
     {
         return new KeyValueNode("refund");
+    }
+
+    /*
+     * Create a new text node for SEPA direct debit PayPal V2 order ID
+     *
+     * @return TextNode
+     */
+    public static function sepaDebitPaypalV2OrderId()
+    {
+        return new TextNode('sepa_debit_paypal_v2_order_id');
     }
 
     /*
@@ -590,57 +681,6 @@ class TransactionSearch
     public static function voidedAt()
     {
         return new RangeNode("voidedAt");
-    }
-
-    /*
-     * Create a new multiple value node for created using
-     *
-     * @return MultipleValueNode
-     */
-    public static function createdUsing()
-    {
-        return new MultipleValueNode('created_using', [
-            Transaction::FULL_INFORMATION,
-            Transaction::TOKEN
-        ]);
-    }
-
-    /*
-     * Create a new multiple value node for credit card type
-     *
-     * @return MultipleValueNode
-     */
-    public static function creditCardCardType()
-    {
-        return new MultipleValueNode('credit_card_card_type', [
-            CreditCard::AMEX,
-            CreditCard::CARTE_BLANCHE,
-            CreditCard::CHINA_UNION_PAY,
-            CreditCard::DINERS_CLUB_INTERNATIONAL,
-            CreditCard::DISCOVER,
-            CreditCard::ELO,
-            CreditCard::JCB,
-            CreditCard::LASER,
-            CreditCard::MAESTRO,
-            CreditCard::MASTER_CARD,
-            CreditCard::SOLO,
-            CreditCard::SWITCH_TYPE,
-            CreditCard::VISA,
-            CreditCard::UNKNOWN
-        ]);
-    }
-
-    /*
-     * Create a new multiple value node for credit card customer location
-     *
-     * @return MultipleValueNode
-     */
-    public static function creditCardCustomerLocation()
-    {
-        return new MultipleValueNode('credit_card_customer_location', [
-            CreditCard::INTERNATIONAL,
-            CreditCard::US
-        ]);
     }
 
     /*

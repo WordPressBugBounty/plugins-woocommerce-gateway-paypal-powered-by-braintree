@@ -22,7 +22,7 @@
  * @license   http://www.gnu.org/licenses/gpl-3.0.html GNU General Public License v3.0
  */
 
-use SkyVerge\WooCommerce\PluginFramework\v5_12_0 as Framework;
+use SkyVerge\WooCommerce\PluginFramework\v5_12_7 as Framework;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -200,7 +200,7 @@ class WC_Braintree_Hosted_Fields_Payment_Form extends WC_Braintree_Payment_Form 
 	 */
 	protected function get_enabled_card_types() {
 
-		$types = array_map( '\\SkyVerge\\WooCommerce\\PluginFramework\\v5_12_0\\SV_WC_Payment_Gateway_Helper::normalize_card_type', $this->get_gateway()->get_card_types() );
+		$types = array_map( '\\SkyVerge\\WooCommerce\\PluginFramework\\v5_12_7\\SV_WC_Payment_Gateway_Helper::normalize_card_type', $this->get_gateway()->get_card_types() );
 
 		// The Braintree SDK has its own strings for a few card types that we need to match
 		$types = str_replace( [

@@ -2,7 +2,7 @@
  WooCommerce SkyVerge Payment Gateway My Payment Methods CoffeeScript
  Version 5.1.0
 
- Copyright (c) 2014-2023, SkyVerge, Inc.
+ Copyright (c) 2014-2024, SkyVerge, Inc.
  Licensed under the GNU General Public License v3.0
  http://www.gnu.org/licenses/gpl-3.0.html
 ###
@@ -12,7 +12,7 @@ jQuery ( $ ) ->
 	# The My Payment Methods handler.
 	#
 	# @since 5.1.0
-	class window.SV_WC_Payment_Methods_Handler_v5_12_0
+	class window.SV_WC_Payment_Methods_Handler_v5_12_7
 
 
 		# Constructs the class.
@@ -174,6 +174,8 @@ jQuery ( $ ) ->
 					# change the "Cancel" button back to "Edit"
 					button.siblings( '.cancel-edit' ).removeClass( 'cancel-edit' ).addClass( 'edit' ).text( @i18n.edit_button ).addClass( 'button' )
 
+					row.removeClass( 'editing' )
+
 					this.disable_editing_ui()
 
 				.fail ( jqXHR, textStatus, error ) =>
@@ -268,4 +270,4 @@ jQuery ( $ ) ->
 
 
 	# dispatch loaded event
-	$( document.body ).trigger( 'sv_wc_payment_methods_handler_v5_12_0_loaded' )
+	$( document.body ).trigger( 'sv_wc_payment_methods_handler_v5_12_7_loaded' )

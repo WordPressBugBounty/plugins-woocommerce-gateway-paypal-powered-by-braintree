@@ -18,7 +18,7 @@
  *
  * @package   SkyVerge/WooCommerce/Plugin/Classes
  * @author    SkyVerge
- * @copyright Copyright (c) 2013-2023, SkyVerge, Inc.
+ * @copyright Copyright (c) 2013-2024, SkyVerge, Inc.
  * @license   http://www.gnu.org/licenses/gpl-3.0.html GNU General Public License v3.0
  */
 
@@ -36,6 +36,7 @@ if ( ! class_exists( 'SV_WC_Framework_Bootstrap' ) ) :
  *
  * @since 2.0.0
  */
+#[\AllowDynamicProperties]
 class SV_WC_Framework_Bootstrap {
 
 

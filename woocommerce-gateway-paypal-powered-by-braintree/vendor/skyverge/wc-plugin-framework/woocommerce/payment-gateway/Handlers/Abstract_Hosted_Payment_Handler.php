@@ -18,15 +18,15 @@
  *
  * @package   SkyVerge/WooCommerce/Payment-Gateway/Admin
  * @author    SkyVerge
- * @copyright Copyright (c) 2013-2023, SkyVerge, Inc.
+ * @copyright Copyright (c) 2013-2024, SkyVerge, Inc.
  * @license   http://www.gnu.org/licenses/gpl-3.0.html GNU General Public License v3.0
  */
 
-namespace SkyVerge\WooCommerce\PluginFramework\v5_12_0\Payment_Gateway\Handlers;
+namespace SkyVerge\WooCommerce\PluginFramework\v5_12_7\Payment_Gateway\Handlers;
 
-use SkyVerge\WooCommerce\PluginFramework\v5_12_0 as FrameworkBase;
+use SkyVerge\WooCommerce\PluginFramework\v5_12_7 as FrameworkBase;
 
-if ( ! class_exists( '\\SkyVerge\\WooCommerce\\PluginFramework\\v5_12_0\\Payment_Gateway\\Handlers\\Abstract_Hosted_Payment_Handler' ) ) :
+if ( ! class_exists( '\\SkyVerge\\WooCommerce\\PluginFramework\\v5_12_7\\Payment_Gateway\\Handlers\\Abstract_Hosted_Payment_Handler' ) ) :
 
 
 /**
@@ -36,6 +36,7 @@ if ( ! class_exists( '\\SkyVerge\\WooCommerce\\PluginFramework\\v5_12_0\\Payment
  *
  * @since 5.4.0
  */
+#[\AllowDynamicProperties]
 abstract class Abstract_Hosted_Payment_Handler extends Abstract_Payment_Handler {
 
 

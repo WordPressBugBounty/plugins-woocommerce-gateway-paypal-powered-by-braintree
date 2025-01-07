@@ -4,7 +4,7 @@ Tags: ecommerce, e-commerce, commerce, woothemes, wordpress ecommerce, store, sa
 Requires at least: 6.5
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 3.2.3
+Stable tag: 3.2.4
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
@@ -106,6 +106,14 @@ If not, please get in touch with us through the [plugin forums](https://wordpres
 6. Checkout with PayPal directly from the product page
 
 == Changelog ==
+
+= 3.2.4 - 2025-01-06 =
+* Fix - PHP 8.3 deprecation notices caused by the use of dynamic properties.
+* Dev - Update Braintree SDK from 6.7.0 to 6.21.0.
+* Dev - Update SkyVerge framework from 5.12.0 to 5.12.7.
+* Dev - Bump WooCommerce "tested up to" version 9.5.
+* Dev - Bump WooCommerce minimum supported version to 9.3.
+* Dev - Resolve some E2E errors.
 
 = 3.2.3 - 2024-11-25 =
 * Dev - Bump WordPress "tested up to" version 6.7.

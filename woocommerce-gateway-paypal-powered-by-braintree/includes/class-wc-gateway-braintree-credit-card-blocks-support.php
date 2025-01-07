@@ -5,7 +5,7 @@
  * @package WC-Braintree/Gateway/Blocks-Support
  */
 
-use SkyVerge\WooCommerce\PluginFramework\v5_12_0 as Framework;
+use SkyVerge\WooCommerce\PluginFramework\v5_12_7 as Framework;
 
 /**
  * Braintree CreditCard payment method Blocks integration

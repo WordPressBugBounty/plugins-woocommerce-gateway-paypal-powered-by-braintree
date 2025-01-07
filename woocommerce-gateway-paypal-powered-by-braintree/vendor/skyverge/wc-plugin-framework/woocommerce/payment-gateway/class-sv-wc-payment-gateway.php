@@ -18,20 +18,20 @@
  *
  * @package   SkyVerge/WooCommerce/Payment-Gateway/Classes
  * @author    SkyVerge
- * @copyright Copyright (c) 2013-2023, SkyVerge, Inc.
+ * @copyright Copyright (c) 2013-2024, SkyVerge, Inc.
  * @license   http://www.gnu.org/licenses/gpl-3.0.html GNU General Public License v3.0
  */
 
-namespace SkyVerge\WooCommerce\PluginFramework\v5_12_0;
+namespace SkyVerge\WooCommerce\PluginFramework\v5_12_7;
 
 use Automattic\WooCommerce\Blocks\Integrations\IntegrationInterface;
-use SkyVerge\WooCommerce\PluginFramework\v5_12_0\Blocks\Blocks_Handler;
-use SkyVerge\WooCommerce\PluginFramework\v5_12_0\Payment_Gateway\Blocks\Gateway_Checkout_Block_Integration;
+use SkyVerge\WooCommerce\PluginFramework\v5_12_7\Blocks\Blocks_Handler;
+use SkyVerge\WooCommerce\PluginFramework\v5_12_7\Payment_Gateway\Blocks\Gateway_Checkout_Block_Integration;
 use stdClass;
 
 defined( 'ABSPATH' ) or exit;
 
-if ( ! class_exists( '\\SkyVerge\\WooCommerce\\PluginFramework\\v5_12_0\\SV_WC_Payment_Gateway' ) ) :
+if ( ! class_exists( '\\SkyVerge\\WooCommerce\\PluginFramework\\v5_12_7\\SV_WC_Payment_Gateway' ) ) :
 
 
 /**
@@ -39,6 +39,7 @@ if ( ! class_exists( '\\SkyVerge\\WooCommerce\\PluginFramework\\v5_12_0\\SV_WC_P
  *
  * @since 1.0.0
  */
+#[\AllowDynamicProperties]
 abstract class SV_WC_Payment_Gateway extends \WC_Payment_Gateway {
 
 
@@ -140,6 +141,13 @@ abstract class SV_WC_Payment_Gateway extends \WC_Payment_Gateway {
 
 	/** Pre-orders integration ID */
 	const INTEGRATION_PRE_ORDERS = 'pre_orders';
+
+	/** flag used when the checkout context is the shortcode-based checkout */
+	public const PROCESSING_CONTEXT_SHORTCODE = 'shortcode';
+
+	/** flag used when the checkout context is the block-based checkout */
+	public const PROCESSING_CONTEXT_BLOCK = 'block';
+
 
 	/** @var SV_WC_Payment_Gateway_Plugin the parent plugin class */
 	private $plugin;
@@ -465,7 +473,7 @@ abstract class SV_WC_Payment_Gateway extends \WC_Payment_Gateway {
 		}
 
 		$handle           = 'sv-wc-payment-gateway-payment-form';
-		$versioned_handle = $handle . '-v5_12_0';
+		$versioned_handle = $handle . '-v5_12_7';
 
 		// Frontend JS
 		wp_enqueue_script( $versioned_handle, $this->get_plugin()->get_payment_gateway_framework_assets_url() . '/dist/frontend/' . $handle . '.js', array( 'jquery-payment' ), SV_WC_Plugin::VERSION, true );
@@ -514,6 +522,7 @@ abstract class SV_WC_Payment_Gateway extends \WC_Payment_Gateway {
 		 * @param SV_WC_Payment_Gateway $gateway
 		 */
 		$params = (array) apply_filters( 'sv_wc_payment_gateway_payment_form_localized_script_params',  [
+			'order_button_text'               => $this->get_order_button_text(),
 			'card_number_missing'             => esc_html_x( 'Card number is missing', 'Credit or debit card','woocommerce-plugin-framework' ),
 			'card_number_invalid'             => esc_html_x( 'Card number is invalid', 'Credit or debit card', 'woocommerce-plugin-framework' ),
 			'card_number_digits_invalid'      => esc_html_x( 'Card number is invalid (only digits allowed)', 'Credit or debit card', 'woocommerce-plugin-framework' ),
@@ -636,7 +645,7 @@ abstract class SV_WC_Payment_Gateway extends \WC_Payment_Gateway {
 	 *
 	 * By default, we don't load the legacy frontend when the checkout block is in use.
 	 *
-	 * @since 5.12.0-dev.1
+	 * @since 5.12.0
 	 *
 	 * @return bool
 	 */
@@ -776,11 +785,18 @@ abstract class SV_WC_Payment_Gateway extends \WC_Payment_Gateway {
 	 * Direct gateway: "Place order"
 	 * Redirect/Hosted gateway: "Continue to Payment"
 	 *
+	 * If a gateway has a separate payment page, then we expect to show "Continue to Payment" on checkout, and
+	 * "Place order" on the separate pay page.
+	 *
 	 * @since 4.0.0
 	 */
 	protected function get_order_button_text() {
 
 		$text = $this->is_hosted_gateway() ? esc_html__( 'Continue to Payment', 'woocommerce-plugin-framework' ) : esc_html__( 'Place order', 'woocommerce-plugin-framework' );
+
+		if ($this->hasSeparatePaymentPage()) {
+			$text = SV_WC_Helper::isCheckoutPayPage() ? esc_html__( 'Place order', 'woocommerce-plugin-framework' ) : esc_html__( 'Continue to Payment', 'woocommerce-plugin-framework' );
+		}
 
 		/**
 		 * Payment Gateway Place Order Button Text Filter.
@@ -788,8 +804,9 @@ abstract class SV_WC_Payment_Gateway extends \WC_Payment_Gateway {
 		 * Allow actors to modify the "place order" button text.
 		 *
 		 * @since 4.0.0
+		 *
 		 * @param string $text button text
-		 * @param \SV_WC_Payment_Gateway $this instance
+		 * @param SV_WC_Payment_Gateway $gateway the current gateway instance
 		 */
 		return apply_filters( 'wc_payment_gateway_' . $this->get_id() . '_order_button_text', $text, $this );
 	}
@@ -819,6 +836,8 @@ abstract class SV_WC_Payment_Gateway extends \WC_Payment_Gateway {
 	/**
 	 * Gets the WooCommerce Checkout Block integration.
 	 *
+	 * @since 5.11.11
+	 *
 	 * @return Gateway_Checkout_Block_Integration|null
 	 */
 	public function get_checkout_block_integration_instance() : ?Gateway_Checkout_Block_Integration {
@@ -830,6 +849,8 @@ abstract class SV_WC_Payment_Gateway extends \WC_Payment_Gateway {
 
 	/**
 	 * Gets the WooCommerce Cart Block integration.
+	 *
+	 * @since 5.11.11
 	 *
 	 * @return IntegrationInterface|null
 	 */
@@ -1930,12 +1951,10 @@ abstract class SV_WC_Payment_Gateway extends \WC_Payment_Gateway {
 		/* translators: Placeholders: %1$s - site title, %2$s - order number */
 		$order->description = sprintf( esc_html__( '%1$s - Order %2$s', 'woocommerce-plugin-framework' ), wp_specialchars_decode( SV_WC_Helper::get_site_name(), ENT_QUOTES ), $order->get_order_number() );
 
-		// when HPOS is enabled, we need to save the order to avoid potential errors when saving a new payment method
-		if ( SV_WC_Plugin_Compatibility::is_hpos_enabled() && ( ! is_admin() || is_ajax() ) ) {
-			$order->save();
+		// the get_order_with_unique_transaction_ref() call results in saving the order object, which we don't want to do if the order hasn't already been saved (such as when adding a payment method)
+		if ( $order->get_id() ) {
+			$order = $this->get_order_with_unique_transaction_ref( $order );
 		}
-
-		$order = $this->get_order_with_unique_transaction_ref( $order );
 
 		/**
 		 * Filters the base order for a payment transaction.
@@ -4022,15 +4041,16 @@ abstract class SV_WC_Payment_Gateway extends \WC_Payment_Gateway {
 
 
 	/**
-	 * Add support for the named feature or features
+	 * Adds support for the named feature or features.
 	 *
 	 * @since 1.0.0
-	 * @param string|array $feature the feature name or names supported by this gateway
+	 *
+	 * @param string|string[] $feature the feature name or names supported by this gateway
 	 */
 	public function add_support( $feature ) {
 
 		if ( ! is_array( $feature ) ) {
-			$feature = array( $feature );
+			$feature = [ $feature ];
 		}
 
 		foreach ( $feature as $name ) {
@@ -4043,8 +4063,8 @@ abstract class SV_WC_Payment_Gateway extends \WC_Payment_Gateway {
 				/**
 				 * Payment Gateway Add Support Action.
 				 *
-				 * Fired when declaring support for a specific gateway feature. Allows other actors
-				 * (including ourselves) to take action when support is declared.
+				 * Fired when declaring support for a specific gateway feature.
+				 * Allows other actors (including ourselves) to take action when support is declared.
 				 *
 				 * @since 1.0.0
 				 *
@@ -4053,51 +4073,63 @@ abstract class SV_WC_Payment_Gateway extends \WC_Payment_Gateway {
 				 */
 				do_action( 'wc_payment_gateway_' . $this->get_id() . '_supports_' . str_replace( '-', '_', $name ), $this, $name );
 			}
-
 		}
+
+		$this->supports = array_values( $this->supports );
 	}
 
 
 	/**
-	 * Remove support for the named feature or features
+	 * Removes support for the named feature or features.
 	 *
 	 * @since 4.1.0
-	 * @param string|array $feature feature name or names not supported by this gateway
+	 *
+	 * @param string|string[] $feature feature name or names not supported by this gateway
 	 */
 	public function remove_support( $feature ) {
 
 		if ( ! is_array( $feature ) ) {
-			$feature = array( $feature );
+			$feature = [ $feature ];
 		}
 
 		foreach ( $feature as $name ) {
 
-			unset( $this->supports[ array_search( $name, $this->supports ) ] );
+			$key = array_search( $name, $this->supports );
 
-			/**
-			 * Payment Gateway Remove Support Action.
-			 *
-			 * Fired when removing support for a specific gateway feature. Allows other actors
-			 * (including ourselves) to take action when support is removed.
-			 *
-			 * @since 4.1.0
-			 *
-			 * @param SV_WC_Payment_Gateway $this instance
-			 * @param string $name of supported feature being removed
-			 */
-			do_action( 'wc_payment_gateway_' . $this->get_id() . '_removed_support_' . str_replace( '-', '_', $name ), $this, $name );
+			if ( $key !== false ) {
+
+				unset( $this->supports[ $key ] );
+
+				/**
+				 * Payment Gateway Remove Support Action.
+				 *
+				 * Fired when removing support for a specific gateway feature.
+				 * Allows other actors (including ourselves) to take action when support is removed.
+				 *
+				 * @since 4.1.0
+				 *
+				 * @param SV_WC_Payment_Gateway $this instance
+				 * @param string $name of supported feature being removed
+				 */
+				do_action( 'wc_payment_gateway_' . $this->get_id() . '_removed_support_' . str_replace( '-', '_', $name ), $this, $name );
+			}
 		}
+
+		// re-index the array
+		$this->supports = array_values( $this->supports );
 	}
 
 
 	/**
-	 * Set all features supported
+	 * Set all features supported.
 	 *
 	 * @since 1.0.0
-	 * @param array $features array of supported feature names
+	 *
+	 * @param string[]|string $features feature or array of supported feature names
 	 */
 	public function set_supports( $features ) {
-		$this->supports = $features;
+
+		$this->supports = array_values( (array) $features );
 	}
 
 
@@ -4345,6 +4377,19 @@ abstract class SV_WC_Payment_Gateway extends \WC_Payment_Gateway {
 		return false;
 	}
 
+	/**
+	 * Returns true if the gateway has a separate, dedicated payment page after the normal Checkout page.
+	 * This usually means the checkout page would show a "Continue to Payment" button, which when clicked redirects
+	 * the customer to a separate page (probably on-site) where payment is actually taken.
+	 *
+	 * @since 5.12.7
+	 * @return bool
+	 */
+	public function hasSeparatePaymentPage(): bool
+	{
+		return false;
+	}
+
 
 	/**
 	 * Returns the payment type for this gateway
@@ -4382,14 +4427,42 @@ abstract class SV_WC_Payment_Gateway extends \WC_Payment_Gateway {
 	/**
 	 * Returns true if currently processing payment from block-based checkout.
 	 *
-	 * @since 5.12.0
-	 * @see Gateway_Checkout_Block_Integration::prepare_payment_data()
+	 * @since 5.12.1
 	 *
 	 * @return bool
 	 */
-	protected function is_block_checkout(): bool {
+	protected function is_processing_block_checkout(): bool {
 
-		return ! empty( $_POST[ 'sv_wc_is_block_checkout' ] ) && Blocks_Handler::is_checkout_block_in_use();
+		return $this->is_processing_context( self::PROCESSING_CONTEXT_BLOCK );
+	}
+
+
+	/**
+	 * Gets the current payment processing context.
+	 *
+	 * @since 5.12.1
+	 * @see Gateway_Checkout_Block_Integration::prepare_payment_data()
+	 *
+	 * @return string
+	 */
+	protected function get_processing_context(  ): ?string {
+
+		return $_POST[ 'wc-' . $this->get_id_dasherized() . '-context' ] ?: null;
+	}
+
+
+	/**
+	 * Checks if we're currently in the given payment processing context.
+	 *
+	 * @since 5.12.1
+	 * @see Gateway_Checkout_Block_Integration::prepare_payment_data()
+	 *
+	 * @param string $context
+	 * @return bool
+	 */
+	protected function is_processing_context( string $context ): bool {
+
+		return $this->get_processing_context() === $context;
 	}
 
 

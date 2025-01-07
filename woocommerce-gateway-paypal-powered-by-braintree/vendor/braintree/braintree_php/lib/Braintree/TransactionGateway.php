@@ -43,18 +43,21 @@ class TransactionGateway
     public function cloneTransaction($transactionId, $attribs)
     {
         Util::verifyKeys(self::cloneSignature(), $attribs);
+        $this->_checkForDeprecatedAttributes($attribs);
         return $this->_doCreate('/transactions/' . $transactionId . '/clone', ['transactionClone' => $attribs]);
     }
 
     private function create($attribs)
     {
         Util::verifyKeys(self::createSignature(), $attribs);
+        $this->_checkForDeprecatedAttributes($attribs);
         $attribs = Util::replaceKey($attribs, 'googlePayCard', 'androidPayCard');
         return $this->_doCreate('/transactions', ['transaction' => $attribs]);
     }
 
     private function createNoValidate($attribs)
     {
+        $this->_checkForDeprecatedAttributes($attribs);
         $result = $this->create($attribs);
         return Util::returnObjectOrThrowException(__CLASS__, $result);
     }
@@ -69,6 +72,9 @@ class TransactionGateway
         return ['amount', 'channel', ['options' => ['submitForSettlement']]];
     }
 
+    // NEXT_MAJOR_VERSION remove threeDSecureToken, venmoSdkPaymentMethodCode, and venmoSdkSession
+    // threeDSecureToken has been deprecated in favor of threeDSecureAuthenticationId
+    // The old venmo SDK class has been deprecated
     /**
      * creates a full array signature of a valid gateway request
      *
@@ -78,130 +84,6 @@ class TransactionGateway
     {
         return [
             'amount',
-            'billingAddressId',
-            'channel',
-            'customerId',
-            'deviceData',
-            'exchangeRateQuoteId',
-            'merchantAccountId',
-            'orderId',
-            'paymentMethodNonce',
-            'paymentMethodToken',
-            'productSku',
-            'purchaseOrderNumber',
-            'recurring',
-            'serviceFeeAmount',
-            'sharedPaymentMethodToken',
-            'sharedPaymentMethodNonce',
-            'sharedCustomerId',
-            'sharedShippingAddressId',
-            'sharedBillingAddressId',
-            'shippingAddressId',
-            'taxAmount',
-            'taxExempt',
-            'threeDSecureToken',
-            'threeDSecureAuthenticationId',
-            'transactionSource',
-            'type',
-            'venmoSdkPaymentMethodCode',
-            'scaExemption',
-            'shippingAmount',
-            'discountAmount',
-            'shipsFromPostalCode',
-            ['riskData' =>
-                [
-                    'customerBrowser', 'customerIp', 'customerDeviceId',
-                    'customerLocationZip', 'customerTenure'],
-            ],
-            ['creditCard' =>
-                [
-                    'token',
-                    'cardholderName',
-                    'cvv',
-                    'expirationDate',
-                    'expirationMonth',
-                    'expirationYear',
-                    'number',
-                    ['paymentReaderCardDetails' => ['encryptedCardData', 'keySerialNumber']],
-                ],
-            ],
-            ['customer' =>
-                [
-                    'id', 'company', 'email', 'fax', 'firstName',
-                    'lastName', 'phone', 'website'],
-            ],
-            ['billing' =>
-                [
-                    'firstName', 'lastName', 'company', 'countryName',
-                    'countryCodeAlpha2', 'countryCodeAlpha3', 'countryCodeNumeric',
-                    'extendedAddress', 'locality', 'phoneNumber', 'postalCode', 'region',
-                    'streetAddress'],
-            ],
-            ['shipping' =>
-                [
-                    'firstName', 'lastName', 'company', 'countryName',
-                    'countryCodeAlpha2', 'countryCodeAlpha3', 'countryCodeNumeric',
-                    'extendedAddress', 'locality', 'phoneNumber', 'postalCode', 'region',
-                    'shippingMethod', 'streetAddress'],
-            ],
-            ['threeDSecurePassThru' =>
-                [
-                    'eciFlag',
-                    'cavv',
-                    'xid',
-                    'threeDSecureVersion',
-                    'authenticationResponse',
-                    'directoryResponse',
-                    'cavvAlgorithm',
-                    'dsTransactionId'],
-            ],
-            ['options' =>
-                [
-                    'holdInEscrow',
-                    'storeInVault',
-                    'storeInVaultOnSuccess',
-                    'submitForSettlement',
-                    'addBillingAddressToPaymentMethod',
-                    'venmoSdkSession',
-                    'storeShippingAddressInVault',
-                    'payeeId',
-                    'payeeEmail',
-                    'skipAdvancedFraudChecking',
-                    'skipAvs',
-                    'skipCvv',
-                    ['creditCard' =>
-                        ['accountType']
-                    ],
-                    ['threeDSecure' =>
-                        ['required']
-                    ],
-                    ['paypal' =>
-                        [
-                            'payeeId',
-                            'payeeEmail',
-                            'customField',
-                            'description',
-                            ['supplementaryData' => ['_anyKey_']],
-                        ]
-                    ],
-                    ['amexRewards' =>
-                        [
-                            'requestId',
-                            'points',
-                            'currencyAmount',
-                            'currencyIsoCode'
-                        ]
-                    ],
-                    ['venmo' =>
-                        [
-                            'profileId'
-                        ]
-                    ]
-                ],
-            ],
-            ['customFields' => ['_anyKey_']],
-            ['descriptor' => ['name', 'phone', 'url']],
-            ['paypalAccount' => ['payeeId', 'payeeEmail', 'payerId', 'paymentId']],
             ['applePayCard' =>
                 [
                     'cardholderName',
@@ -212,13 +94,65 @@ class TransactionGateway
                     'number'
                 ]
             ],
+            ['billing' =>
+                [
+                    'firstName', 'lastName', 'company', 'countryName',
+                    'countryCodeAlpha2', 'countryCodeAlpha3', 'countryCodeNumeric',
+                    'extendedAddress', 'locality', 'phoneNumber', ['internationalPhone' => ['countryCode', 'nationalNumber']], 'postalCode', 'region',
+                    'streetAddress'],
+            ],
+            'billingAddressId',
+            'channel',
+            ['creditCard' =>
+                [
+                    'cardholderName',
+                    'cvv',
+                    'expirationDate',
+                    'expirationMonth',
+                    'expirationYear',
+                    ['networkTokenizationAttributes' => ['cryptogram', 'ecommerceIndicator', 'tokenRequestorId']],
+                    'number',
+                    ['paymentReaderCardDetails' => ['encryptedCardData', 'keySerialNumber']],
+                    'token',
+                ],
+            ],
+            ['customer' =>
+                [
+                    'id', 'company', 'email', 'fax', 'firstName',
+                    'lastName', 'phone', ['internationalPhone' => ['countryCode', 'nationalNumber']], 'website'],
+            ],
+            'customerId',
+            ['customFields' => ['_anyKey_']],
+            ['descriptor' => ['name', 'phone', 'url']],
+            'deviceData',
+            'discountAmount',
+            'exchangeRateQuoteId',
+            ['externalVault' =>
+                ['status' , 'previousNetworkTransactionId'],
+            ],
+            'foreignRetailer',
+            ['googlePayCard' =>
+                [
+                    'cryptogram',
+                    'eciIndicator',
+                    'expirationMonth',
+                    'expirationYear',
+                    'googleTransactionId',
+                    'number',
+                    'sourceCardLastFour',
+                    'sourceCardType'
+                ]
+            ],
             ['industry' =>
                 ['industryType',
                     ['data' =>
                         [
+                            'arrivalDate',
                             'folioNumber',
                             'checkInDate',
                             'checkOutDate',
+                            'countryCode',
+                            'dateOfBirth',
                             'travelPackage',
                             'departureDate',
                             'lodgingCheckInDate',
@@ -270,16 +204,19 @@ class TransactionGateway
                                     'kind',
                                     'amount'
                                 ]
-                            ]
+                            ],
+                            'ticketIssuerAddress'
                         ]
                     ]
                 ]
             ],
+            ['installments' => ['count']],
             ['lineItems' =>
                 [
                     'commodityCode',
                     'description',
                     'discountAmount',
+                    'imageUrl',
                     'kind',
                     'name',
                     'productCode',
@@ -289,25 +226,149 @@ class TransactionGateway
                     'unitAmount',
                     'unitOfMeasure',
                     'unitTaxAmount',
+                    'upcCode',
+                    'upcType',
                     'url'
                 ]
             ],
-            ['externalVault' =>
-                ['status' , 'previousNetworkTransactionId'],
-            ],
-            ['googlePayCard' =>
+            'merchantAccountId',
+            ['options' =>
                 [
-                    'cryptogram',
-                    'eciIndicator',
-                    'expirationMonth',
-                    'expirationYear',
-                    'googleTransactionId',
-                    'number',
-                    'sourceCardLastFour',
-                    'sourceCardType'
-                ]
+                    'holdInEscrow',
+                    'storeInVault',
+                    'storeInVaultOnSuccess',
+                    'submitForSettlement',
+                    'addBillingAddressToPaymentMethod',
+                    'venmoSdkSession',  // Deprecated
+                    'storeShippingAddressInVault',
+                    'payeeId',
+                    'payeeEmail',
+                    'skipAdvancedFraudChecking',
+                    'skipAvs',
+                    'skipCvv',
+                    ['creditCard' =>
+                        ['accountType',
+                        'processDebitAsCredit']
+                    ],
+                    ['threeDSecure' =>
+                        ['required']
+                    ],
+                    ['paypal' =>
+                        [
+                            'payeeId',
+                            'payeeEmail',
+                            'customField',
+                            'description',
+                            ['supplementaryData' => ['_anyKey_']],
+                        ]
+                    ],
+                    ['amexRewards' =>
+                        [
+                            'requestId',
+                            'points',
+                            'currencyAmount',
+                            'currencyIsoCode'
+                        ]
+                    ],
+                    ['venmo' =>
+                        [
+                            'profileId'
+                        ]
+                    ],
+                    ['processingOverrides' =>
+                        [
+                            'customerEmail',
+                            'customerFirstName',
+                            'customerLastName',
+                            'customerTaxIdentifier'
+                        ]
+                    ]
+                ],
             ],
-            ['installments' => ['count']]
+            'orderId',
+            'paymentMethodNonce',
+            'paymentMethodToken',
+            ['paypalAccount' => ['payeeId', 'payeeEmail', 'payerId', 'paymentId']],
+            'productSku',
+            'purchaseOrderNumber',
+            'recurring',
+            ['riskData' =>
+                [
+                    'customerBrowser', 'customerIp', 'customerDeviceId',
+                    'customerLocationZip', 'customerTenure'],
+            ],
+            'scaExemption',
+            'serviceFeeAmount',
+            'sharedCustomerId',
+            'sharedPaymentMethodToken',
+            'sharedPaymentMethodNonce',
+            'sharedShippingAddressId',
+            'sharedBillingAddressId',
+            ['shipping' =>
+                [
+                    'firstName', 'lastName', 'company', 'countryName',
+                    'countryCodeAlpha2', 'countryCodeAlpha3', 'countryCodeNumeric',
+                    'extendedAddress', 'locality', 'phoneNumber', ['internationalPhone' => ['countryCode', 'nationalNumber']], 'postalCode', 'region',
+                    'shippingMethod', 'streetAddress'],
+            ],
+            'shippingAddressId',
+            'shippingAmount',
+            'shippingTaxAmount',
+            'shipsFromPostalCode',
+            'taxAmount',
+            'taxExempt',
+            ['threeDSecurePassThru' =>
+                [
+                    'eciFlag',
+                    'cavv',
+                    'xid',
+                    'threeDSecureVersion',
+                    'authenticationResponse',
+                    'directoryResponse',
+                    'cavvAlgorithm',
+                    'dsTransactionId'],
+            ],
+            'threeDSecureToken', //Deprecated
+            'threeDSecureAuthenticationId',
+            'transactionSource',
+            'type',
+            'venmoSdkPaymentMethodCode'  // Deprecated
+        ];
+    }
+
+    /**
+     * creates a full array signature of a valid package tracking request
+     *
+     * @return array package tracking request signature format
+     */
+    public static function packageTrackingRequestSignature()
+    {
+        return
+        [
+            'carrier',
+            'trackingNumber',
+            'notifyPayer',
+            [
+                'lineItems' =>
+                    [
+                        'commodityCode',
+                        'description',
+                        'discountAmount',
+                        'imageUrl',
+                        'kind',
+                        'name',
+                        'productCode',
+                        'quantity',
+                        'taxAmount',
+                        'totalAmount',
+                        'unitAmount',
+                        'unitOfMeasure',
+                        'unitTaxAmount',
+                        'upcCode',
+                        'upcType',
+                        'url'
+                    ]
+            ],
         ];
     }
 
@@ -319,17 +380,79 @@ class TransactionGateway
     public static function submitForSettlementSignature()
     {
         return ['orderId', ['descriptor' => ['name', 'phone', 'url']],
-            'purchaseOrderNumber',
-            'taxAmount',
-            'taxExempt',
-            'shippingAmount',
-            'discountAmount',
-            'shipsFromPostalCode',
+            ['industry' =>
+                ['industryType',
+                    ['data' =>
+                        [
+                            'advancedDeposit',
+                            'arrivalDate',
+                            'checkInDate',
+                            'checkOutDate',
+                            'countryCode',
+                            'customerCode',
+                            'dateOfBirth',
+                            'departureDate',
+                            'fareAmount',
+                            'feeAmount',
+                            'fireSafe',
+                            'folioNumber',
+                            'issuedDate',
+                            'issuingCarrierCode',
+                            'lodgingCheckInDate',
+                            'lodgingCheckOutDate',
+                            'lodgingName',
+                            'noShow',
+                            'passengerFirstName',
+                            'passengerLastName',
+                            'passengerMiddleInitial',
+                            'passengerTitle',
+                            'propertyPhone',
+                            'restrictedTicket',
+                            'roomRate',
+                            'roomTax',
+                            'taxAmount',
+                            'ticketIssuerAddress',
+                            'ticketNumber',
+                            'travelAgencyCode',
+                            'travelAgencyName',
+                            'travelPackage',
+                            ['legs' =>
+                                [
+                                    'arrivalAirportCode',
+                                    'arrivalTime',
+                                    'carrierCode',
+                                    'conjunctionTicket',
+                                    'couponNumber',
+                                    'departureAirportCode',
+                                    'departureDate',
+                                    'departureTime',
+                                    'endorsementOrRestrictions',
+                                    'exchangeTicket',
+                                    'fareAmount',
+                                    'fareBasisCode',
+                                    'feeAmount',
+                                    'flightNumber',
+                                    'serviceClass',
+                                    'stopoverPermitted',
+                                    'taxAmount',
+                                ]
+                            ],
+                            ['additionalCharges' =>
+                                [
+                                    'amount',
+                                    'kind'
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
+            ],
             ['lineItems' =>
                 [
                     'commodityCode',
                     'description',
                     'discountAmount',
+                    'imageUrl',
                     'kind',
                     'name',
                     'productCode',
@@ -339,10 +462,32 @@ class TransactionGateway
                     'unitAmount',
                     'unitOfMeasure',
                     'unitTaxAmount',
+                    'upcCode',
+                    'upcType',
                     'url'
                 ]
             ],
+            'discountAmount',
+            'purchaseOrderNumber',
+            'shippingAmount',
+            'shippingTaxAmount',
+            'shipsFromPostalCode',
+            'taxAmount',
+            'taxExempt',
         ];
+    }
+
+    /**
+     * creates a full array signature of a valid gateway request
+     *
+     * @return array gateway request signature format
+     */
+    public static function submitForPartialSettlementSignature()
+    {
+        return array_merge(
+            self::submitForSettlementSignature(),
+            ['finalCapture']
+        );
     }
 
     /**
@@ -423,6 +568,7 @@ class TransactionGateway
      */
     public function sale($attribs)
     {
+        // phpcs:ignore
         if (array_key_exists('recurring', $attribs)) {
             trigger_error('$recurring is deprecated, use $transactionSource instead', E_USER_DEPRECATED);
         }
@@ -463,6 +609,7 @@ class TransactionGateway
 
         $path = $this->_config->merchantPath() . '/transactions/advanced_search_ids';
         $response = $this->_http->post($path, ['search' => $criteria]);
+        // phpcs:ignore
         if (array_key_exists('searchResults', $response)) {
             $pager = [
                 'object' => $this,
@@ -494,6 +641,7 @@ class TransactionGateway
         $path = $this->_config->merchantPath() . '/transactions/advanced_search';
         $response = $this->_http->post($path, ['search' => $criteria]);
 
+        // phpcs:ignore
         if (array_key_exists('creditCardTransactions', $response)) {
             return Util::extractattributeasarray(
                 $response['creditCardTransactions'],
@@ -604,6 +752,24 @@ class TransactionGateway
     }
 
     /**
+     * Supplement the transaction with package tracking details
+     *
+     * @param string $transactionId to be updated
+     * @param array  $attribs       package tracking request attributes
+     *
+     * @return Result\Successful|Result\Error
+     */
+    public function packageTracking($transactionId, $attribs = [])
+    {
+        $this->_validateId($transactionId);
+        Util::verifyKeys(self::packageTrackingRequestSignature(), $attribs);
+
+        $path = $this->_config->merchantPath() . '/transactions/' . $transactionId . '/shipments';
+        $response = $this->_http->post($path, ['shipment' => $attribs]);
+        return $this->_verifyGatewayResponse($response);
+    }
+
+    /**
      * Settle multiple partial amounts against the same authorization
      *
      * @param string $transactionId unque identifier of the transaction to be submitted for settlement
@@ -615,7 +781,7 @@ class TransactionGateway
     public function submitForPartialSettlement($transactionId, $amount, $attribs = [])
     {
         $this->_validateId($transactionId);
-        Util::verifyKeys(self::submitForSettlementSignature(), $attribs);
+        Util::verifyKeys(self::submitForPartialSettlementSignature(), $attribs);
         $attribs['amount'] = $amount;
 
         $path = $this->_config->merchantPath() . '/transactions/' . $transactionId . '/submit_for_partial_settlement';
@@ -752,6 +918,16 @@ class TransactionGateway
             throw new Exception\Unexpected(
                 "Expected transaction or apiErrorResponse"
             );
+        }
+    }
+
+    private function _checkForDeprecatedAttributes($attributes)
+    {
+        if (isset($attributes['threeDSecureToken'])) {
+            trigger_error('threeDSecureToken has been deprecated. Please use threeDSecureAuthenticationId instead.', E_USER_DEPRECATED);
+        }
+        if (isset($attributes['venmoSdkSession']) || isset($attributes['venmoSdkPaymentMethodCode'])) {
+            trigger_error('The Venmo SDK integration is Unsupported. Please update your integration to use Pay with Venmo instead.', E_USER_DEPRECATED);
         }
     }
 }

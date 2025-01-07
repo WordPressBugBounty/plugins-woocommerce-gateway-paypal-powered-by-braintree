@@ -18,18 +18,18 @@
  *
  * @package   SkyVerge/WooCommerce/Payment-Gateway/Classes
  * @author    SkyVerge
- * @copyright Copyright (c) 2013-2023, SkyVerge, Inc.
+ * @copyright Copyright (c) 2013-2024, SkyVerge, Inc.
  * @license   http://www.gnu.org/licenses/gpl-3.0.html GNU General Public License v3.0
  */
 
-namespace SkyVerge\WooCommerce\PluginFramework\v5_12_0\Handlers;
+namespace SkyVerge\WooCommerce\PluginFramework\v5_12_7\Handlers;
 
-use SkyVerge\WooCommerce\PluginFramework\v5_12_0\SV_WC_Helper;
-use SkyVerge\WooCommerce\PluginFramework\v5_12_0\SV_WC_Plugin_Exception;
+use SkyVerge\WooCommerce\PluginFramework\v5_12_7\SV_WC_Helper;
+use SkyVerge\WooCommerce\PluginFramework\v5_12_7\SV_WC_Plugin_Exception;
 
 defined( 'ABSPATH' ) or exit;
 
-if ( ! class_exists( '\\SkyVerge\\WooCommerce\\PluginFramework\\v5_12_0\\Handlers\\Script_Handler' ) ) :
+if ( ! class_exists( '\\SkyVerge\\WooCommerce\\PluginFramework\\v5_12_7\\Handlers\\Script_Handler' ) ) :
 
 
 /**
@@ -39,6 +39,7 @@ if ( ! class_exists( '\\SkyVerge\\WooCommerce\\PluginFramework\\v5_12_0\\Handler
  *
  * @since 5.7.0
  */
+#[\AllowDynamicProperties]
 abstract class Script_Handler {
 
 
@@ -79,7 +80,7 @@ abstract class Script_Handler {
 	 */
 	protected function get_js_handler_class_name() {
 
-		return sprintf( '%s_v5_12_0', $this->js_handler_base_class_name );
+		return sprintf( '%s_v5_12_7', $this->js_handler_base_class_name );
 	}
 
 

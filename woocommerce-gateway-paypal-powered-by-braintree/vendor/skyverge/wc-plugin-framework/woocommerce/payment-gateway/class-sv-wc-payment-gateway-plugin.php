@@ -18,20 +18,20 @@
  *
  * @package   SkyVerge/WooCommerce/Payment-Gateway/Classes
  * @author    SkyVerge
- * @copyright Copyright (c) 2013-2023, SkyVerge, Inc.
+ * @copyright Copyright (c) 2013-2024, SkyVerge, Inc.
  * @license   http://www.gnu.org/licenses/gpl-3.0.html GNU General Public License v3.0
  */
 
-namespace SkyVerge\WooCommerce\PluginFramework\v5_12_0;
+namespace SkyVerge\WooCommerce\PluginFramework\v5_12_7;
 
 use Automattic\WooCommerce\Admin\Notes\WC_Admin_Note;
 use Automattic\WooCommerce\Admin\Notes\WC_Admin_Notes;
-use SkyVerge\WooCommerce\PluginFramework\v5_12_0\Payment_Gateway\Blocks\Gateway_Blocks_Handler;
-use SkyVerge\WooCommerce\PluginFramework\v5_12_0\Payment_Gateway\External_Checkout\Google_Pay\Google_Pay;
+use SkyVerge\WooCommerce\PluginFramework\v5_12_7\Payment_Gateway\Blocks\Gateway_Blocks_Handler;
+use SkyVerge\WooCommerce\PluginFramework\v5_12_7\Payment_Gateway\External_Checkout\Google_Pay\Google_Pay;
 
 defined( 'ABSPATH' ) or exit;
 
-if ( ! class_exists( '\\SkyVerge\\WooCommerce\\PluginFramework\\v5_12_0\\SV_WC_Payment_Gateway_Plugin' ) ) :
+if ( ! class_exists( '\\SkyVerge\\WooCommerce\\PluginFramework\\v5_12_7\\SV_WC_Payment_Gateway_Plugin' ) ) :
 
 
 /**
@@ -60,6 +60,7 @@ if ( ! class_exists( '\\SkyVerge\\WooCommerce\\PluginFramework\\v5_12_0\\SV_WC_P
  *
  * @version 2.0.0
  */
+#[\AllowDynamicProperties]
 abstract class SV_WC_Payment_Gateway_Plugin extends SV_WC_Plugin {
 
 
@@ -181,7 +182,7 @@ abstract class SV_WC_Payment_Gateway_Plugin extends SV_WC_Plugin {
 	protected function init_blocks_handler() : void {
 
 		require_once( $this->get_framework_path() . '/Blocks/Blocks_Handler.php' );
-		require_once( $this->get_framework_path() . '/payment-gateway/Blocks/Gateway_Blocks_Handler.php' );
+		require_once( $this->get_payment_gateway_framework_path() . '/Blocks/Gateway_Blocks_Handler.php' );
 
 		// individual gateway plugins should initialize their block integrations handler by overriding this method
 		$this->blocks_handler = new Gateway_Blocks_Handler( $this );

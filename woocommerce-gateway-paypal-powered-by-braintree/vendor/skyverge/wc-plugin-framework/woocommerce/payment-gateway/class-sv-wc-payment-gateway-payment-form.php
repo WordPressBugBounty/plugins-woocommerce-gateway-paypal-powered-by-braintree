@@ -18,18 +18,18 @@
  *
  * @package   SkyVerge/WooCommerce/Payment-Gateway/Classes
  * @author    SkyVerge
- * @copyright Copyright (c) 2013-2023, SkyVerge, Inc.
+ * @copyright Copyright (c) 2013-2024, SkyVerge, Inc.
  * @license   http://www.gnu.org/licenses/gpl-3.0.html GNU General Public License v3.0
  */
 
-namespace SkyVerge\WooCommerce\PluginFramework\v5_12_0;
+namespace SkyVerge\WooCommerce\PluginFramework\v5_12_7;
 
-use SkyVerge\WooCommerce\PluginFramework\v5_12_0\Blocks\Blocks_Handler;
-use SkyVerge\WooCommerce\PluginFramework\v5_12_0\Payment_Gateway\Blocks\Gateway_Checkout_Block_Integration;
+use SkyVerge\WooCommerce\PluginFramework\v5_12_7\Blocks\Blocks_Handler;
+use SkyVerge\WooCommerce\PluginFramework\v5_12_7\Payment_Gateway\Blocks\Gateway_Checkout_Block_Integration;
 
 defined( 'ABSPATH' ) or exit;
 
-if ( ! class_exists( '\\SkyVerge\\WooCommerce\\PluginFramework\\v5_12_0\\SV_WC_Payment_Gateway_Payment_Form' ) ) :
+if ( ! class_exists( '\\SkyVerge\\WooCommerce\\PluginFramework\\v5_12_7\\SV_WC_Payment_Gateway_Payment_Form' ) ) :
 
 
 /**
@@ -39,6 +39,7 @@ if ( ! class_exists( '\\SkyVerge\\WooCommerce\\PluginFramework\\v5_12_0\\SV_WC_P
  *
  * @since 4.0.0
  */
+#[\AllowDynamicProperties]
 class SV_WC_Payment_Gateway_Payment_Form extends Handlers\Script_Handler {
 
 
@@ -296,7 +297,9 @@ class SV_WC_Payment_Gateway_Payment_Form extends Handlers\Script_Handler {
 	 */
 	protected function get_payment_fields() : array {
 
-		switch ( $this->get_gateway()->get_payment_type() ) {
+		$gateway = $this->get_gateway();
+
+		switch ( $gateway->get_payment_type() ) {
 
 			case 'credit-card':
 				$fields = $this->get_credit_card_fields();
@@ -319,9 +322,9 @@ class SV_WC_Payment_Gateway_Payment_Form extends Handlers\Script_Handler {
 		$fields = wp_parse_args( $fields, [
 			'context' => [
 				'type'  => 'hidden',
-				'id'    => 'wc-' . $this->get_gateway()->get_id_dasherized() . '-context',
-				'name'  => 'wc-' . $this->get_gateway()->get_id_dasherized() . '-context',
-				'value' => 'shortcode',
+				'id'    => 'wc-' . $gateway->get_id_dasherized() . '-context',
+				'name'  => 'wc-' . $gateway->get_id_dasherized() . '-context',
+				'value' => $gateway::PROCESSING_CONTEXT_SHORTCODE,
 			],
 		] );
 
@@ -339,7 +342,7 @@ class SV_WC_Payment_Gateway_Payment_Form extends Handlers\Script_Handler {
 		 * @param array<string, mixed> $fields in the format supported by {@see woocommerce_form_field()}
 		 * @param SV_WC_Payment_Gateway_Payment_Form $payment_form payment form instance
 		 */
-		return (array) apply_filters( 'wc_' . $this->get_gateway()->get_id() . '_payment_form_default_payment_form_fields', $fields, $this );
+		return (array) apply_filters( 'wc_' . $gateway->get_id() . '_payment_form_default_payment_form_fields', $fields, $this );
 	}
 
 
@@ -1082,6 +1085,7 @@ class SV_WC_Payment_Gateway_Payment_Form extends Handlers\Script_Handler {
 
 		switch ( current_action() ) :
 			case 'wp_footer' :
+				$this->renderScriptDependencies();
 				$this->payment_form_js_rendered[] = $gateway_id;
 				?><script type="text/javascript">jQuery(function($){<?php echo $this->get_safe_handler_js(); ?>});</script><?php
 			break;
@@ -1092,6 +1096,35 @@ class SV_WC_Payment_Gateway_Payment_Form extends Handlers\Script_Handler {
 		endswitch;
 	}
 
+	/**
+	 * Renders the payment form JS dependencies.
+	 *
+	 * @see SV_WC_Payment_Gateway_Payment_Form::render_js()
+	 *
+	 * @since 4.12.6
+	 */
+	protected function renderScriptDependencies() : void
+	{
+		if (! $dependencies = $this->getFormScriptDependencies()) {
+			return;
+		}
+
+		wp_print_scripts($dependencies);
+	}
+
+	/**
+	 * Gets the payment form JS list of dependencies handles.
+	 *
+	 * @see SV_WC_Payment_Gateway_Payment_Form::renderScriptDependencies()
+	 *
+	 * @since 4.12.6
+	 *
+	 * @return string[]
+	 */
+	protected function getFormScriptDependencies() : array
+	{
+		return ['jquery'];
+	}
 
 	/**
 	 * Gets the handler instantiation JS.
@@ -1140,7 +1173,7 @@ class SV_WC_Payment_Gateway_Payment_Form extends Handlers\Script_Handler {
 
 			if ( is_array( $card_types ) && ! empty( $card_types ) ) {
 
-				$args['enabled_card_types'] = array_map( [ 'SkyVerge\WooCommerce\PluginFramework\v5_12_0\SV_WC_Payment_Gateway_Helper', 'normalize_card_type' ], $card_types );
+				$args['enabled_card_types'] = array_map( [ 'SkyVerge\WooCommerce\PluginFramework\v5_12_7\SV_WC_Payment_Gateway_Helper', 'normalize_card_type' ], $card_types );
 			}
 		}
 

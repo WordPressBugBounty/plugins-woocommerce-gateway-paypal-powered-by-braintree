@@ -45,6 +45,8 @@ class Codes
 
     const ADJUSTMENT_AMOUNT_MUST_BE_GREATER_THAN_ZERO                   = '95605';
 
+    const ANDROID_PAY_CARDS_ARE_NOT_ACCEPTED                                = '83708';
+
     const APPLE_PAY_CARDS_ARE_NOT_ACCEPTED                                  = '83501';
     const APPLE_PAY_CUSTOMER_ID_IS_REQUIRED_FOR_VAULTING                    = '83502';
     const APPLE_PAY_TOKEN_IS_IN_USE                                         = '93503';
@@ -76,13 +78,16 @@ class Codes
     const AUTHORIZATION_FINGERPRINT_OPTIONS_NOT_ALLOWED_WITHOUT_CUSTOMER = '93207';
     const AUTHORIZATION_FINGERPRINT_SIGNATURE_REVOKED                    = '93203';
 
-    const CLIENT_TOKEN_CUSTOMER_DOES_NOT_EXIST                               = '92804';
-    const CLIENT_TOKEN_FAIL_ON_DUPLICATE_PAYMENT_METHOD_REQUIRES_CUSTOMER_ID = '92803';
-    const CLIENT_TOKEN_MAKE_DEFAULT_REQUIRES_CUSTOMER_ID                     = '92801';
-    const CLIENT_TOKEN_PROXY_MERCHANT_DOES_NOT_EXIST                         = '92805';
-    const CLIENT_TOKEN_UNSUPPORTED_VERSION                                   = '92806';
-    const CLIENT_TOKEN_VERIFY_CARD_REQUIRES_CUSTOMER_ID                      = '92802';
-    const CLIENT_TOKEN_MERCHANT_ACCOUNT_DOES_NOT_EXIST                       = '92807';
+    const CLIENT_TOKEN_CUSTOMER_DOES_NOT_EXIST                                            = '92804';
+    const CLIENT_TOKEN_FAIL_ON_DUPLICATE_PAYMENT_METHOD_REQUIRES_CUSTOMER_ID              = '92803';
+    const CLIENT_TOKEN_FAIL_ON_DUPLICATE_PAYMENT_METHOD_FOR_CUSTOMER_REQUIRES_CUSTOMER_ID = '92805';
+    const CLIENT_TOKEN_INVALID_DOMAIN_FORMAT                                              = '92011';
+    const CLIENT_TOKEN_MAKE_DEFAULT_REQUIRES_CUSTOMER_ID                                  = '92801';
+    const CLIENT_TOKEN_PROXY_MERCHANT_DOES_NOT_EXIST                                      = '92805';
+    const CLIENT_TOKEN_TOO_MANY_DOMAINS                                                   = '92810';
+    const CLIENT_TOKEN_UNSUPPORTED_VERSION                                                = '92806';
+    const CLIENT_TOKEN_VERIFY_CARD_REQUIRES_CUSTOMER_ID                                   = '92802';
+    const CLIENT_TOKEN_MERCHANT_ACCOUNT_DOES_NOT_EXIST                                    = '92807';
 
     const CREDIT_CARD_BILLING_ADDRESS_CONFLICT                                             = '91701';
     const CREDIT_CARD_BILLING_ADDRESS_FORMAT_IS_INVALID                                    = '91744';
@@ -97,6 +102,7 @@ class Codes
     const CREDIT_CARD_CVV_IS_REQUIRED                                                      = '81706';
     const CREDIT_CARD_CVV_VERIFICATION_FAILED                                              = '81736';
     const CREDIT_CARD_DUPLICATE_CARD_EXISTS                                                = '81724';
+    const CREDIT_CARD_DUPLICATE_CARD_EXISTS_FOR_CUSTOMER                                   = '81763';
     const CREDIT_CARD_EXPIRATION_DATE_CONFLICT                                             = '91708';
     const CREDIT_CARD_EXPIRATION_DATE_IS_INVALID                                           = '81710';
     const CREDIT_CARD_EXPIRATION_DATE_IS_REQUIRED                                          = '81709';
@@ -105,6 +111,8 @@ class Codes
     const CREDIT_CARD_EXPIRATION_YEAR_IS_INVALID                                           = '81713';
     const CREDIT_CARD_INVALID_PARAMS_FOR_CREDIT_CARD_UPDATE                                = '91745';
     const CREDIT_CARD_INVALID_VENMO_SDK_PAYMENT_METHOD_CODE                                = '91727';
+    const CREDIT_CARD_LIMIT_EXCEEDED_FOR_DUPLICATE_PAYMENT_METHOD_CHECK_FOR_CUSTOMER       = '81764';
+    const CREDIT_CARD_NETWORK_TOKENIZATION_ATTRIBUTE_CRYPTOGRAM_IS_REQUIRED                = '81762';
     const CREDIT_CARD_NUMBER_INVALID_LENGTH                                                = '81716';
     const CREDIT_CARD_NUMBER_IS_INVALID                                                    = '81715';
     const CREDIT_CARD_NUMBER_IS_PROHIBITED                                                 = '81750';
@@ -304,6 +312,10 @@ class Codes
     const TRANSACTION_LINE_ITEM_TAX_AMOUNT_FORMAT_IS_INVALID                = '95827';
     const TRANSACTION_LINE_ITEM_TAX_AMOUNT_IS_TOO_LARGE                     = '95828';
     const TRANSACTION_LINE_ITEM_TAX_AMOUNT_CANNOT_BE_NEGATIVE               = '95829';
+    const TRANSACTION_LINE_ITEM_UPC_CODE_IS_MISSING                         = '95830';
+    const TRANSACTION_LINE_ITEM_UPC_CODE_IS_TOO_LONG                        = '95831';
+    const TRANSACTION_LINE_ITEM_UPC_TYPE_IS_MISSING                         = '95832';
+    const TRANSACTION_LINE_ITEM_UPC_TYPE_IS_INVALID                         = '95833';
 
     const TRANSACTION_EXTERNAL_VAULT_STATUS_IS_INVALID                                      = '915175';
     const TRANSACTION_EXTERNAL_VAULT_STATUS_WITH_PREVIOUS_NETWORK_TRANSACTION_ID_IS_INVALID = '915177';
@@ -462,6 +474,10 @@ class Codes
     const PROCESSOR_DOES_NOT_SUPPORT_AUTH_ADJUSTMENT                                  = '915222';
     const PROCESSOR_DOES_NOT_SUPPORT_INCREMENTAL_AUTH                                 = '915220';
     const PROCESSOR_DOES_NOT_SUPPORT_PARTIAL_AUTH_REVERSAL                            = '915221';
+
+    const SEPA_DEBIT_ACCOUNT_PAYMENT_METHOD_MANDATE_TYPE_IS_NOT_SUPPORTED = '87115';
+    const SEPA_DEBIT_ACCOUNT_PAYMENT_METHOD_CUSTOMER_ID_IS_INVALID        = '87116';
+    const SEPA_DEBIT_ACCOUNT_PAYMENT_METHOD_CUSTOMER_ID_IS_REQUIRED       = '87117';
 
     const SETTLEMENT_BATCH_SUMMARY_SETTLEMENT_DATE_IS_INVALID  = '82302';
     const SETTLEMENT_BATCH_SUMMARY_SETTLEMENT_DATE_IS_REQUIRED = '82301';

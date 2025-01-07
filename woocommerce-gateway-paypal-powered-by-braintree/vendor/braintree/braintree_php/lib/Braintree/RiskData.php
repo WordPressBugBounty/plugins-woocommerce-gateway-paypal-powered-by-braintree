@@ -19,6 +19,10 @@ class RiskData extends Base
         $instance = new self();
         $instance->_initialize($attributes);
 
+        if (isset($attributes['liabilityShift'])) {
+            $instance->_set('liabilityShift', LiabilityShift::factory($attributes['liabilityShift']));
+        }
+
         return $instance;
     }
 
@@ -37,6 +41,15 @@ class RiskData extends Base
         return $this->_attributes['decisionReasons'];
     }
 
+    /**
+     * If enrolled in Chargeback Protection, returns any information regarding scenarios where liability in the event of a chargeback is shifted from the merchant to another party.
+     *
+     * @return LiabilityShift object
+     */
+    public function liabilityShift()
+    {
+        return $this->_attributes['liabilityShift'];
+    }
 
     // phpcs:ignore PEAR.Commenting.FunctionComment.Missing
     public function __toString()
