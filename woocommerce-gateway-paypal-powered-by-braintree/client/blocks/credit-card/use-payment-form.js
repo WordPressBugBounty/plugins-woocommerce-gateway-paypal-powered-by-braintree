@@ -128,6 +128,7 @@ export const usePaymentForm = ({
 		const verificationData = {
 			amount: amount.toString(),
 			email: billing.billingData.email || '',
+			challengeRequested: true, // Always request 3DS challenge, if possible. see https://github.com/woocommerce/woocommerce-gateway-paypal-powered-by-braintree/issues/637
 			billingAddress: {
 				givenName: billing.billingData.first_name || '',
 				surname: billing.billingData.last_name || '',
@@ -166,14 +167,10 @@ export const usePaymentForm = ({
 			},
 		};
 
-		// If the cart contains a subscription, we need to set challengeRequested to true.
-		if (cartContainsSubscription) {
-			verificationData.challengeRequested = true;
-			// If the order total is 0 (eg: trial), we need to set the recurring amount to the order total.
-			// TODO: Check further on this and make sure braintree not support 0 amount 3DS verification.
-			if (amount === '0.00' && orderTotal3DSecure) {
-				verificationData.amount = orderTotal3DSecure.toFixed(2);
-			}
+		// If the order total is 0 (eg: trial), we need to set the recurring amount to the order total.
+		// TODO: Check further on this and make sure braintree not support 0 amount 3DS verification.
+		if (cartContainsSubscription && amount === '0.00' && orderTotal3DSecure) {
+			verificationData.amount = orderTotal3DSecure.toFixed(2);
 		}
 
 		return verificationData;

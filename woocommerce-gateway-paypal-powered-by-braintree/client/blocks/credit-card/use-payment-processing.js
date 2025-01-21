@@ -17,7 +17,6 @@ import { PAYMENT_METHOD_NAME } from './constants';
 
 const { threeds, integrationErrorMessage, paymentErrorMessage, cscRequired } =
 	getBraintreeCreditCardServerData();
-const { braintree } = window;
 
 /**
  * Sets up payment details and POST data to be processed on server-side on checkout submission.
@@ -43,7 +42,10 @@ export const usePaymentProcessing = (
 			messageContext: emitResponse.noticeContexts.PAYMENTS,
 		};
 		const is3DSecureEnabled =
-			threeds && threeds.enabled && braintree && braintree.threeDSecure;
+			threeds &&
+			threeds.enabled &&
+			window.braintree &&
+			window.braintree.threeDSecure;
 		const shouldTokenize = !(token && !cscRequired);
 		let shouldVerify3DSecure = false;
 
