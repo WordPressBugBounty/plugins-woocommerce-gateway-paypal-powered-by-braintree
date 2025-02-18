@@ -397,21 +397,21 @@ class WC_Gateway_Braintree_PayPal extends WC_Gateway_Braintree {
 			'desc_tip'     => true,
 			'description'  => esc_html__(
 				'By default all possible funding sources will be shown. You can disable some sources, if you wish.',
-				'woocommerce-paypal-payments'
+				'woocommerce-gateway-paypal-powered-by-braintree'
 			),
 			'options'      => array(
-				'card'       => _x( 'Credit or debit cards', 'Name of payment method', 'woocommerce-paypal-payments' ),
-				'blik'       => _x( 'BLIK', 'Name of payment method', 'woocommerce-paypal-payments' ),
-				'sepa'       => _x( 'SEPA-Lastschrift', 'Name of payment method', 'woocommerce-paypal-payments' ),
-				'bancontact' => _x( 'Bancontact', 'Name of payment method', 'woocommerce-paypal-payments' ),
-				'eps'        => _x( 'eps', 'Name of payment method', 'woocommerce-paypal-payments' ),
-				'giropay'    => _x( 'giropay', 'Name of payment method', 'woocommerce-paypal-payments' ),
-				'ideal'      => _x( 'iDEAL', 'Name of payment method', 'woocommerce-paypal-payments' ),
-				'mercadopago'=> _x( 'Mercado Pago', 'Name of payment method', 'woocommerce-paypal-payments' ),
-				'mybank'     => _x( 'MyBank', 'Name of payment method', 'woocommerce-paypal-payments' ),
-				'p24'        => _x( 'Przelewy24', 'Name of payment method', 'woocommerce-paypal-payments' ),
-				'sofort'     => _x( 'Sofort', 'Name of payment method', 'woocommerce-paypal-payments' ),
-				'venmo'      => _x( 'Venmo', 'Name of payment method', 'woocommerce-paypal-payments' ),
+				'card'        => _x( 'Credit or debit cards', 'Name of payment method', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+				'blik'        => _x( 'BLIK', 'Name of payment method', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+				'sepa'        => _x( 'SEPA-Lastschrift', 'Name of payment method', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+				'bancontact'  => _x( 'Bancontact', 'Name of payment method', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+				'eps'         => _x( 'eps', 'Name of payment method', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+				'giropay'     => _x( 'giropay', 'Name of payment method', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+				'ideal'       => _x( 'iDEAL', 'Name of payment method', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+				'mercadopago' => _x( 'Mercado Pago', 'Name of payment method', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+				'mybank'      => _x( 'MyBank', 'Name of payment method', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+				'p24'         => _x( 'Przelewy24', 'Name of payment method', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+				'sofort'      => _x( 'Sofort', 'Name of payment method', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+				'venmo'       => _x( 'Venmo', 'Name of payment method', 'woocommerce-gateway-paypal-powered-by-braintree' ),
 			)
 		);
 
@@ -589,8 +589,8 @@ class WC_Gateway_Braintree_PayPal extends WC_Gateway_Braintree {
 		if ( $response->transaction_approved() ) {
 
 			// order note, e.g. Braintree (PayPal) Sandbox Payment Approved (Transaction ID ABC)
-			/* translators: Placeholders: %1$s - payment method title (e.g. PayPal), %2$s - transaction environment (either Sandbox or blank string), %3$s - type of transaction (either Authorization or Payment) */
 			$message = sprintf(
+				/* translators: Placeholders: %1$s - payment method title (e.g. PayPal), %2$s - transaction environment (either Sandbox or blank string), %3$s - type of transaction (either Authorization or Payment) */
 				esc_html__( '%1$s %2$s %3$s Approved', 'woocommerce-gateway-paypal-powered-by-braintree' ),
 				$this->get_method_title(),
 				$this->is_test_environment() ? esc_html__( 'Sandbox', 'woocommerce-gateway-paypal-powered-by-braintree' ) : '',
@@ -620,7 +620,7 @@ class WC_Gateway_Braintree_PayPal extends WC_Gateway_Braintree {
 	 * @return string
 	 */
 	protected function get_saved_payment_token_order_note( $token ) {
-
+		/* translators: Placeholder: %s - PayPal account email */
 		return sprintf( esc_html__( 'PayPal Account Saved: %s', 'woocommerce-gateway-paypal-powered-by-braintree' ), $token->get_payer_email() );
 	}
 
@@ -755,7 +755,7 @@ class WC_Gateway_Braintree_PayPal extends WC_Gateway_Braintree {
 	public function get_icon() {
 
 		// from https://www.paypal.com/webapps/mpp/logos-buttons
-		$icon_html = '<img src="https://www.paypalobjects.com/webstatic/en_US/i/buttons/PP_logo_h_100x26.png" alt="PayPal" />';
+		$icon_html = '<img src="https://www.paypalobjects.com/webstatic/en_US/i/buttons/PP_logo_h_100x26.png" alt="PayPal" />'; // phpcs:ignore PluginCheck.CodeAnalysis.Offloading.OffloadedContent
 
 		return apply_filters( 'woocommerce_gateway_icon', $icon_html, $this->get_id() );
 	}
@@ -1182,7 +1182,7 @@ class WC_Gateway_Braintree_PayPal extends WC_Gateway_Braintree {
 		if ( in_array( $country, [ 'US', 'UK', 'DE', 'AU', 'IT', 'ES' ] ) ) {
 
 			return sprintf(
-				/** translators: Placeholders: %1$s - <a> tag, %2$s - </a> tag */
+				/* translators: Placeholders: %1$s - <a> tag, %2$s - </a> tag */
 				__( 'Displays Pay Later messaging for available offers. Restrictions apply. %1$sClick here to learn more.%2$s', 'woocommerce-gateway-paypal-powered-by-braintree' ),
 				'<a href="https://developer.paypal.com/docs/commerce-platforms/admin-panel/woocommerce/' . strtolower( $country ) . '/" target="_blank">',
 				'</a>'

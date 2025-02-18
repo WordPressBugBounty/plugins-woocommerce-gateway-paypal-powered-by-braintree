@@ -684,12 +684,14 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 
 				esc_html_e( 'Connect/Disconnect', 'woocommerce-gateway-paypal-powered-by-braintree' );
 
-				echo wc_help_tip( sprintf(
-					'%s<br><br>%s<br><br>%s',
-					__( 'You just connected your Braintree account to WooCommerce. You can start taking payments now.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
-					__( 'Once you have processed a payment, PayPal will review your application for final approval. Before you ship any goods make sure you have received a final approval for your Braintree account.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
-					__( 'Questions? We are a phone call away: 1-855-489-0345.', 'woocommerce-gateway-paypal-powered-by-braintree' )
-				) );
+				echo wc_help_tip( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+					sprintf( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+						'%s<br><br>%s<br><br>%s',
+						__( 'You just connected your Braintree account to WooCommerce. You can start taking payments now.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+						__( 'Once you have processed a payment, PayPal will review your application for final approval. Before you ship any goods make sure you have received a final approval for your Braintree account.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+						__( 'Questions? We are a phone call away: 1-855-489-0345.', 'woocommerce-gateway-paypal-powered-by-braintree' )
+					)
+				);
 
 				?>
 			</th>
@@ -859,6 +861,7 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 
 		$base_currency = get_woocommerce_currency();
 
+		/* translators: %s: currency code */
 		$button_text = sprintf( __( 'Add merchant account ID for %s', 'woocommerce-gateway-paypal-powered-by-braintree' ), $base_currency );
 
 		// currency selector
@@ -1063,7 +1066,8 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 			$currency_code = strtolower( $currency_code );
 		}
 
-		$id    = sprintf( 'woocommerce_%s_merchant_account_id_%s', $this->get_id(), $currency_code );
+		$id = sprintf( 'woocommerce_%s_merchant_account_id_%s', $this->get_id(), $currency_code );
+		/* translators: %s: currency code */
 		$title = sprintf( __( 'Merchant Account ID (%s)', 'woocommerce-gateway-paypal-powered-by-braintree' ), $currency_display );
 
 		ob_start();
@@ -1958,5 +1962,36 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 
 		// Add order note and continue with WC refund process.
 		$order->add_order_note( $order_note );
+	}
+
+	/**
+	 * Check if the gateway has an account connected.
+	 *
+	 * @since 3.2.6
+	 *
+	 * @return bool True if the gateway has an account connected, false otherwise.
+	 */
+	public function is_account_connected() {
+		return $this->is_configured();
+	}
+
+	/**
+	 * Returns true if the current gateway environment is configured to 'sandbox'
+	 *
+	 * @since 3.2.6
+	 *
+	 * @return boolean true if the current environment is test environment.
+	 */
+	public function is_in_test_mode() {
+		return $this->is_test_environment();
+	}
+
+	/**
+	 * Determine if the gateway still requires setup.
+	 *
+	 * @return bool
+	 */
+	public function needs_setup() {
+		return ! $this->is_configured();
 	}
 }

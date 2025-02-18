@@ -211,7 +211,7 @@ class WC_Braintree_API extends Framework\SV_WC_API_Base implements Framework\SV_
 					$message = $result->get_user_message();
 				}
 
-				throw new Framework\SV_WC_Payment_Gateway_Exception( $message );
+				throw new Framework\SV_WC_Payment_Gateway_Exception( esc_html( $message ) );
 			}
 		}
 	}
@@ -543,7 +543,7 @@ class WC_Braintree_API extends Framework\SV_WC_API_Base implements Framework\SV_
 
 		// check if Braintree response contains exception and convert to framework exception
 		if ( $response instanceof Exception ) {
-			throw new Framework\SV_WC_API_Exception( $this->get_braintree_exception_message( $response ), $response->getCode(), $response );
+			throw new Framework\SV_WC_API_Exception( esc_html( $this->get_braintree_exception_message( $response ) ), $response->getCode(), $response ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		$handler_class = $this->get_response_handler();

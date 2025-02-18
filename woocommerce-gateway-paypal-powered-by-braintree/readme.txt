@@ -1,10 +1,10 @@
 === Braintree for WooCommerce Payment Gateway ===
 Contributors: woocommerce, automattic, skyverge
 Tags: ecommerce, e-commerce, commerce, woothemes, wordpress ecommerce, store, sales, sell, shop, shopping, cart, checkout, configurable, paypal, braintree
-Requires at least: 6.5
+Requires at least: 6.6
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 3.2.5
+Stable tag: 3.2.6
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
@@ -12,89 +12,72 @@ Accept PayPal, Credit Cards, and Debit Cards on your WooCommerce store.
 
 == Description ==
 
-The Braintree for WooCommerce gateway lets you accept **credit cards and PayPal payments** on your WooCommerce store via Braintree. Customers can save their credit card details or link a PayPal account to their WooCommerce user account for fast and easy checkout.
+Accept **all major cards, Apple Pay**, and **PayPal** directly with PayPal Braintree for WooCommerce. Customers can save their card details or link a PayPal account for an even faster checkout experience.
 
-With this gateway, you can **securely sell your products** online using Hosted Fields, which help you meet security requirements without sacrificing flexibility or an integrated checkout process. Hosted Fields, similar to iFrames, are hosted on PayPal's servers but fit inside the checkout form elements on your site, providing a **secure, seamless** means for customers to share their payment information.
+= Features =
 
-Braintree for WooCommerce supports tokenization, letting your customers save their credit cards or connect their PayPal account for faster, easier subsequent checkouts. The gateway also supports <a href="https://woocommerce.com/products/woocommerce-subscriptions/" target="_blank">WooCommerce Subscriptions</a> to let you sell products with recurring billing and <a href="https://woocommerce.com/products/woocommerce-pre-orders/" target="_blank">WooCommerce Pre-Orders</a>, which supports accepting payments for upcoming products as they ship or up-front but it's important to understand that enabling tokenization in the settings will create a billing agreement ID. This billing agreement ID is necessary for future transactions when tokenization is enabled. If a user does not intend to use the same payment method for future transactions, they can disable tokenization to avoid creating a billing agreement ID.
+* **No redirects** — keep customers on your site for payment, reducing the risk of abandoned carts.
+* **Security first**; PCI compliant, with 3D Secure verification and Strong Customer Authentication (SCA).
+* **Express checkout options**, including Buy Now and PayPal Checkout buttons. Customers can save their card details, link a PayPal account, or pay with Apple Pay.
+* **Optimized order management**; process refunds, void transactions, and capture charges from your WooCommerce dashboard.
+* **Route payments in certain currencies** to different Braintree accounts (requires currency switcher).
+* **Compatible** with WooCommerce Subscriptions and WooCommerce Pre-Orders.
 
-= Powering Advanced Payments =
+= Safe and secure — every time =
 
-Braintree for WooCommerce provides several advanced features for transaction processing and payment method management.
+Braintree's secure Hosted Fields provide a **seamless** way for customers to enter payment info on your site without redirecting them to PayPal.
 
-- Meets [PCI Compliance SAQ-A](https://www.pcisecuritystandards.org/documents/Understanding_SAQs_PCI_DSS_v3.pdf) standards
-- Supports [WooCommerce Subscriptions](https://woocommerce.com/products/woocommerce-subscriptions/), and [WooCommerce Pre-Orders](https://woocommerce.com/products/woocommerce-pre-orders/)
-- Customers can securely save credit cards or link PayPal accounts to your site
-- Easily process refunds, void transactions, and capture charges right from WooCommerce
-- Route payments in different currencies to different Braintree accounts (requires currency switcher)
-- Supports Braintree's [extensive suite of fraud tools](https://articles.braintreepayments.com/guides/fraud-tools/overview)
-- Supports 3D Secure
-- Includes express checkout options like Buy Now buttons on product pages and PayPal Connect buttons in the Cart
-- ...and much more!
+It's [PCI compliant](https://listings.pcisecuritystandards.org/documents/Understanding_SAQs_PCI_DSS_v3.pdf) and supports **SCA** and **3D Secure** verification, so you always meet security requirements — without sacrificing flexibility. Plus, Braintree’s [fraud tools](https://articles.braintreepayments.com/guides/fraud-tools/overview) protect your business by helping **detect and prevent fraud**.
 
-== Installation ==
+= Even faster checkouts =
 
-= Minimum Requirements =
+Customers can **save their credit and debit card details** or **link a PayPal account** to fast-forward checkout the next time they shop with you. Adding **PayPal Checkout** and **Buy Now** buttons to your product, cart, and checkout pages makes purchasing simpler and quicker, too.
 
-- PHP 7.4+ (you can see this under <strong>WooCommerce &gt; Status</strong>)</li>
-- WooCommerce 8.1+
-- WordPress 6.2+
-- An SSL certificate
-- cURL support (most hosts have this enabled by default)
+= Get paid upfront and earn recurring revenue =
 
-= Installation =
-
-[Click here for instructions on installing plugins on your WordPress site.](https://wordpress.org/support/article/managing-plugins/#installing-plugins) We recommend using automatic installation as the simplest method.
-
-= Updating =
-
-Automatic updates should work like a charm, though we do recommend creating a backup of your site before updating, just in case.
-
-If you do encounter an issue after updating, you may need to flush site permalinks by going to **Settings > Permalinks** and clicking **Save Changes**. That will usually return things to normal!
+Take charge of how you sell online. PayPal Braintree supports [WooCommerce Subscriptions](https://woocommerce.com/products/woocommerce-subscriptions/) — the perfect solution for earning **recurring revenue**. It's also compatible with [WooCommerce Pre-Orders](https://woocommerce.com/products/woocommerce-pre-orders/), enabling you to accept payment **upfront** or as products ship.
 
 == Frequently Asked Questions ==
 
 = Where can I find documentation? =
 
-Great question! [Click here to review Braintree for WooCommerce documentation.](https://docs.woocommerce.com/document/woocommerce-gateway-paypal-powered-by-braintree/) This documentation includes detailed setup instructions and information about using the gateway's features.
+You’ve come to the right place. [Our documentation](https://woocommerce.com/document/woocommerce-gateway-paypal-powered-by-braintree/) for PayPal Braintree for WooCommerce includes detailed setup instructions, troubleshooting tips, and more.
 
-= Does this plugin work with credit cards, or just PayPal? =
+= Does this extension work with credit cards, or just PayPal? =
 
-This plugin supports payments with credit cards and PayPal.
+Both! PayPal Braintree for WooCommerce supports payments with credit cards and PayPal. (You can also [enable Apple Pay](https://woocommerce.com/document/woocommerce-gateway-paypal-powered-by-braintree/#support-apple-pay).)
 
-= Does this plugin support recurring payment, like for subscriptions? =
+= Does it support subscriptions? =
 
-Yes! This plugin supports tokenization, which is required for recurring payments such as those created with [WooCommerce Subscriptions](http://woocommerce.com/products/woocommerce-subscriptions/).
+Yes! PayPal Braintree supports tokenization (required for recurring payments) and is compatible with [WooCommerce Subscriptions](http://woocommerce.com/products/woocommerce-subscriptions/).
 
-= What currencies are supported? =
+= Which currencies are supported? =
 
-This plugin supports all countries in which Braintree is available. You can use your native currency, or you can add multiple merchant IDs to process different currencies via different Braintree accounts. To use multi-currency, your site must use a **currency switcher** to adjust the order currency (may require purchase). We’ve tested this plugin with the [Aelia Currency Switcher](https://aelia.co/shop/currency-switcher-woocommerce/) (requires purchase).
+Support is available for 25 currencies, [wherever Braintree is available](https://www.paypal.com/us/webapps/mpp/country-worldwide). You can use your store’s native currency or add multiple merchant IDs to process other currencies via different Braintree accounts. To manage multiple currencies, you’ll need a free or paid **currency switcher**, such as [Aelia Currency Switcher](https://aelia.co/shop/currency-switcher-woocommerce/) (requires purchase).
 
-= Can non-US merchants use this plugin? =
+= Can non-US merchants use this extension? =
 
-Yes! This plugin supports all countries where Braintree is available.
+Yes! It’s supported in [all countries where Braintree is available](https://www.paypal.com/us/webapps/mpp/country-worldwide).
 
-= Does this plugin support testing and production modes? =
+= Does it support testing and production modes? =
 
-Yes! This plugin includes a production and sandbox mode so you can test without activating live payments.
+Yes; sandbox mode is available so you can test the payment process without activating live transactions. Woo-hoo!
 
-= Credit cards are working fine, but PayPal's not working. What's going on? =
+= Credit card payments are working, but PayPal is not — why? =
 
-It sounds like you may need to enable PayPal on your Braintree account. [Click here for instructions on enabling PayPal in your Braintree control panel.](https://docs.woocommerce.com/document/woocommerce-gateway-paypal-powered-by-braintree/#section-6)
+You may need to [enable PayPal in your Braintree account](https://woocommerce.com/document/woocommerce-gateway-paypal-powered-by-braintree/#my-credentials-are-correct-but-i-still-dont-see-paypal-at-checkout-whats-going-on).
 
-= Can I use this plugin just for PayPal? =
+= Can I use this extension for PayPal only? =
 
-Sure thing! [Click here for instructions on setting up this gateway to only accept PayPal payments.](https://docs.woocommerce.com/document/woocommerce-gateway-paypal-powered-by-braintree#section-10)
+Sure thing! See our instructions on [using PayPal Braintree without credit cards](https://woocommerce.com/document/woocommerce-gateway-paypal-powered-by-braintree/#using-paypal-without-credit-cards).
 
-= Will this plugin work with my site's theme? =
+= Will it work with my site’s theme? =
 
-Braintree for WooCommerce should work nicely with any WooCommerce compatible theme (such as [Storefront](http://www.woocommerce.com/storefront/)), but may require some styling for a perfect fit. For assistance with theme customization, please visit the [WooCommerce Codex](https://docs.woocommerce.com/documentation/plugins/woocommerce/woocommerce-codex/).
+This extension should work with any WooCommerce-compatible theme, but you might need to [customize your theme](https://woocommerce.com/document/woocommerce-gateway-paypal-powered-by-braintree/#theme-issues) for a perfect fit.
 
-= Where can I get support, request new features, or report bugs? =
+= Where can I get support, report bugs, or request new features? =
 
-First, please [check out our plugin documentation](https://docs.woocommerce.com/document/woocommerce-gateway-paypal-powered-by-braintree) to see if that addresses any of your questions or concerns.
-
-If not, please get in touch with us through the [plugin forums](https://wordpress.org/support/plugin/woocommerce-gateway-paypal-powered-by-braintree/)!
+First, [review our documentation](https://woocommerce.com/document/woocommerce-gateway-paypal-powered-by-braintree/) for troubleshooting tips and answers to common questions. If you need further assistance, please get in touch via the [official support forum](https://wordpress.org/support/plugin/woocommerce-gateway-paypal-powered-by-braintree/).
 
 == Screenshots ==
 
@@ -106,6 +89,14 @@ If not, please get in touch with us through the [plugin forums](https://wordpres
 6. Checkout with PayPal directly from the product page
 
 == Changelog ==
+
+= 3.2.6 - 2025-02-18 =
+* Fix - Ensure payment methods display the correct buttons and statuses in the new WooCommerce Payments settings.
+* Dev - Bump WooCommerce "tested up to" version 9.7.
+* Dev - Bump WooCommerce minimum supported version to 9.5.
+* Dev - Bump WordPress minimum supported version to 6.6.
+* Dev - Refresh WPORG assets and readme copy.
+* Dev - Add the WordPress Plugin Check GitHub Action.
 
 = 3.2.5 - 2025-01-20 =
 * Add - Request a cardholder challenge on all transactions.

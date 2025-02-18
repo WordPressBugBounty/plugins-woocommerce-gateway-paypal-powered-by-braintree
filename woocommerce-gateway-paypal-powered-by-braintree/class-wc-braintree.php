@@ -423,7 +423,7 @@ class WC_Braintree extends Framework\SV_WC_Payment_Gateway_Plugin {
 
 			$this->get_admin_notice_handler()->add_admin_notice(
 				sprintf(
-					/** translators: Placeholders: %1$s - <a> tag, %2$s - </a> tag */
+					/* translators: Placeholders: %1$s - <a> tag, %2$s - </a> tag */
 						esc_html__( 'Heads up! You\'ve enabled advanced fraud tools for Braintree. Please make sure that advanced fraud tools are also enabled in your Braintree account. Need help? See the %1$sdocumentation%2$s.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
 					'<a target="_blank" href="' . esc_url( $this->get_documentation_url() ) . '">',
 					'</a>'
@@ -441,7 +441,7 @@ class WC_Braintree extends Framework\SV_WC_Payment_Gateway_Plugin {
 
 				$this->get_admin_notice_handler()->add_admin_notice(
 					sprintf(
-						/** translators: Placeholders: %1$s - <a> tag, %2$s - </a> tag */
+						/* translators: Placeholders: %1$s - <a> tag, %2$s - </a> tag */
 						__( 'Braintree for WooCommerce is almost ready. To get started, %1$sconnect your Braintree account%2$s.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
 						'<a href="' . esc_url( $this->get_settings_url() ) . '">', '</a>'
 					), 'install-notice', array( 'notice_class' => 'updated' )
@@ -453,7 +453,7 @@ class WC_Braintree extends Framework\SV_WC_Payment_Gateway_Plugin {
 
 				$this->get_admin_notice_handler()->add_admin_notice(
 					sprintf(
-						/** translators: Placeholders: %1$s - <a> tag, %2$s - </a> tag */
+						/* translators: Placeholders: %1$s - <a> tag, %2$s - </a> tag */
 						__( 'Upgrade successful! WooCommerce Braintree deactivated, and Braintree for WooCommerce has been %1$sconfigured with your previous settings%2$s.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
 						'<a href="' . esc_url( $this->get_settings_url() ) . '">', '</a>'
 					), 'install-notice', array( 'notice_class' => 'updated' )
