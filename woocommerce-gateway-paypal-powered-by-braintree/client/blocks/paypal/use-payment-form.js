@@ -108,8 +108,17 @@ export const usePaymentForm = ({
 								}
 							}
 							setPaymentNonce(payload.nonce);
-							// Place an Order.
-							onSubmit();
+
+							/**
+							 * We're using setTimeout here to place the order in the next event loop cycle to ensure that the nonce is set before the order is placed.
+							 *
+							 * This is necessary due to React 18's batched updates.
+							 *
+							 * @see https://github.com/woocommerce/woocommerce/pull/52473
+							 *
+							 * TODO: This is not an ideal solution and feels like a workaround. We need to find a better solution for this.
+							 */
+							setTimeout( onSubmit, 0 ); // Place an Order.
 						});
 				},
 				onError(error) {

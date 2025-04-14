@@ -2,9 +2,9 @@
 Contributors: woocommerce, automattic, skyverge
 Tags: ecommerce, e-commerce, commerce, woothemes, wordpress ecommerce, store, sales, sell, shop, shopping, cart, checkout, configurable, paypal, braintree
 Requires at least: 6.6
-Tested up to: 6.7
+Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 3.2.6
+Stable tag: 3.2.7
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
@@ -89,6 +89,14 @@ First, [review our documentation](https://woocommerce.com/document/woocommerce-g
 6. Checkout with PayPal directly from the product page
 
 == Changelog ==
+
+= 3.2.7 - 2025-04-14 =
+* Fix - PayPal payment issue in Woo 9.8 Block Checkout.
+* Dev - Bump WooCommerce "tested up to" version 9.8.
+* Dev - Bump WooCommerce minimum supported version to 9.6.
+* Dev - Bump WordPress "tested up to" version 6.8.
+* Dev - Update all third-party actions our workflows rely on to use versions based on specific commit hashes.
+* Dev - Disabled warning checks from WordPress Plugin Check Action.
 
 = 3.2.6 - 2025-02-18 =
 * Fix - Ensure payment methods display the correct buttons and statuses in the new WooCommerce Payments settings.
