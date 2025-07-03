@@ -4,7 +4,7 @@ Tags: ecommerce, e-commerce, commerce, woothemes, wordpress ecommerce, store, sa
 Requires at least: 6.6
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 3.2.7
+Stable tag: 3.2.8
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
@@ -89,6 +89,14 @@ First, [review our documentation](https://woocommerce.com/document/woocommerce-g
 6. Checkout with PayPal directly from the product page
 
 == Changelog ==
+
+= 3.2.8 - 2025-06-25 =
+* Fix - Upgrade SkyVerge Framework from 5.12.7 to 5.15.10 which helps resolve a few fatal errors around Subscriptions.
+* Fix - Correct HTML markup of Dynamic Descriptors section on settings page.
+* Fix - JavaScript error on block cart and checkout pages.
+* Dev - Bump WooCommerce "tested up to" version 9.9.
+* Dev - Bump WooCommerce minimum supported version to 9.7.
+* Dev - Ensure JavaScript dependencies are correct.
 
 = 3.2.7 - 2025-04-14 =
 * Fix - PayPal payment issue in Woo 9.8 Block Checkout.

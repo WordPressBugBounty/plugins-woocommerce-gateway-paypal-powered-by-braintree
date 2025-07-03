@@ -24,7 +24,7 @@
 
 namespace WC_Braintree\PayPal\Buttons;
 
-use SkyVerge\WooCommerce\PluginFramework\v5_12_7 as Framework;
+use SkyVerge\WooCommerce\PluginFramework\v5_15_10 as Framework;
 
 defined( 'ABSPATH' ) or exit;
 

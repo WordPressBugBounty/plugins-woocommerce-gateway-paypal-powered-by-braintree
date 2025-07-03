@@ -24,7 +24,7 @@
 
 namespace WC_Braintree\PayPal\Buttons;
 
-use SkyVerge\WooCommerce\PluginFramework\v5_12_7 as Framework;
+use SkyVerge\WooCommerce\PluginFramework\v5_15_10 as Framework;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -78,10 +78,10 @@ class Product extends Abstract_Button {
 
 		add_action( 'wp', function() { $this->init_product(); } );
 
-		add_action( 'woocommerce_api_' . strtolower( get_class( $this->get_gateway() ) ) . '_product_button_checkout', [ $this, 'handle_wc_api' ] );
+		add_action( 'woocommerce_api_' . stripslashes( strtolower( get_class( $this->get_gateway() ) ) ) . '_product_button_checkout', [ $this, 'handle_wc_api' ] );
 
 		if ( $this->should_validate_product_data() ) {
-			add_action( 'woocommerce_api_' . strtolower( get_class( $this->get_gateway() ) ) . '_validate_product_data', [ $this, 'validate_product_data' ] );
+			add_action( 'woocommerce_api_' . stripslashes( strtolower( get_class( $this->get_gateway() ) ) ) . '_validate_product_data', [ $this, 'validate_product_data' ] );
 		}
 	}
 

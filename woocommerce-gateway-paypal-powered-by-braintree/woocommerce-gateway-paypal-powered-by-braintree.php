@@ -7,14 +7,14 @@
  * Description: Receive credit card or PayPal payments using Braintree for WooCommerce.  A server with cURL, SSL support, and a valid SSL certificate is required (for security reasons) for this gateway to function. Requires PHP 7.4+
  * Author: WooCommerce
  * Author URI: http://woocommerce.com/
- * Version: 3.2.7
+ * Version: 3.2.8
  * Text Domain: woocommerce-gateway-paypal-powered-by-braintree
  * Domain Path: /i18n/languages/
  *
  * Requires at least: 6.6
  * Tested up to: 6.8
- * WC requires at least: 9.6
- * WC tested up to: 9.8
+ * WC requires at least: 9.7
+ * WC tested up to: 9.9
  * Requires PHP: 7.4
  * PHP tested up to: 8.3
  *
@@ -61,7 +61,7 @@ class WC_PayPal_Braintree_Loader {
 	const MINIMUM_WP_VERSION = '6.6';
 
 	/** minimum WooCommerce version required by this plugin */
-	const MINIMUM_WC_VERSION = '9.6';
+	const MINIMUM_WC_VERSION = '9.7';
 
 	/** SkyVerge plugin framework version used by this plugin */
 	const FRAMEWORK_VERSION = '5.12.7';
@@ -173,16 +173,11 @@ class WC_PayPal_Braintree_Loader {
 			return;
 		}
 
-		$this->load_framework();
-
 		// autoload plugin and vendor files
 		require_once( plugin_dir_path( __FILE__ ) . 'vendor/autoload.php' );
 
-		// load main plugin file
-		require_once( plugin_dir_path( __FILE__ ) . 'class-wc-braintree.php' );
-
 		// if WooCommerce is inactive, render a notice and bail
-		if ( ! WC_Braintree::is_woocommerce_active() ) {
+		if ( ! WC_Braintree\WC_Braintree::is_woocommerce_active() ) {
 
 			add_action( 'admin_notices', static function() {
 
@@ -196,26 +191,8 @@ class WC_PayPal_Braintree_Loader {
 		}
 
 		// fire it up!
-		add_action( 'woocommerce_init', 'wc_braintree' );
+		add_action( 'woocommerce_init', '\WC_Braintree\wc_braintree' );
 	}
-
-
-	/**
-	 * Loads the base framework classes.
-	 *
-	 * @since 2.3.0
-	 */
-	protected function load_framework() {
-
-		if ( ! class_exists( '\\SkyVerge\\WooCommerce\\PluginFramework\\' . $this->get_framework_version_namespace() . '\\SV_WC_Plugin' ) ) {
-			require_once( plugin_dir_path( __FILE__ ) . 'vendor/skyverge/wc-plugin-framework/woocommerce/class-sv-wc-plugin.php' );
-		}
-
-		if ( ! class_exists( '\\SkyVerge\\WooCommerce\\PluginFramework\\' . $this->get_framework_version_namespace() . '\\SV_WC_Payment_Gateway_Plugin' ) ) {
-			require_once( plugin_dir_path( __FILE__ ) . 'vendor/skyverge/wc-plugin-framework/woocommerce/payment-gateway/class-sv-wc-payment-gateway-plugin.php' );
-		}
-	}
-
 
 	/**
 	 * Gets the framework version in namespace form.
@@ -525,7 +502,7 @@ class WC_PayPal_Braintree_Loader {
 				( isset( $_GET['action'] ) && 'delete' === sanitize_text_field( wp_unslash( $_GET['action'] ) ) ) ||
 				( isset( $_GET['action2'] ) && 'delete' === sanitize_text_field( wp_unslash( $_GET['action2'] ) ) )
 			) &&
-			! WC_Braintree::is_staging_site()
+			! WC_Braintree\WC_Braintree::is_staging_site()
 		) {
 			$has_token = false;
 			$users     = array();
@@ -537,7 +514,7 @@ class WC_PayPal_Braintree_Loader {
 			}
 
 			foreach ( $users as $user_id ) {
-				$tokens = wc_braintree()->get_gateway()->get_payment_tokens_handler()->get_tokens( $user_id );
+				$tokens = \WC_Braintree\wc_braintree()->get_gateway()->get_payment_tokens_handler()->get_tokens( $user_id );
 				if ( ! empty( $tokens ) ) {
 					$has_token = true;
 					break;
@@ -596,14 +573,11 @@ class WC_PayPal_Braintree_Loader {
 	 */
 	public function woocommerce_block_support() {
 		if ( class_exists( 'Automattic\WooCommerce\Blocks\Payments\Integrations\AbstractPaymentMethodType' ) ) {
-			require_once plugin_dir_path( __FILE__ ) . '/includes/class-wc-gateway-braintree-blocks-support.php';
-			require_once plugin_dir_path( __FILE__ ) . '/includes/class-wc-gateway-braintree-paypal-blocks-support.php';
-			require_once plugin_dir_path( __FILE__ ) . '/includes/class-wc-gateway-braintree-credit-card-blocks-support.php';
 			add_action(
 				'woocommerce_blocks_payment_method_type_registration',
 				function( Automattic\WooCommerce\Blocks\Payments\PaymentMethodRegistry $payment_method_registry ) {
-					$payment_method_registry->register( new WC_Gateway_Braintree_PayPal_Blocks_Support() );
-					$payment_method_registry->register( new WC_Gateway_Braintree_Credit_Card_Blocks_Support() );
+					$payment_method_registry->register( new WC_Braintree\WC_Gateway_Braintree_PayPal_Blocks_Support() );
+					$payment_method_registry->register( new WC_Braintree\WC_Gateway_Braintree_Credit_Card_Blocks_Support() );
 				}
 			);
 

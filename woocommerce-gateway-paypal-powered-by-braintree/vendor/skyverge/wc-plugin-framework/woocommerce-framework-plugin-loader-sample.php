@@ -26,19 +26,6 @@
 
 defined( 'ABSPATH' ) or exit;
 
-// Required functions
-if ( ! function_exists( 'woothemes_queue_update' ) ) {
-	require_once( plugin_dir_path( __FILE__ ) . 'woo-includes/woo-functions.php' );
-}
-
-// Plugin updates
-woothemes_queue_update( plugin_basename( __FILE__ ), '00000000000000000000000000000000', '99999' ); // TODO: updater keys
-
-// WC active check
-if ( ! is_woocommerce_active() ) {
-	return;
-}
-
 /**
  * The plugin loader class.
  *
@@ -52,27 +39,27 @@ class SV_WC_Framework_Plugin_Loader {
 
 
 	/** minimum PHP version required by this plugin */
-	const MINIMUM_PHP_VERSION = '7.4';
+	public const MINIMUM_PHP_VERSION = '7.4';
 
 	/** minimum WordPress version required by this plugin */
-	const MINIMUM_WP_VERSION = '5.6';
+	public const MINIMUM_WP_VERSION = '5.6';
 
 	/** minimum WooCommerce version required by this plugin */
-	const MINIMUM_WC_VERSION = '3.9';
+	public const MINIMUM_WC_VERSION = '3.9';
 
 	/** SkyVerge plugin framework version used by this plugin */
-	const FRAMEWORK_VERSION = '5.12.7'; // TODO: framework version
+	public const FRAMEWORK_VERSION = '5.15.10'; // TODO: framework version
 
 
 	/** the plugin name, for displaying notices */
-	const PLUGIN_NAME = 'WooCommerce Framework Plugin'; // TODO: plugin name
+	public const PLUGIN_NAME = 'WooCommerce Framework Plugin'; // TODO: plugin name
 
 
 	/** @var SV_WC_Framework_Plugin_Loader single instance of this class // TODO: replace with loader class name */
-	private static $instance;
+	private static ?SV_WC_Framework_Plugin_Loader $instance = null;
 
 	/** @var array the admin notices to add */
-	private $notices = array();
+	private array $notices = [];
 
 
 	/**
@@ -131,12 +118,10 @@ class SV_WC_Framework_Plugin_Loader {
 			return;
 		}
 
-		$this->load_framework();
-
-		/** If the plugin is structured for PSR-4, do the following:
-
 		// autoload plugin and vendor files
 		$loader = require_once( plugin_dir_path( __FILE__ ) . 'vendor/autoload.php' );
+
+		/** If the plugin is structured for PSR-4, do the following:
 
 		// register plugin namespace with autoloader
 		$loader->addPsr4( 'SkyVerge\\WooCommerce\\Plugin_Name\\', __DIR__ . '/includes' ); // TODO: plugin namespace here
@@ -155,24 +140,6 @@ class SV_WC_Framework_Plugin_Loader {
 
 		// fire it up!
 		wc_framework_plugin(); // TODO: call the main plugin method
-	}
-
-
-	/**
-	 * Loads the base framework classes.
-	 *
-	 * @since 1.0.0
-	 */
-	private function load_framework() {
-
-		if ( ! class_exists( '\\SkyVerge\\WooCommerce\\PluginFramework\\' . $this->get_framework_version_namespace() . '\\SV_WC_Plugin' ) ) {
-			require_once( plugin_dir_path( __FILE__ ) . 'lib/skyverge/woocommerce/class-sv-wc-plugin.php' );
-		}
-
-		// TODO: remove this if not a payment gateway
-		if ( ! class_exists( '\\SkyVerge\\WooCommerce\\PluginFramework\\' . $this->get_framework_version_namespace() . '\\SV_WC_Payment_Gateway_Plugin' ) ) {
-			require_once( plugin_dir_path( __FILE__ ) . 'lib/skyverge/woocommerce/payment-gateway/class-sv-wc-payment-gateway-plugin.php' );
-		}
 	}
 
 
@@ -427,15 +394,11 @@ class SV_WC_Framework_Plugin_Loader {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @return \SV_WC_Framework_Plugin_Loader
+	 * @return SV_WC_Framework_Plugin_Loader
 	 */
-	public static function instance() {
-
-		if ( null === self::$instance ) {
-			self::$instance = new self();
-		}
-
-		return self::$instance;
+	public static function instance() : SV_WC_Framework_Plugin_Loader
+	{
+		return self::$instance ??=new self();
 	}
 
 
