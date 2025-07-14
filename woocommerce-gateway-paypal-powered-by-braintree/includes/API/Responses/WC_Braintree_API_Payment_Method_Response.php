@@ -128,6 +128,4 @@ class WC_Braintree_API_Payment_Method_Response extends WC_Braintree_API_Vault_Re
 
 		return $this->has_risk_data() ? $this->response->paymentMethod->verification->riskData->decision : null;
 	}
-
-
 }

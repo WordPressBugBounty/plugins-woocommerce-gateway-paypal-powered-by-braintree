@@ -44,7 +44,7 @@ class WC_Braintree_API_Customer_Request extends WC_Braintree_API_Vault_Request {
 	 * @link https://developers.braintreepayments.com/reference/request/customer/create/php
 	 *
 	 * @since 3.0.0
-	 * @param \WC_Order $order
+	 * @param \WC_Order $order The order object.
 	 */
 	public function create_customer( \WC_Order $order ) {
 
@@ -56,13 +56,13 @@ class WC_Braintree_API_Customer_Request extends WC_Braintree_API_Vault_Request {
 		$this->request_data = array(
 			'company'            => $order->get_billing_company( 'edit' ),
 			'email'              => $order->get_billing_email( 'edit' ),
-			'phone'              => Framework\SV_WC_Helper::str_truncate( preg_replace( '/[^\d\-().]/', '', $order->get_billing_phone( 'edit' ) ),  14, '' ),
+			'phone'              => Framework\SV_WC_Helper::str_truncate( preg_replace( '/[^\d\-().]/', '', $order->get_billing_phone( 'edit' ) ), 14, '' ),
 			'firstName'          => $order->get_billing_first_name( 'edit' ),
 			'lastName'           => $order->get_billing_last_name( 'edit' ),
 			'paymentMethodNonce' => $order->payment->nonce,
 		);
 
-		// add verification data for credit cards
+		// add verification data for credit cards.
 		if ( 'credit_card' === $order->payment->type ) {
 			$this->request_data['creditCard'] = array(
 				'billingAddress' => $this->get_billing_address(),
@@ -71,7 +71,7 @@ class WC_Braintree_API_Customer_Request extends WC_Braintree_API_Vault_Request {
 			);
 		}
 
-		// fraud data
+		// fraud data.
 		$this->add_device_data();
 	}
 
@@ -82,7 +82,7 @@ class WC_Braintree_API_Customer_Request extends WC_Braintree_API_Vault_Request {
 	 * @link https://developers.braintreepayments.com/reference/request/customer/find/php
 	 *
 	 * @since 3.0.0
-	 * @param string $customer_id Braintree customer ID
+	 * @param string $customer_id Braintree customer ID.
 	 */
 	public function get_payment_methods( $customer_id ) {
 
@@ -91,6 +91,4 @@ class WC_Braintree_API_Customer_Request extends WC_Braintree_API_Vault_Request {
 
 		$this->request_data = $customer_id;
 	}
-
-
 }

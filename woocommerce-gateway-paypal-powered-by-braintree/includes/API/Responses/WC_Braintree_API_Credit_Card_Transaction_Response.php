@@ -59,7 +59,7 @@ class WC_Braintree_API_Credit_Card_Transaction_Response extends WC_Braintree_API
 	 *
 	 * @since 3.0.0
 	 * @return \WC_Braintree_Payment_Method
-	 * @throws \SV_WC_Payment_Gateway_Exception if token is missing
+	 * @throws Framework\SV_WC_Payment_Gateway_Exception If token is missing.
 	 */
 	public function get_payment_token() {
 
@@ -68,7 +68,7 @@ class WC_Braintree_API_Credit_Card_Transaction_Response extends WC_Braintree_API
 		}
 
 		$data = array(
-			'default'            => false, // tokens created as part of a transaction can't be set as default
+			'default'            => false, // tokens created as part of a transaction can't be set as default.
 			'type'               => WC_Braintree_Payment_Method::CREDIT_CARD_TYPE,
 			'last_four'          => $this->get_last_four(),
 			'card_type'          => $this->get_card_type(),
@@ -103,7 +103,7 @@ class WC_Braintree_API_Credit_Card_Transaction_Response extends WC_Braintree_API
 	 */
 	public function get_card_type() {
 
-		// note that creditCardDetails->cardType is not used here as it is already prettified (e.g. American Express instead of amex)
+		// note that creditCardDetails->cardType is not used here as it is already prettified (e.g. American Express instead of amex).
 		return Framework\SV_WC_Payment_Gateway_Helper::card_type_from_account_number( $this->get_bin() );
 	}
 

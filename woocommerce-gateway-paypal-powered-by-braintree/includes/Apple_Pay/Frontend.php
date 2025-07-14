@@ -180,6 +180,7 @@ class Frontend extends Framework\SV_WC_Payment_Gateway_Apple_Pay_Frontend {
 	public function render_button() {
 
 		$button_text = '';
+		$is_disabled = $this->is_tokenization_forced() ? 'disabled' : '';
 		$classes     = array(
 			'sv-wc-apple-pay-button',
 		);
@@ -217,12 +218,24 @@ class Frontend extends Framework\SV_WC_Payment_Gateway_Apple_Pay_Frontend {
 			printf( '<span class="wc-braintree-express-payment-title">%s</span>', esc_html__( 'Express checkout', 'woocommerce-gateway-paypal-powered-by-braintree' ) );
 		}
 
-		echo '<button class="' . implode( ' ', array_map( 'sanitize_html_class', $classes ) ) . '" lang="' . esc_attr( substr( get_locale(), 0, 2 ) ) . '">';
+		echo '<button ' . esc_attr( $is_disabled ) . ' class="' . implode( ' ', array_map( 'sanitize_html_class', $classes ) ) . '" lang="' . esc_attr( substr( get_locale(), 0, 2 ) ) . '">';
 
 		if ( $button_text ) {
 			echo '<span class="text">' . esc_html( $button_text ) . '</span><span class="logo"></span>';
 		}
 
 		echo '</button>';
+
+		if ( $this->is_tokenization_forced() ) {
+			printf(
+				'<div class="wc-braintree-apple-pay-vaulting-consent">
+					<input type="checkbox" id="wc-braintree-apple-pay-vaulting-consent" />
+					<label for="wc-braintree-apple-pay-vaulting-consent">
+						%s
+					</label>
+				</div>',
+				esc_html__( 'I consent to use this Apple Pay card for future subscriptions transactions.', 'woocommerce-gateway-paypal-powered-by-braintree' )
+			);
+		}
 	}
 }

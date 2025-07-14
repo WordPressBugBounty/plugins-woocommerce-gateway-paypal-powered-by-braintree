@@ -42,7 +42,7 @@ class WC_Braintree_API_Payment_Method_Request extends WC_Braintree_API_Vault_Req
 	 * @link https://developers.braintreepayments.com/reference/request/payment-method/create/php
 	 *
 	 * @since 3.0.0
-	 * @param \WC_Order $order
+	 * @param \WC_Order $order The order object.
 	 */
 	public function create_payment_method( \WC_Order $order ) {
 
@@ -56,14 +56,14 @@ class WC_Braintree_API_Payment_Method_Request extends WC_Braintree_API_Vault_Req
 			'paymentMethodNonce' => $order->payment->nonce,
 		);
 
-		// add verification data for credit cards
+		// add verification data for credit cards.
 		if ( 'credit_card' === $order->payment->type ) {
 			$this->request_data['billingAddress'] = $this->get_billing_address();
 			$this->request_data['cardholderName'] = $order->get_formatted_billing_full_name();
 			$this->request_data['options']        = $this->get_credit_card_options();
 		}
 
-		// fraud data
+		// fraud data.
 		$this->add_device_data();
 	}
 
@@ -74,7 +74,7 @@ class WC_Braintree_API_Payment_Method_Request extends WC_Braintree_API_Vault_Req
 	 * @link https://developers.braintreepayments.com/reference/request/payment-method/delete/php
 	 *
 	 * @since 3.0.0
-	 * @param string $token Braintree payment method token
+	 * @param string $token Braintree payment method token.
 	 */
 	public function delete_payment_method( $token ) {
 
@@ -90,8 +90,8 @@ class WC_Braintree_API_Payment_Method_Request extends WC_Braintree_API_Vault_Req
 	 * nonce
 	 *
 	 * @since 3.0.0
-	 * @param string $token existing payment method token
-	 * @param string $nonce nonce provided from client-side hosted fields
+	 * @param string $token existing payment method token.
+	 * @param string $nonce nonce provided from client-side hosted fields.
 	 */
 	public function verify_csc( $token, $nonce ) {
 
@@ -100,8 +100,8 @@ class WC_Braintree_API_Payment_Method_Request extends WC_Braintree_API_Vault_Req
 
 		$update_data = array(
 			'paymentMethodNonce' => $nonce,
-			'billingAddress' => $this->get_billing_address(),
-			'options' => array(
+			'billingAddress'     => $this->get_billing_address(),
+			'options'            => array(
 				'verifyCard' => true,
 			),
 		);
@@ -114,6 +114,8 @@ class WC_Braintree_API_Payment_Method_Request extends WC_Braintree_API_Vault_Req
 	}
 
 	/**
+	 * Update the expiration date for an existing payment method.
+	 *
 	 * @since 2.6.2
 	 * @param string $token existing payment method token.
 	 * @param string $expiration_date expiration date in MM/YY format.
@@ -128,7 +130,4 @@ class WC_Braintree_API_Payment_Method_Request extends WC_Braintree_API_Vault_Req
 
 		$this->request_data = array( $token, $update_data );
 	}
-
-
-
 }

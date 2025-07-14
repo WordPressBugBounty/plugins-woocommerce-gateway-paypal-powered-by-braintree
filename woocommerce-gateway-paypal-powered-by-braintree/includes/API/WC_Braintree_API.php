@@ -54,10 +54,18 @@ class WC_Braintree_API extends Framework\SV_WC_API_Base implements Framework\SV_
 	const API_CHANNEL = 'woocommerce_bt';
 
 
-	/** @var \WC_Gateway_Braintree class instance */
+	/**
+	 * Gateway class instance.
+	 *
+	 * @var \WC_Gateway_Braintree
+	 */
 	protected $gateway;
 
-	/** @var \WC_Order order associated with the request, if any */
+	/**
+	 * Order associated with the request, if any.
+	 *
+	 * @var \WC_Order
+	 */
 	protected $order;
 
 
@@ -65,7 +73,7 @@ class WC_Braintree_API extends Framework\SV_WC_API_Base implements Framework\SV_
 	 * Constructor - setup request object and set endpoint
 	 *
 	 * @since 3.0.0
-	 * @param \WC_Gateway_Braintree $gateway class instance
+	 * @param \WC_Gateway_Braintree $gateway class instance.
 	 */
 	public function __construct( $gateway ) {
 
@@ -90,7 +98,7 @@ class WC_Braintree_API extends Framework\SV_WC_API_Base implements Framework\SV_
 
 		$data = base64_decode( $response->get_client_token() );
 
-		// sanity check that the client key has valid JSON to decode
+		// sanity check that the client key has valid JSON to decode.
 		if ( ! json_decode( $data ) ) {
 			throw new Framework\SV_WC_API_Exception( 'The client key contained invalid JSON.', 500 );
 		}
@@ -108,11 +116,13 @@ class WC_Braintree_API extends Framework\SV_WC_API_Base implements Framework\SV_
 	 * @return \WC_Braintree_API_Client_Token_Response
 	 * @throws Framework\SV_WC_Plugin_Exception
 	 */
-	public function get_client_token( Array $args = array() ) {
+	public function get_client_token( array $args = array() ) {
 
-		$request = $this->get_new_request( array(
-			'type' => 'client-token',
-		) );
+		$request = $this->get_new_request(
+			array(
+				'type' => 'client-token',
+			)
+		);
 
 		$request->get_token( $args );
 
@@ -133,15 +143,17 @@ class WC_Braintree_API extends Framework\SV_WC_API_Base implements Framework\SV_
 	 */
 	public function credit_card_charge( \WC_Order $order ) {
 
-		// pre-verify CSC
+		// pre-verify CSC.
 		if ( $this->get_gateway()->is_credit_card_gateway() && $this->get_gateway()->is_csc_required() ) {
 			$this->verify_csc( $order );
 		}
 
-		$request = $this->get_new_request( array(
-			'type'  => 'transaction',
-			'order' => $order,
-		) );
+		$request = $this->get_new_request(
+			array(
+				'type'  => 'transaction',
+				'order' => $order,
+			)
+		);
 
 		$request->create_credit_card_charge();
 
@@ -161,15 +173,17 @@ class WC_Braintree_API extends Framework\SV_WC_API_Base implements Framework\SV_
 	 */
 	public function credit_card_authorization( \WC_Order $order ) {
 
-		// pre-verify CSC
+		// pre-verify CSC.
 		if ( $this->get_gateway()->is_credit_card_gateway() && $this->get_gateway()->is_csc_required() ) {
 			$this->verify_csc( $order );
 		}
 
-		$request = $this->get_new_request( array(
-			'type'  => 'transaction',
-			'order' => $order,
-		) );
+		$request = $this->get_new_request(
+			array(
+				'type'  => 'transaction',
+				'order' => $order,
+			)
+		);
 
 		$request->create_credit_card_auth();
 
@@ -183,22 +197,24 @@ class WC_Braintree_API extends Framework\SV_WC_API_Base implements Framework\SV_
 	 *
 	 * @since 3.0.0
 	 *
-	 * @param \WC_Order $order order
+	 * @param \WC_Order $order order.
 	 * @throws Framework\SV_WC_Plugin_Exception if CSC verification fails
 	 */
 	public function verify_csc( \WC_Order $order ) {
 
-		// don't verify the CSC for transactions that are already 3ds verified
+		// don't verify the CSC for transactions that are already 3ds verified.
 		if ( ! empty( $order->payment->use_3ds_nonce ) ) {
 			return;
 		}
 
 		if ( ! empty( $order->payment->nonce ) && ! empty( $order->payment->token ) ) {
 
-			$request = $this->get_new_request( array(
-				'type' => 'payment-method',
-				'order' => $order,
-			) );
+			$request = $this->get_new_request(
+				array(
+					'type'  => 'payment-method',
+					'order' => $order,
+				)
+			);
 
 			$request->verify_csc( $order->payment->token, $order->payment->nonce );
 
@@ -231,16 +247,18 @@ class WC_Braintree_API extends Framework\SV_WC_API_Base implements Framework\SV_
 	 * @since 3.0.0
 	 *
 	 * @see SV_WC_Payment_Gateway_API::credit_card_capture()
-	 * @param \WC_Order $order order
+	 * @param \WC_Order $order order.
 	 * @return \WC_Braintree_API_Transaction_Response
 	 * @throws Framework\SV_WC_Plugin_Exception
 	 */
 	public function credit_card_capture( \WC_Order $order ) {
 
-		$request = $this->get_new_request( array(
-			'type'  => 'transaction',
-			'order' => $order,
-		) );
+		$request = $this->get_new_request(
+			array(
+				'type'  => 'transaction',
+				'order' => $order,
+			)
+		);
 
 		$request->create_credit_card_capture();
 
@@ -252,7 +270,7 @@ class WC_Braintree_API extends Framework\SV_WC_API_Base implements Framework\SV_
 	 * Check Debit - no-op
 	 *
 	 * @since 3.0.0
-	 * @param \WC_Order $order order
+	 * @param \WC_Order $order order.
 	 * @return null
 	 */
 	public function check_debit( \WC_Order $order ) { }
@@ -263,16 +281,18 @@ class WC_Braintree_API extends Framework\SV_WC_API_Base implements Framework\SV_
 	 *
 	 * @since 3.0.0
 	 *
-	 * @param \WC_Order $order the order
+	 * @param \WC_Order $order the order.
 	 * @return \WC_Braintree_API_Transaction_Response
 	 * @throws Framework\SV_WC_Plugin_Exception
 	 */
 	public function refund( \WC_Order $order ) {
 
-		$request = $this->get_new_request( array(
-			'type'  => 'transaction',
-			'order' => $order,
-		) );
+		$request = $this->get_new_request(
+			array(
+				'type'  => 'transaction',
+				'order' => $order,
+			)
+		);
 
 		$request->create_refund();
 
@@ -285,16 +305,18 @@ class WC_Braintree_API extends Framework\SV_WC_API_Base implements Framework\SV_
 	 *
 	 * @since 3.0.0
 	 *
-	 * @param \WC_Order $order the order
+	 * @param \WC_Order $order the order.
 	 * @return \WC_Braintree_API_Transaction_Response
 	 * @throws Framework\SV_WC_Plugin_Exception
 	 */
 	public function void( \WC_Order $order ) {
 
-		$request = $this->get_new_request( array(
-			'type'  => 'transaction',
-			'order' => $order,
-		) );
+		$request = $this->get_new_request(
+			array(
+				'type'  => 'transaction',
+				'order' => $order,
+			)
+		);
 
 		$request->create_void();
 
@@ -311,7 +333,7 @@ class WC_Braintree_API extends Framework\SV_WC_API_Base implements Framework\SV_
 	 * @since 3.0.0
 	 *
 	 * @see SV_WC_Payment_Gateway_API::tokenize_payment_method()
-	 * @param \WC_Order $order the order with associated payment and customer info
+	 * @param \WC_Order $order the order with associated payment and customer info.
 	 * @return \WC_Braintree_API_Customer_Response|\WC_Braintree_API_Payment_Method_Response
 	 * @throws Framework\SV_WC_Plugin_Exception
 	 */
@@ -319,21 +341,25 @@ class WC_Braintree_API extends Framework\SV_WC_API_Base implements Framework\SV_
 
 		if ( $order->customer_id ) {
 
-			// create a payment method for existing customer
-			$request = $this->get_new_request( array(
-				'type'  => 'payment-method',
-				'order' => $order,
-			) );
+			// create a payment method for existing customer.
+			$request = $this->get_new_request(
+				array(
+					'type'  => 'payment-method',
+					'order' => $order,
+				)
+			);
 
 			$request->create_payment_method( $order );
 
 		} else {
 
-			// create both customer and payment method
-			$request = $this->get_new_request( array(
-				'type'  => 'customer',
-				'order' => $order,
-			) );
+			// create both customer and payment method.
+			$request = $this->get_new_request(
+				array(
+					'type'  => 'customer',
+					'order' => $order,
+				)
+			);
 
 			$request->create_customer( $order );
 		}
@@ -348,7 +374,7 @@ class WC_Braintree_API extends Framework\SV_WC_API_Base implements Framework\SV_
 	 * @since 3.0.0
 	 *
 	 * @see SV_WC_Payment_Gateway_API::get_tokenized_payment_methods()
-	 * @param string $customer_id unique
+	 * @param string $customer_id unique.
 	 * @return \WC_Braintree_API_Customer_response
 	 * @throws Framework\SV_WC_API_Exception
 	 */
@@ -366,7 +392,7 @@ class WC_Braintree_API extends Framework\SV_WC_API_Base implements Framework\SV_
 	 * Update the tokenized payment method for given customer
 	 *
 	 * @since 3.0.0
-	 * @param WC_Order $order
+	 * @param WC_Order $order The order object.
 	 */
 	public function update_tokenized_payment_method( \WC_Order $order ) {
 
@@ -498,16 +524,16 @@ class WC_Braintree_API extends Framework\SV_WC_API_Base implements Framework\SV_
 	 *
 	 * @since 3.0.0
 	 * @see SV_WC_API_Base::do_remote_request()
-	 * @param string $callback SDK static callback, e.g. `\Braintree\ClientToken::generate`
-	 * @param array $callback_params parameters to pass to the static callback
+	 * @param string $callback SDK static callback, e.g. `\Braintree\ClientToken::generate`.
+	 * @param array  $callback_params parameters to pass to the static callback.
 	 * @return \Exception|mixed
 	 */
 	protected function do_remote_request( $callback, $callback_params ) {
 
-		// configure
+		// configure.
 		if ( $this->is_braintree_auth() ) {
 
-			// configure with access token
+			// configure with access token.
 			$gateway_args = array(
 				'accessToken' => $this->get_gateway()->get_auth_access_token(),
 			);
@@ -543,23 +569,23 @@ class WC_Braintree_API extends Framework\SV_WC_API_Base implements Framework\SV_
 	 * Handle and parse the response
 	 *
 	 * @since 3.0.0
-	 * @param mixed $response directly from Braintree SDK
+	 * @param mixed $response directly from Braintree SDK.
 	 * @return \WC_Braintree_API_Response
-	 * @throws Framework\SV_WC_API_Exception braintree errors
+	 * @throws Framework\SV_WC_API_Exception Braintree errors.
 	 */
 	protected function handle_response( $response ) {
 
-		// check if Braintree response contains exception and convert to framework exception
+		// check if Braintree response contains exception and convert to framework exception.
 		if ( $response instanceof \Exception ) {
 			throw new Framework\SV_WC_API_Exception( esc_html( $this->get_braintree_exception_message( $response ) ), $response->getCode(), $response ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 
 		$handler_class = $this->get_response_handler();
 
-		// parse the response body and tie it to the request
+		// parse the response body and tie it to the request.
 		$this->response = new $handler_class( $response, $this->get_gateway()->is_credit_card_gateway() ? 'credit-card' : 'paypal' );
 
-		// broadcast request
+		// broadcast request.
 		$this->broadcast_request();
 
 		return $this->response;
@@ -572,7 +598,7 @@ class WC_Braintree_API extends Framework\SV_WC_API_Base implements Framework\SV_
 	 *
 	 * @link https://developers.braintreepayments.com/reference/general/exceptions/php
 	 * @since 3.0.0
-	 * @param \Exception $e
+	 * @param \Exception $e Exception object.
 	 * @return string
 	 */
 	protected function get_braintree_exception_message( $e ) {
@@ -581,27 +607,27 @@ class WC_Braintree_API extends Framework\SV_WC_API_Base implements Framework\SV_
 
 			case 'Braintree\Exception\Authentication':
 				$message = esc_html__( 'Invalid Credentials, please double-check your API credentials (Merchant ID, Public Key, Private Key, and Merchant Account ID) and try again.', 'woocommerce-gateway-paypal-powered-by-braintree' );
-			break;
+				break;
 
 			case 'Braintree\Exception\Authorization':
 				$message = esc_html__( 'Authorization Failed, please verify the user for the API credentials provided can perform transactions and that the request data is correct.', 'woocommerce-gateway-paypal-powered-by-braintree' );
-			break;
+				break;
 
 			case 'Braintree\Exception\ServiceUnavailable':
 				$message = esc_html__( 'Braintree is currently down for maintenance, please try again later.', 'woocommerce-gateway-paypal-powered-by-braintree' );
-			break;
+				break;
 
 			case 'Braintree\Exception\NotFound':
 				$message = esc_html__( 'The record cannot be found, please contact support.', 'woocommerce-gateway-paypal-powered-by-braintree' );
-			break;
+				break;
 
 			case 'Braintree\Exception\ServerError':
 				$message = esc_html__( 'Braintree encountered an error when processing your request, please try again later or contact support.', 'woocommerce-gateway-paypal-powered-by-braintree' );
-			break;
+				break;
 
 			case 'Braintree\Exception\SSLCertificate':
 				$message = esc_html__( 'Braintree cannot verify your server\'s SSL certificate. Please contact your hosting provider or try again later.', 'woocommerce-gateway-paypal-powered-by-braintree' );
-			break;
+				break;
 
 			default:
 				$message = $e->getMessage();
@@ -650,7 +676,7 @@ class WC_Braintree_API extends Framework\SV_WC_API_Base implements Framework\SV_
 			'environment' => $this->get_gateway()->get_environment(),
 			'uri'         => $this->get_request_uri(),
 			'data'        => $this->get_request()->to_string_safe(),
-			'duration'    => $this->get_request_duration() . 's', // seconds
+			'duration'    => $this->get_request_duration() . 's', // seconds.
 		);
 
 		$response_data = array(
@@ -666,8 +692,8 @@ class WC_Braintree_API extends Framework\SV_WC_API_Base implements Framework\SV_
 	 *
 	 * @since 3.0.0
 	 * @see SV_WC_API_Base::get_new_request()
-	 * @param array $args
-	 * @throws Framework\SV_WC_API_Exception for invalid request types
+	 * @param array $args Request arguments.
+	 * @throws Framework\SV_WC_API_Exception for invalid request types.
 	 * @return WC_Braintree_API_Client_Token_Request|WC_Braintree_API_Transaction_Request|WC_Braintree_API_Customer_Request|WC_Braintree_API_Payment_Method_Request|WC_Braintree_API_Payment_Method_Nonce_Request
 	 */
 	protected function get_new_request( $args = array() ) {
@@ -682,7 +708,6 @@ class WC_Braintree_API extends Framework\SV_WC_API_Base implements Framework\SV_
 			break;
 
 			case 'transaction':
-
 				$channel = ( $this->is_braintree_auth() ) ? self::BT_AUTH_CHANNEL : self::API_CHANNEL;
 
 				$this->set_response_handler( $this->get_gateway()->is_credit_card_gateway() ? 'WC_Braintree\\API\\Responses\\WC_Braintree_API_Credit_Card_Transaction_Response' : 'WC_Braintree\\API\\Responses\\WC_Braintree_API_PayPal_Transaction_Response' );
@@ -770,6 +795,4 @@ class WC_Braintree_API extends Framework\SV_WC_API_Base implements Framework\SV_
 
 		return $this->gateway;
 	}
-
-
 }

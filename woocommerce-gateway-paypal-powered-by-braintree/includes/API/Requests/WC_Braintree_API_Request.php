@@ -38,16 +38,32 @@ defined( 'ABSPATH' ) or exit;
 abstract class WC_Braintree_API_Request implements Framework\SV_WC_Payment_Gateway_API_Request {
 
 
-	/** @var string Braintree SDK resource for the request, e.g. `transaction` */
+	/**
+	 * Braintree SDK resource for the request, e.g. `transaction`.
+	 *
+	 * @var string
+	 */
 	protected $resource;
 
-	/** @var string Braintree SDK callback for the request, e.g. `generate` */
+	/**
+	 * Braintree SDK callback for the request, e.g. `generate`.
+	 *
+	 * @var string
+	 */
 	protected $callback;
 
-	/** @var array request data passed to the static callback */
+	/**
+	 * Request data passed to the static callback.
+	 *
+	 * @var array
+	 */
 	protected $request_data = array();
 
-	/** @var \WC_Order order associated with the request, if any */
+	/**
+	 * Order associated with the request, if any.
+	 *
+	 * @var \WC_Order
+	 */
 	protected $order;
 
 
@@ -55,7 +71,7 @@ abstract class WC_Braintree_API_Request implements Framework\SV_WC_Payment_Gatew
 	 * Setup request
 	 *
 	 * @since 3.0.0
-	 * @param \WC_Order|null $order order if available
+	 * @param \WC_Order|null $order order if available.
 	 */
 	public function __construct( $order = null ) {
 
@@ -67,7 +83,7 @@ abstract class WC_Braintree_API_Request implements Framework\SV_WC_Payment_Gatew
 	 * Sets the Braintree SDK resource for the request.
 	 *
 	 * @since 2.0.0
-	 * @param string $resource, e.g. `transaction`
+	 * @param string $resource e.g. `transaction`.
 	 */
 	protected function set_resource( $resource ) {
 
@@ -91,7 +107,7 @@ abstract class WC_Braintree_API_Request implements Framework\SV_WC_Payment_Gatew
 	 * Set the static callback for the request
 	 *
 	 * @since 3.0.0
-	 * @param string $callback, e.g. `\Braintree\ClientToken::generate`
+	 * @param string $callback e.g. `\Braintree\ClientToken::generate`.
 	 */
 	protected function set_callback( $callback ) {
 
@@ -121,13 +137,13 @@ abstract class WC_Braintree_API_Request implements Framework\SV_WC_Payment_Gatew
 
 		switch ( $this->get_callback() ) {
 
-			// these API calls use 2 callback parameters
+			// these API calls use 2 callback parameters.
 			case 'submitForSettlement':
 			case 'refund':
 			case 'update':
 				return $this->get_data();
 
-			// all others use a single callback param
+			// all others use a single callback param.
 			default:
 				return array( $this->get_data() );
 		}
@@ -155,7 +171,7 @@ abstract class WC_Braintree_API_Request implements Framework\SV_WC_Payment_Gatew
 	 */
 	public function to_string_safe() {
 
-		// no confidential info to mask...yet
+		// no confidential info to mask...yet.
 		return $this->to_string();
 	}
 
@@ -230,12 +246,9 @@ abstract class WC_Braintree_API_Request implements Framework\SV_WC_Payment_Gatew
 						}
 					}
 				}
+			} elseif ( is_null( $value ) || '' === $value ) {
 
-			} else {
-
-				if ( is_null( $value ) || '' === $value ) {
 					unset( $this->request_data[ $key ] );
-				}
 			}
 		}
 	}
@@ -245,7 +258,7 @@ abstract class WC_Braintree_API_Request implements Framework\SV_WC_Payment_Gatew
 	 * Gets a property from the associated order.
 	 *
 	 * @since 2.0.0
-	 * @param string $prop the desired order property
+	 * @param string $prop the desired order property.
 	 * @return mixed
 	 */
 	public function get_order_prop( $prop ) {
@@ -273,7 +286,6 @@ abstract class WC_Braintree_API_Request implements Framework\SV_WC_Payment_Gatew
 	 * Braintree requests do not require a method per request
 	 *
 	 * @since 3.0.0
-	 * @return null
 	 */
 	public function get_method() { }
 
@@ -282,7 +294,6 @@ abstract class WC_Braintree_API_Request implements Framework\SV_WC_Payment_Gatew
 	 * Braintree requests do not require a path per request
 	 *
 	 * @since 3.0.0
-	 * @return null
 	 */
 	public function get_path() { }
 
@@ -298,6 +309,4 @@ abstract class WC_Braintree_API_Request implements Framework\SV_WC_Payment_Gatew
 
 		return array();
 	}
-
-
 }

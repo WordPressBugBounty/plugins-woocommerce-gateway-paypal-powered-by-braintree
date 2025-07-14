@@ -38,13 +38,25 @@ defined( 'ABSPATH' ) or exit;
 class WC_Braintree_API_Transaction_Request extends WC_Braintree_API_Request {
 
 
-	/** auth and capture transaction type */
+	/**
+	 * Auth and capture transaction type.
+	 *
+	 * @var bool
+	 */
 	const AUTHORIZE_AND_CAPTURE = true;
 
-	/** authorize-only transaction type */
+	/**
+	 * Authorize-only transaction type.
+	 *
+	 * @var bool
+	 */
 	const AUTHORIZE_ONLY = false;
 
-	/** @var string Braintree partner ID */
+	/**
+	 * Braintree partner ID.
+	 *
+	 * @var string
+	 */
 	protected $channel;
 
 
@@ -52,8 +64,8 @@ class WC_Braintree_API_Transaction_Request extends WC_Braintree_API_Request {
 	 * Constructs the class.
 	 *
 	 * @since 2.0.0
-	 * @param \WC_Order|null $order order if available
-	 * @param string $channel Braintree Partner ID/channel
+	 * @param \WC_Order|null $order order if available.
+	 * @param string         $channel Braintree Partner ID/channel.
 	 */
 	public function __construct( $order = null, $channel = '' ) {
 
@@ -143,7 +155,7 @@ class WC_Braintree_API_Transaction_Request extends WC_Braintree_API_Request {
 	 * @link https://developers.braintreepayments.com/reference/request/transaction/sale/php
 	 *
 	 * @since 3.0.0
-	 * @param bool $settlement_type true = auth/capture, false = auth-only
+	 * @param bool $settlement_type true = auth/capture, false = auth-only.
 	 */
 	protected function create_transaction( $settlement_type ) {
 
@@ -162,24 +174,24 @@ class WC_Braintree_API_Transaction_Request extends WC_Braintree_API_Request {
 			'taxExempt'         => $this->get_order()->get_user_id() > 0 && is_callable( array( WC()->customer, 'is_vat_exempt' ) ) ? WC()->customer->is_vat_exempt() : false,
 		);
 
-		// set customer data
+		// set customer data.
 		$this->set_customer();
 
-		// set billing data
+		// set billing data.
 		$this->set_billing();
 
-		// set payment method, either existing token or nonce
+		// set payment method, either existing token or nonce.
 		$this->set_payment_method();
 
-		// add dynamic descriptors
+		// add dynamic descriptors.
 		$this->set_dynamic_descriptors();
 
 		/**
 		 * Filters the request data for new transactions.
 		 *
 		 * @since 2.0.0
-		 * @param array $data The transaction/sale data
-		 * @param \WC_Braintree_API_Transaction_Request $request the request object
+		 * @param array $data The transaction/sale data.
+		 * @param \WC_Braintree_API_Transaction_Request $request the request object.
 		 */
 		$this->request_data = apply_filters( 'wc_braintree_transaction_data', $this->request_data, $this );
 	}
@@ -196,14 +208,14 @@ class WC_Braintree_API_Transaction_Request extends WC_Braintree_API_Request {
 
 		if ( $this->get_order()->customer_id ) {
 
-			// use existing customer ID
+			// use existing customer ID.
 			$this->request_data['customerId'] = $this->get_order()->customer_id;
 
 		} else {
 
 			// set customer info
 			// a customer will only be created if tokenization is required and
-			// storeInVaultOnSuccess is set to true, see get_options() below
+			// storeInVaultOnSuccess is set to true, see get_options() below.
 			$this->request_data['customer'] = array(
 				'firstName' => $this->get_order_prop( 'billing_first_name' ),
 				'lastName'  => $this->get_order_prop( 'billing_last_name' ),
@@ -221,18 +233,17 @@ class WC_Braintree_API_Transaction_Request extends WC_Braintree_API_Request {
 	 * @link https://developers.braintreepayments.com/reference/request/transaction/sale/php#billing
 	 *
 	 * @since 3.0.0
-	 * @return array
 	 */
 	protected function set_billing() {
 
 		if ( ! empty( $this->get_order()->payment->billing_address_id ) ) {
 
-			// use the existing billing address when using a saved payment method
+			// use the existing billing address when using a saved payment method.
 			$this->request_data['billingAddressId'] = $this->get_order()->payment->billing_address_id;
 
 		} else {
 
-			// otherwise just set the billing address directly
+			// otherwise just set the billing address directly.
 			$this->request_data['billing'] = array(
 				'firstName'         => $this->get_order_prop( 'billing_first_name' ),
 				'lastName'          => $this->get_order_prop( 'billing_last_name' ),
@@ -284,22 +295,22 @@ class WC_Braintree_API_Transaction_Request extends WC_Braintree_API_Request {
 
 		if ( ! empty( $this->get_order()->payment->token ) && empty( $this->get_order()->payment->use_3ds_nonce ) ) {
 
-			// use saved payment method (token)
+			// use saved payment method (token).
 			$this->request_data['paymentMethodToken'] = $this->get_order()->payment->token;
 
 		} else {
 
-			// use new payment method (nonce)
+			// use new payment method (nonce).
 			$this->request_data['paymentMethodNonce'] = $this->get_order()->payment->nonce;
 
 			// set cardholder name when adding a credit card, note this isn't possible
-			// when using a 3DS nonce
+			// when using a 3DS nonce.
 			if ( 'credit_card' === $this->get_order()->payment->type && empty( $this->get_order()->payment->use_3ds_nonce ) ) {
 				$this->request_data['creditCard'] = array( 'cardholderName' => $this->get_order()->get_formatted_billing_full_name() );
 			}
 		}
 
-		// add recurring flag to transactions that are subscription renewals
+		// add recurring flag to transactions that are subscription renewals.
 		if ( ! empty( $this->get_order()->payment->subscription ) ) {
 			$this->request_data['transactionSource'] = $this->get_order()->payment->subscription->is_renewal ? 'recurring' : 'recurring_first';
 		}
@@ -316,7 +327,7 @@ class WC_Braintree_API_Transaction_Request extends WC_Braintree_API_Request {
 	 */
 	protected function set_dynamic_descriptors() {
 
-		// dynamic descriptors
+		// dynamic descriptors.
 		if ( ! empty( $this->get_order()->payment->dynamic_descriptors ) ) {
 
 			$this->request_data['descriptor'] = array();
@@ -337,7 +348,7 @@ class WC_Braintree_API_Transaction_Request extends WC_Braintree_API_Request {
 	 * @link https://developers.braintreepayments.com/reference/request/transaction/sale/php#options
 	 *
 	 * @since 3.0.0
-	 * @param bool $settlement_type, authorize or auth/capture
+	 * @param bool $settlement_type authorize or auth/capture.
 	 * @return array
 	 */
 	protected function get_options( $settlement_type ) {
@@ -370,6 +381,4 @@ class WC_Braintree_API_Transaction_Request extends WC_Braintree_API_Request {
 
 		return $this->channel;
 	}
-
-
 }

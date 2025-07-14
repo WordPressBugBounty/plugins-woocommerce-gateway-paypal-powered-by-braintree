@@ -61,7 +61,7 @@ class WC_Braintree_API_PayPal_Transaction_Response extends WC_Braintree_API_Tran
 	 *
 	 * @since 3.0.0
 	 * @return \WC_Braintree_Payment_Method
-	 * @throws \SV_WC_Payment_Gateway_Exception if token is missing
+	 * @throws Framework\SV_WC_Payment_Gateway_Exception If token is missing.
 	 */
 	public function get_payment_token() {
 
@@ -70,7 +70,7 @@ class WC_Braintree_API_PayPal_Transaction_Response extends WC_Braintree_API_Tran
 		}
 
 		$data = array(
-			'default'     => false, // tokens created as part of a transaction can't be set as default
+			'default'     => false, // tokens created as part of a transaction can't be set as default.
 			'type'        => WC_Braintree_Payment_Method::PAYPAL_TYPE,
 			'payer_email' => $this->get_payer_email(),
 			'payer_id'    => $this->get_payer_id(),
@@ -148,6 +148,4 @@ class WC_Braintree_API_PayPal_Transaction_Response extends WC_Braintree_API_Tran
 
 		return ! empty( $this->response->transaction->paypalDetails->refundId ) ? $this->response->transaction->paypalDetails->refundId : null;
 	}
-
-
 }

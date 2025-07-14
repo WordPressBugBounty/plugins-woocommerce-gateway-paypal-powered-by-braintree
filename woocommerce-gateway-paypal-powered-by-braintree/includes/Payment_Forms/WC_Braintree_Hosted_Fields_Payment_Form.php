@@ -58,7 +58,7 @@ class WC_Braintree_Hosted_Fields_Payment_Form extends WC_Braintree_Payment_Form 
 	 * data-nonce attribute.
 	 *
 	 * @since 3.0.0
-	 * @param \WC_Braintree_Payment_Method $token payment token
+	 * @param \WC_Braintree_Payment_Method $token payment token.
 	 * @return string saved payment method HTML
 	 */
 	protected function get_saved_payment_method_html( $token ) {
@@ -94,15 +94,15 @@ class WC_Braintree_Hosted_Fields_Payment_Form extends WC_Braintree_Payment_Form 
 
 			if ( isset( $fields[ $field_key ] ) ) {
 
-				// parent div classes - contains both the label and hosted field container div
+				// parent div classes - contains both the label and hosted field container div.
 				$fields[ $field_key ]['class'] = array_merge( $fields[ $field_key ]['class'], array( "wc-braintree-hosted-field-{$field_key}-parent", 'wc-braintree-hosted-field-parent' ) );
 
-				// hosted field container classes - contains the iframe element
+				// hosted field container classes - contains the iframe element.
 				$fields[ $field_key ]['input_class'] = array_merge( $fields[ $field_key ]['input_class'], array( "wc-braintree-hosted-field-{$field_key}", 'wc-braintree-hosted-field' ) );
 			}
 		}
 
-		// adjust expiry date label
+		// adjust expiry date label.
 		$fields['card-expiry']['label'] = esc_html__( 'Expiration (MMYY)', 'woocommerce-gateway-paypal-powered-by-braintree' );
 
 		return $fields;
@@ -115,7 +115,7 @@ class WC_Braintree_Hosted_Fields_Payment_Form extends WC_Braintree_Payment_Form 
 	 * by Braintree's hosted field implementation
 	 *
 	 * @since 3.0.0
-	 * @param array $field
+	 * @param array $field field data.
 	 */
 	public function render_payment_field( $field ) {
 		$defaults = array(
@@ -147,9 +147,9 @@ class WC_Braintree_Hosted_Fields_Payment_Form extends WC_Braintree_Payment_Form 
 
 		$params = parent::get_payment_form_handler_js_params();
 
-		// Braintree JS only returns the full names, so ensure they're correctly formatted from settings
+		// Braintree JS only returns the full names, so ensure they're correctly formatted from settings.
 		$braintree_card_types = array(
-			'American Express' => Framework\SV_WC_Payment_Gateway_Helper::CARD_TYPE_AMEX ,
+			'American Express' => Framework\SV_WC_Payment_Gateway_Helper::CARD_TYPE_AMEX,
 			'MasterCard'       => Framework\SV_WC_Payment_Gateway_Helper::CARD_TYPE_MASTERCARD,
 			'Visa'             => Framework\SV_WC_Payment_Gateway_Helper::CARD_TYPE_VISA,
 			'Maestro'          => Framework\SV_WC_Payment_Gateway_Helper::CARD_TYPE_MAESTRO,
@@ -157,17 +157,20 @@ class WC_Braintree_Hosted_Fields_Payment_Form extends WC_Braintree_Payment_Form 
 
 		$card_types = array_keys( array_intersect( $braintree_card_types, $this->get_gateway()->get_3d_secure_card_types() ) );
 
-		$params = array_merge( $params, [
-			'csc_required' => $this->get_gateway()->is_csc_required(),
-			'threeds'      => array(
-				'enabled'                         => $this->should_enable_3d_secure(), // setting this to false overrides any account configuration
-				'liability_shift_always_required' => $this->get_gateway()->is_3d_secure_liability_shift_always_required(),
-				'card_types'                      => $card_types,
-				'failure_message'                 => esc_html__( 'We cannot process your order with the payment information that you provided. Please use an alternate payment method.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
-			),
-			'hosted_fields_styles' => $this->get_hosted_fields_styles(),
-			'enabled_card_types'   => $this->get_enabled_card_types(),
-		] );
+		$params = array_merge(
+			$params,
+			[
+				'csc_required'         => $this->get_gateway()->is_csc_required(),
+				'threeds'              => array(
+					'enabled'                         => $this->should_enable_3d_secure(), // setting this to false overrides any account configuration.
+					'liability_shift_always_required' => $this->get_gateway()->is_3d_secure_liability_shift_always_required(),
+					'card_types'                      => $card_types,
+					'failure_message'                 => esc_html__( 'We cannot process your order with the payment information that you provided. Please use an alternate payment method.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+				),
+				'hosted_fields_styles' => $this->get_hosted_fields_styles(),
+				'enabled_card_types'   => $this->get_enabled_card_types(),
+			]
+		);
 
 		return $params;
 	}
@@ -186,7 +189,7 @@ class WC_Braintree_Hosted_Fields_Payment_Form extends WC_Braintree_Payment_Form 
 
 		if ( ! is_add_payment_method_page() && $this->get_gateway()->is_3d_secure_enabled() ) {
 
-			// disable 3D Secure if we can't determine a non-zero cart total, as $0 verifications are currently not supported
+			// disable 3D Secure if we can't determine a non-zero cart total, as $0 verifications are currently not supported.
 			$enable = $this->get_order_total_for_3d_secure() !== 0.0;
 		}
 
@@ -205,16 +208,20 @@ class WC_Braintree_Hosted_Fields_Payment_Form extends WC_Braintree_Payment_Form 
 
 		$types = array_map( '\\SkyVerge\\WooCommerce\\PluginFramework\\v5_15_10\\SV_WC_Payment_Gateway_Helper::normalize_card_type', $this->get_gateway()->get_card_types() );
 
-		// The Braintree SDK has its own strings for a few card types that we need to match
-		$types = str_replace( [
-			Framework\SV_WC_Payment_Gateway_Helper::CARD_TYPE_AMEX,
-			Framework\SV_WC_Payment_Gateway_Helper::CARD_TYPE_DINERSCLUB,
-			Framework\SV_WC_Payment_Gateway_Helper::CARD_TYPE_MASTERCARD,
-		], [
-			'american-express',
-			'diners-club',
-			'master-card',
-		], $types );
+		// The Braintree SDK has its own strings for a few card types that we need to match.
+		$types = str_replace(
+			[
+				Framework\SV_WC_Payment_Gateway_Helper::CARD_TYPE_AMEX,
+				Framework\SV_WC_Payment_Gateway_Helper::CARD_TYPE_DINERSCLUB,
+				Framework\SV_WC_Payment_Gateway_Helper::CARD_TYPE_MASTERCARD,
+			],
+			[
+				'american-express',
+				'diners-club',
+				'master-card',
+			],
+			$types
+		);
 
 		return $types;
 	}
@@ -234,7 +241,7 @@ class WC_Braintree_Hosted_Fields_Payment_Form extends WC_Braintree_Payment_Form 
 		$styles = array(
 			'input' => array(
 				'font-size' => '1.3em',
-			)
+			),
 		);
 
 		/**
@@ -356,6 +363,4 @@ class WC_Braintree_Hosted_Fields_Payment_Form extends WC_Braintree_Payment_Form 
 
 		return $total;
 	}
-
-
 }

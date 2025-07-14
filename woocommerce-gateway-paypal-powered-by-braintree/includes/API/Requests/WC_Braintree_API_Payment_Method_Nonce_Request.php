@@ -44,7 +44,7 @@ class WC_Braintree_API_Payment_Method_Nonce_Request extends WC_Braintree_API_Req
 	 * @link https://developers.braintreepayments.com/reference/request/payment-method-nonce/create/php
 	 *
 	 * @since 3.0.0
-	 * @param string $nonce nonce from 3D secure verification
+	 * @param string $nonce nonce from 3D secure verification.
 	 */
 	public function get_payment_method( $nonce ) {
 
@@ -62,7 +62,7 @@ class WC_Braintree_API_Payment_Method_Nonce_Request extends WC_Braintree_API_Req
 	 * @link https://developers.braintreepayments.com/reference/request/payment-method-nonce/find/php
 	 *
 	 * @since 3.0.0
-	 * @param string $token vault token ID
+	 * @param string $token vault token ID.
 	 */
 	public function create_nonce( $token ) {
 
@@ -71,6 +71,4 @@ class WC_Braintree_API_Payment_Method_Nonce_Request extends WC_Braintree_API_Req
 
 		$this->request_data = $token;
 	}
-
-
 }

@@ -46,8 +46,8 @@ class WC_Braintree_Payment_Method_Handler extends Framework\SV_WC_Payment_Gatewa
 	 *
 	 * @since 3.0.0
 	 *
-	 * @param string $token token ID
-	 * @param array|\WC_Payment_Token $data token data or object
+	 * @param string                  $token Token ID.
+	 * @param array|\WC_Payment_Token $data  Token data or object.
 	 * @return \WC_Braintree\WC_Braintree_Payment_Method
 	 */
 	public function build_token( $token, $data ) {
@@ -64,9 +64,9 @@ class WC_Braintree_Payment_Method_Handler extends Framework\SV_WC_Payment_Gatewa
 	 *
 	 * @since 3.0.0
 	 *
-	 * @param int $user_id WP user ID
-	 * @param array $tokens array of tokens
-	 * @param string $environment_id optional environment id, defaults to plugin current environment
+	 * @param int    $user_id WP user ID.
+	 * @param array  $tokens array of tokens.
+	 * @param string $environment_id optional environment id, defaults to plugin current environment.
 	 * @return string updated user meta id
 	 */
 	public function update_tokens( $user_id, $tokens, $environment_id = null ) {
@@ -86,18 +86,19 @@ class WC_Braintree_Payment_Method_Handler extends Framework\SV_WC_Payment_Gatewa
 	 *
 	 * @since 2.0.1
 	 *
-	 * @param Framework\SV_WC_Payment_Gateway_Payment_Token $token the payment token being saved
+	 * @param Framework\SV_WC_Payment_Gateway_Payment_Token $token the payment token being saved.
 	 * @return string
 	 */
 	protected function get_order_note( $token ) {
 
 		$message = parent::get_order_note( $token );
 
-		// order note for the PayPal gateway
+		// order note for the PayPal gateway.
 		if ( ! $message && $this->get_gateway()->is_paypal_gateway() ) {
 
-			/* translators: Placeholders: %1$s - payment gateway title (PayPal), %2$s - PayPal account email address */
-			$message = sprintf( esc_html__( '%1$s Account Saved: %2$s', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+			$message = sprintf(
+				/* translators: Placeholders: %1$s - payment gateway title (PayPal), %2$s - PayPal account email address */
+				esc_html__( '%1$s Account Saved: %2$s', 'woocommerce-gateway-paypal-powered-by-braintree' ),
 				esc_html( $this->get_gateway()->get_method_title() ),
 				esc_html( $token->get_type_full() )
 			);

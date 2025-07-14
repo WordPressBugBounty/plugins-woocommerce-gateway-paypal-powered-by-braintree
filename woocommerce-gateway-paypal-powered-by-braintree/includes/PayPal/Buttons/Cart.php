@@ -72,7 +72,7 @@ class Cart extends Abstract_Button {
 
 		parent::add_button_hooks();
 
-		// add the PayPal button below "Proceed to Checkout"
+		// add the PayPal button below "Proceed to Checkout".
 		add_action( 'woocommerce_proceed_to_checkout', [ $this, 'render' ], 50 );
 	}
 
@@ -142,6 +142,4 @@ class Cart extends Abstract_Button {
 
 		return $this->get_gateway()->get_id() . '_cart';
 	}
-
-
 }

@@ -151,6 +151,4 @@ class WC_Braintree_API_Payment_Method_Nonce_Response extends WC_Braintree_API_Re
 
 		return isset( $this->response->paymentMethodNonce ) ? $this->response->paymentMethodNonce : $this->response;
 	}
-
-
 }

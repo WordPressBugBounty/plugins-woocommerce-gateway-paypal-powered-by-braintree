@@ -156,6 +156,4 @@ abstract class WC_Braintree_API_Transaction_Response extends WC_Braintree_API_Re
 
 		return ! empty( $this->response->transaction->riskData->decision ) ? $this->response->transaction->riskData->decision : null;
 	}
-
-
 }

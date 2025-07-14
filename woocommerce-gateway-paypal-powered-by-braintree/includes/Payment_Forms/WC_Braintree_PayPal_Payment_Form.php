@@ -73,10 +73,10 @@ class WC_Braintree_PayPal_Payment_Form extends WC_Braintree_Payment_Form {
 
 		$size = $this->get_gateway()->get_button_size();
 
-		// tweak the styles a bit for better display on the Add Payment Method page
+		// tweak the styles a bit for better display on the Add Payment Method page.
 		if ( is_add_payment_method_page() ) {
 			$default_button_styles['label'] = 'paypal';
-			$size = 'medium';
+			$size                           = 'medium';
 		}
 
 		if ( 'responsive' !== $size && ! empty( $button_sizes[ $size ] ) ) {
@@ -94,7 +94,7 @@ class WC_Braintree_PayPal_Payment_Form extends WC_Braintree_Payment_Form {
 		 */
 		$button_styles = apply_filters( 'wc_' . $this->get_gateway()->get_id() . '_button_styles', $default_button_styles );
 
-		// PayPal requires at least medium-size buttons for the vertical layout, so force that to prevent JS errors after filtering
+		// PayPal requires at least medium-size buttons for the vertical layout, so force that to prevent JS errors after filtering.
 		if ( isset( $button_styles['layout'], $button_styles['size'] ) && 'vertical' === $button_styles['layout'] && 'small' === $button_styles['size'] ) {
 			$button_styles['size'] = 'medium';
 		}
@@ -104,24 +104,27 @@ class WC_Braintree_PayPal_Payment_Form extends WC_Braintree_Payment_Form {
 			unset( $button_styles['size'] );
 		}
 
-		// allows the buyer country to be forced during the PayPal SDK loading on test environments
+		// allows the buyer country to be forced during the PayPal SDK loading on test environments.
 		$force_buyer_country = $this->get_gateway()->should_force_buyer_country_on_loading_sdk() ? get_user_meta( wp_get_current_user()->ID, 'billing_country', true ) : null;
 
-		// gets the disabled funding options
+		// gets the disabled funding options.
 		$disabled_funding_options = $this->get_disabled_funding_options();
 
-		$params = array_merge( $params, [
-			'is_test_environment'             => $this->get_gateway()->is_test_environment(),
-			'is_paypal_pay_later_enabled'     => $this->get_gateway()->is_paypal_pay_later_enabled() && ! in_array( 'paylater', $disabled_funding_options ),
-			'is_paypal_card_enabled'          => $this->get_gateway()->is_paypal_card_enabled(),
-			'paypal_disabled_funding_options' => $disabled_funding_options,
-			'force_buyer_country'             => $force_buyer_country,
-			'must_login_message'              => esc_html__( 'Please click the "PayPal" button below to log into your PayPal account before placing your order.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
-			'must_login_add_method_message'   => esc_html__( 'Please click the "PayPal" button below to log into your PayPal account before adding your payment method.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
-			'button_styles'                   => wp_parse_args( $button_styles, $default_button_styles ), // ensure all expected parameters are present after filtering to avoid JS errors
-			'cart_payment_nonce'              => $this->get_cart_nonce(),
-			'paypal_intent'                   => WC_Gateway_Braintree_PayPal::TRANSACTION_TYPE_AUTHORIZATION === $this->get_gateway()->get_transaction_type() ? 'authorize' : 'capture',
-		] );
+		$params = array_merge(
+			$params,
+			[
+				'is_test_environment'             => $this->get_gateway()->is_test_environment(),
+				'is_paypal_pay_later_enabled'     => $this->get_gateway()->is_paypal_pay_later_enabled() && ! in_array( 'paylater', $disabled_funding_options, true ),
+				'is_paypal_card_enabled'          => $this->get_gateway()->is_paypal_card_enabled(),
+				'paypal_disabled_funding_options' => $disabled_funding_options,
+				'force_buyer_country'             => $force_buyer_country,
+				'must_login_message'              => esc_html__( 'Please click the "PayPal" button below to log into your PayPal account before placing your order.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+				'must_login_add_method_message'   => esc_html__( 'Please click the "PayPal" button below to log into your PayPal account before adding your payment method.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+				'button_styles'                   => wp_parse_args( $button_styles, $default_button_styles ), // ensure all expected parameters are present after filtering to avoid JS errors.
+				'cart_payment_nonce'              => $this->get_cart_nonce(),
+				'paypal_intent'                   => WC_Gateway_Braintree_PayPal::TRANSACTION_TYPE_AUTHORIZATION === $this->get_gateway()->get_transaction_type() ? 'authorize' : 'capture',
+			]
+		);
 
 		return $params;
 	}
@@ -190,7 +193,7 @@ class WC_Braintree_PayPal_Payment_Form extends WC_Braintree_Payment_Form {
 	 *
 	 * @since 2.2.5
 	 *
-	 * @param WC_Braintree_Payment_Method $token token object
+	 * @param WC_Braintree_Payment_Method $token token object.
 	 * @return string
 	 */
 	protected function get_saved_payment_method_title( $token ) {
@@ -255,7 +258,7 @@ class WC_Braintree_PayPal_Payment_Form extends WC_Braintree_Payment_Form {
 		?>
 
 		<?php if ( $this->get_gateway()->is_paypal_pay_later_enabled() ) : ?>
-			<div id="wc_braintree_paypal_pay_later_messaging_container"<?php echo wp_kses( $container_style, '' ); ?> <?php echo wp_kses( $this->get_gateway()->get_pay_later_messaging_style_attributes(), '' );?>></div>
+			<div id="wc_braintree_paypal_pay_later_messaging_container"<?php echo wp_kses( $container_style, '' ); ?> <?php echo wp_kses( $this->get_gateway()->get_pay_later_messaging_style_attributes(), '' ); ?>></div>
 		<?php endif; ?>
 
 		<div id="wc_braintree_paypal_container" <?php echo wp_kses( $container_style, 'style' ); ?>></div>
@@ -287,6 +290,4 @@ class WC_Braintree_PayPal_Payment_Form extends WC_Braintree_Payment_Form {
 		 */
 		return apply_filters( 'wc_' . $this->get_gateway()->get_id() . '_disabled_funding_options', $this->get_gateway()->get_disabled_funding_sources(), $this );
 	}
-
-
 }

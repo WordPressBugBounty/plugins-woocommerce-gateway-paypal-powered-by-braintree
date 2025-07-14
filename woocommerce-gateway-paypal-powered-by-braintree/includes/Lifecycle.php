@@ -48,15 +48,15 @@ class Lifecycle extends Framework\Plugin\Lifecycle {
 
 		$installed_version = $this->get_installed_version();
 
-		// if installing from the retired WooCommerce Braintree plugin (higher version number)
+		// if installing from the retired WooCommerce Braintree plugin (higher version number).
 		if ( version_compare( $installed_version, $this->get_plugin()->get_version(), '>' ) ) {
 
 			$this->migrate_from_sv();
 
-		// if upgrading from 1.x, which won't have a version number set
+			// if upgrading from 1.x, which won't have a version number set.
 		} elseif ( ! $installed_version && ( get_option( 'woocommerce_paypalbraintree_cards_settings' ) || get_option( 'wc_paypal_braintree_merchant_access_token' ) ) ) {
 
-			// set the version number
+			// set the version number.
 			$this->set_installed_version( '1.2.7' );
 		}
 
@@ -69,11 +69,11 @@ class Lifecycle extends Framework\Plugin\Lifecycle {
 	 *
 	 * @since 2.2.0
 	 *
-	 * @param string $installed_version currently installed version
+	 * @param string $installed_version currently installed version.
 	 */
 	protected function upgrade( $installed_version ) {
 
-		// upgrade to 2.0.0
+		// upgrade to 2.0.0.
 		if ( version_compare( $installed_version, '2.0.0', '<' ) ) {
 
 			global $wpdb;
@@ -83,21 +83,24 @@ class Lifecycle extends Framework\Plugin\Lifecycle {
 			$environment = ( 'sandbox' === get_option( 'wc_paypal_braintree_environment' ) ) ? WC_Gateway_Braintree::ENVIRONMENT_SANDBOX : WC_Gateway_Braintree::ENVIRONMENT_PRODUCTION;
 			$merchant_id = get_option( 'wc_paypal_braintree_merchant_id', '' );
 
-			// Begin settings upgrade
+			// Begin settings upgrade.
 			$this->get_plugin()->log( 'Upgrading settings' );
 
 			// we need to parse args here because it's possible that the legacy
 			// gateway was connected & processing payments but the settings were
 			// never saved.
-			$legacy_settings = wp_parse_args( get_option( 'woocommerce_paypalbraintree_cards_settings', array() ), array(
-				'enabled'            => ( get_option( 'wc_paypal_braintree_merchant_access_token' ) ) ? 'yes' : 'no',
-				'capture'            => 'yes',
-				'debug'              => 'no',
-				'title_cards'        => 'Credit Card',
-				'description_cards'  => 'Pay securely using your credit card.',
-				'title_paypal'       => 'PayPal',
-				'description_paypal' => 'Click the PayPal icon below to sign into your PayPal account and pay securely.',
-			) );
+			$legacy_settings = wp_parse_args(
+				get_option( 'woocommerce_paypalbraintree_cards_settings', array() ),
+				array(
+					'enabled'            => ( get_option( 'wc_paypal_braintree_merchant_access_token' ) ) ? 'yes' : 'no',
+					'capture'            => 'yes',
+					'debug'              => 'no',
+					'title_cards'        => 'Credit Card',
+					'description_cards'  => 'Pay securely using your credit card.',
+					'title_paypal'       => 'PayPal',
+					'description_paypal' => 'Click the PayPal icon below to sign into your PayPal account and pay securely.',
+				)
+			);
 
 			$common_settings = array(
 				'enabled'          => $legacy_settings['enabled'],
@@ -112,54 +115,54 @@ class Lifecycle extends Framework\Plugin\Lifecycle {
 			if ( $environment === WC_Gateway_Braintree::ENVIRONMENT_PRODUCTION ) {
 				$common_settings['merchant_id'] = $merchant_id;
 			} else {
-				$common_settings[ $environment . '_merchant_id'] = $merchant_id;
+				$common_settings[ $environment . '_merchant_id' ] = $merchant_id;
 			}
 
 			$credit_card_settings = array(
 				'title'       => $legacy_settings['title_cards'],
 				'description' => $legacy_settings['description_cards'],
-				'require_csc' => 'yes', // no option to disable this in v1, so enable by default
-				'card_types'  => array( 'VISA', 'MC', 'AMEX', 'DISC', 'DINERS', 'JCB', ),
+				'require_csc' => 'yes', // no option to disable this in v1, so enable by default.
+				'card_types'  => array( 'VISA', 'MC', 'AMEX', 'DISC', 'DINERS', 'JCB' ),
 			);
 
 			update_option( 'woocommerce_braintree_credit_card_settings', array_merge( $common_settings, $credit_card_settings ) );
 
 			$paypal_settings = array(
-				'title'            => $legacy_settings['title_paypal'],
-				'description'      => $legacy_settings['description_paypal'],
+				'title'       => $legacy_settings['title_paypal'],
+				'description' => $legacy_settings['description_paypal'],
 			);
 
 			update_option( 'woocommerce_braintree_paypal_settings', array_merge( $common_settings, $paypal_settings ) );
 
-			// the Braintree Auth options
+			// the Braintree Auth options.
 			$wpdb->update( $wpdb->options, array( 'option_name' => 'wc_braintree_auth_access_token' ), array( 'option_name' => 'wc_paypal_braintree_merchant_access_token' ) );
-			$wpdb->update( $wpdb->options, array( 'option_name' => 'wc_braintree_auth_environment' ),  array( 'option_name' => 'wc_paypal_braintree_environment' ) );
-			$wpdb->update( $wpdb->options, array( 'option_name' => 'wc_braintree_auth_merchant_id' ),  array( 'option_name' => 'wc_paypal_braintree_merchant_id' ) );
+			$wpdb->update( $wpdb->options, array( 'option_name' => 'wc_braintree_auth_environment' ), array( 'option_name' => 'wc_paypal_braintree_environment' ) );
+			$wpdb->update( $wpdb->options, array( 'option_name' => 'wc_braintree_auth_merchant_id' ), array( 'option_name' => 'wc_paypal_braintree_merchant_id' ) );
 
 			$this->get_plugin()->log( 'Settings upgraded' );
 
-			// update the legacy order & user meta
+			// update the legacy order & user meta.
 			$this->update_legacy_meta();
 
-			// flush the options cache to ensure notices are displayed correctly
+			// flush the options cache to ensure notices are displayed correctly.
 			wp_cache_flush();
 
 			$this->get_plugin()->log( 'Completed upgrade for 2.0.0' );
 
 		} elseif ( version_compare( $installed_version, '2.0.1', '<' ) ) {
 
-			// update meta again for those that may be seeing the legacy migration issue from previous installs
+			// update meta again for those that may be seeing the legacy migration issue from previous installs.
 			$this->update_legacy_meta();
 		}
 
-		// upgrade to v2.0.2
+		// upgrade to v2.0.2.
 		if ( version_compare( $installed_version, '2.0.2', '<' ) ) {
 
 			$this->get_plugin()->log( 'Starting upgrade to 2.0.2' );
 
 			$cc_settings = get_option( 'woocommerce_braintree_credit_card_settings', array() );
 
-			// if the require CSC setting was never set, set it to avoid various false error notices
+			// if the require CSC setting was never set, set it to avoid various false error notices.
 			if ( ! empty( $cc_settings ) && empty( $cc_settings['require_csc'] ) ) {
 
 				$this->get_plugin()->log( 'Updating missing CSC setting' );
@@ -172,7 +175,7 @@ class Lifecycle extends Framework\Plugin\Lifecycle {
 			$this->get_plugin()->log( 'Completed upgrade for 2.0.2' );
 		}
 
-		// upgrade to v2.5.0
+		// upgrade to v2.5.0.
 		if ( version_compare( $installed_version, '2.5.0', '<' ) ) {
 
 			$this->upgrade_to_2_5_0();
@@ -189,14 +192,14 @@ class Lifecycle extends Framework\Plugin\Lifecycle {
 
 		$this->get_plugin()->log( 'Starting migration to ' . $this->get_plugin()->get_plugin_name() );
 
-		// set the version number
+		// set the version number.
 		$this->set_installed_version( $this->get_plugin()->get_version() );
 
 		foreach ( $this->get_plugin()->get_gateway_ids() as $gateway_id ) {
 
 			$settings = $this->get_plugin()->get_gateway_settings( $gateway_id );
 
-			// if the API credentials have been previously configured
+			// if the API credentials have been previously configured.
 			if ( 'yes' === $settings['inherit_settings'] || ( ! empty( $settings['public_key'] ) && ! empty( $settings['private_key'] ) && ! empty( $settings['merchant_id'] ) ) || ( ! empty( $settings['sandbox_public_key'] ) && ! empty( $settings['sandbox_private_key'] ) && ! empty( $settings['sandbox_merchant_id'] ) ) ) {
 
 				$settings['connect_manually'] = 'yes';
@@ -208,7 +211,7 @@ class Lifecycle extends Framework\Plugin\Lifecycle {
 		update_option( 'wc_braintree_legacy_migrated', 'yes' );
 
 		// update legacy meta in case users had previously switched to v1 from
-		// the SkyVerge plugin prior to this migration
+		// the SkyVerge plugin prior to this migration.
 		$this->update_legacy_meta();
 
 		$this->get_plugin()->log( 'Completed migration to ' . $this->get_plugin()->get_plugin_name() );
@@ -235,7 +238,7 @@ class Lifecycle extends Framework\Plugin\Lifecycle {
 
 		foreach ( $order_meta as $legacy_key => $new_suffix ) {
 
-			// update for the credit card gateway
+			// update for the credit card gateway.
 			$rows = $wpdb->query(
 				$wpdb->prepare(
 					"
@@ -255,7 +258,7 @@ class Lifecycle extends Framework\Plugin\Lifecycle {
 
 			$count += $rows;
 
-			// update for the paypal gateway
+			// update for the paypal gateway.
 			$rows = $wpdb->query(
 				$wpdb->prepare(
 					"
@@ -276,11 +279,28 @@ class Lifecycle extends Framework\Plugin\Lifecycle {
 			$count += $rows;
 		}
 
-		if ( $rows = $wpdb->update( $wpdb->postmeta, array( 'meta_value' => 'braintree_credit_card' ), array( 'meta_key' => '_payment_method', 'meta_value' => 'paypalbraintree_cards' ) ) ) {
+		$rows = $wpdb->update(
+			$wpdb->postmeta,
+			array( 'meta_value' => 'braintree_credit_card' ), // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
+			array(
+				'meta_key'   => '_payment_method', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+				'meta_value' => 'paypalbraintree_cards', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
+			)
+		);
+		if ( $rows ) {
 			$count += $rows;
 		}
-		if ( $rows = $wpdb->update( $wpdb->postmeta, array( 'meta_value' => 'braintree_paypal' ), array( 'meta_key' => '_payment_method', 'meta_value' => 'paypalbraintree_paypal' ) ) ) {
-			$count += $rows;
+
+		$rows_paypal = $wpdb->update(
+			$wpdb->postmeta,
+			array( 'meta_value' => 'braintree_paypal' ), // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
+			array(
+				'meta_key'   => '_payment_method', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+				'meta_value' => 'paypalbraintree_paypal', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
+			)
+		);
+		if ( $rows_paypal ) {
+			$count += $rows_paypal;
 		}
 
 		if ( $count ) {
@@ -289,7 +309,7 @@ class Lifecycle extends Framework\Plugin\Lifecycle {
 
 		// Customer IDs
 		// old key: _wc_paypal_braintree_customer_id
-		// new key: wc_braintree_customer_id
+		// new key: wc_braintree_customer_id.
 		if ( $rows = $wpdb->update( $wpdb->usermeta, array( 'meta_key' => 'wc_braintree_customer_id' ), array( 'meta_key' => '_wc_paypal_braintree_customer_id' ) ) ) {
 			$this->get_plugin()->log( sprintf( '%d user customer IDs updated.', $rows ) );
 		}
@@ -309,12 +329,10 @@ class Lifecycle extends Framework\Plugin\Lifecycle {
 
 		if ( isset( $paypal_settings['enable_paypal_credit'] ) ) {
 
-			// if enable_paypal_credit was previously set, the pay later button must also be set when upgraded
+			// if enable_paypal_credit was previously set, the pay later button must also be set when upgraded.
 			$paypal_settings['enable_paypal_pay_later'] = $paypal_settings['enable_paypal_credit'];
 		}
 
 		update_option( 'woocommerce_braintree_paypal_settings', $paypal_settings );
 	}
-
-
 }

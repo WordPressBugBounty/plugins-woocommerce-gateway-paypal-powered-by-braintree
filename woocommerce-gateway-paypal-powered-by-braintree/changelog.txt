@@ -1,5 +1,12 @@
 *** Changelog ***
 
+= 3.2.9 - 2025-07-14 =
+* Add - Consent checkbox for vaulting Apple Pay cards for Subscription products.
+* Fix - Ensure that 'Pay with PayPal' functions properly in Block Checkout when using the Safari browser.
+* Dev - Applied PHPCS auto-fixes and documentation comment updates.
+* Dev - Bump WooCommerce "tested up to" version 10.0.
+* Dev - Bump WooCommerce minimum supported version to 9.8.
+
 = 3.2.8 - 2025-06-25 =
 * Fix - Upgrade SkyVerge Framework from 5.12.7 to 5.15.10 which helps resolve a few fatal errors around Subscriptions.
 * Fix - Correct HTML markup of Dynamic Descriptors section on settings page.

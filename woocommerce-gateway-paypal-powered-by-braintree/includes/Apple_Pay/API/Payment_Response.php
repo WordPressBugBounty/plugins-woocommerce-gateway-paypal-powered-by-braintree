@@ -47,6 +47,4 @@ class Payment_Response extends Framework\SV_WC_Payment_Gateway_Apple_Pay_Payment
 
 		return (string) $this->braintree_nonce;
 	}
-
-
 }

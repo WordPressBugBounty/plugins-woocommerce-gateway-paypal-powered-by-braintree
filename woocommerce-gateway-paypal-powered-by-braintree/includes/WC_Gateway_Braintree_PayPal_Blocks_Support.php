@@ -30,7 +30,7 @@ final class WC_Gateway_Braintree_PayPal_Blocks_Support extends WC_Gateway_Braint
 		parent::initialize();
 		add_action(
 			'woocommerce_blocks_enqueue_checkout_block_scripts_before',
-			function() {
+			function () {
 				add_filter( 'woocommerce_saved_payment_methods_list', array( $this, 'add_braintree_paypal_saved_payment_methods' ), 10, 2 );
 			}
 		);

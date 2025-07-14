@@ -98,6 +98,7 @@ class WC_Braintree_My_Payment_Methods extends Framework\SV_WC_Payment_Gateway_My
 	/**
 	 * Returns a token's expiration date HTML.
 	 * Escapes the HTML before returning it.
+	 *
 	 * @since 2.6.2
 	 * @internal
 	 * @param Framework\SV_WC_Payment_Gateway_Payment_Token $token Token object.
@@ -135,11 +136,11 @@ class WC_Braintree_My_Payment_Methods extends Framework\SV_WC_Payment_Gateway_My
 				throw new Framework\SV_WC_Payment_Gateway_Exception( 'Invalid token ID' );
 			}
 
-			$user_id  = get_current_user_id();
-			$token    = $this->tokens[ $token_id ];
-			$gateway  = $this->get_plugin()->get_gateway_from_token( $user_id, $token );
+			$user_id = get_current_user_id();
+			$token   = $this->tokens[ $token_id ];
+			$gateway = $this->get_plugin()->get_gateway_from_token( $user_id, $token );
 
-			// bail if the gateway or token couldn't be found for this user
+			// bail if the gateway or token couldn't be found for this user.
 			if ( ! $gateway || ! $gateway->get_payment_tokens_handler()->user_has_token( $user_id, $token ) ) {
 				throw new Framework\SV_WC_Payment_Gateway_Exception( 'Invalid token' );
 			}
@@ -148,17 +149,19 @@ class WC_Braintree_My_Payment_Methods extends Framework\SV_WC_Payment_Gateway_My
 
 			parse_str( Framework\SV_WC_Helper::get_posted_value( 'data' ), $data );
 
-			// set the data
+			// set the data.
 			$token = $this->save_token_data( $token, $data );
 
-			// persist the data
+			// persist the data.
 			$gateway->get_payment_tokens_handler()->update_token( $user_id, $token );
 
-			wp_send_json_success( [
-				'title'   => $this->get_payment_method_title_html( $token ),
-				'expires' => $this->get_payment_method_expires_html( $token ),
-				'nonce'   => wp_create_nonce( 'wc_' . $this->get_plugin()->get_id() . '_save_payment_method' ),
-			] );
+			wp_send_json_success(
+				[
+					'title'   => $this->get_payment_method_title_html( $token ),
+					'expires' => $this->get_payment_method_expires_html( $token ),
+					'nonce'   => wp_create_nonce( 'wc_' . $this->get_plugin()->get_id() . '_save_payment_method' ),
+				]
+			);
 
 		} catch ( Framework\SV_WC_Payment_Gateway_Exception $e ) {
 
@@ -172,7 +175,7 @@ class WC_Braintree_My_Payment_Methods extends Framework\SV_WC_Payment_Gateway_My
 	 *
 	 * @since 2.6.2
 	 * @param Framework\SV_WC_Payment_Gateway_Payment_Token $token Token object.
-	 * @param array $data New data to store for the token.
+	 * @param array                                         $data New data to store for the token.
 	 * @return Framework\SV_WC_Payment_Gateway_Payment_Token
 	 */
 	protected function save_token_data( Framework\SV_WC_Payment_Gateway_Payment_Token $token, array $data ) {
@@ -225,5 +228,4 @@ class WC_Braintree_My_Payment_Methods extends Framework\SV_WC_Payment_Gateway_My
 
 		return compact( 'month', 'year' );
 	}
-
 }

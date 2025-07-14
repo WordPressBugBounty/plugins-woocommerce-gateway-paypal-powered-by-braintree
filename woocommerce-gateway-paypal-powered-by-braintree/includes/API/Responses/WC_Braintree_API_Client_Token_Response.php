@@ -46,6 +46,4 @@ class WC_Braintree_API_Client_Token_Response extends WC_Braintree_API_Response {
 
 		return ! empty( $this->response ) ? $this->response : '';
 	}
-
-
 }

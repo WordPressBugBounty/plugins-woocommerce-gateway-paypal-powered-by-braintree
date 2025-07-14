@@ -50,14 +50,14 @@ class WC_Braintree_API_Customer_Response extends WC_Braintree_API_Vault_Response
 	 * containing the one just created ಠ_ಠ
 	 *
 	 * @since 3.0.0
-	 * @param mixed $response response data from Braintree SDK
-	 * @param string $response_type indicates whether the response is from a credit card or PayPal request
+	 * @param mixed  $response response data from Braintree SDK.
+	 * @param string $response_type indicates whether the response is from a credit card or PayPal request.
 	 */
 	public function __construct( $response, $response_type ) {
 
 		parent::__construct( $response, $response_type );
 
-		// set created payment method when creating customer
+		// set created payment method when creating customer.
 		if ( isset( $this->response->customer ) ) {
 			$this->payment_method = $this->get_created_payment_method();
 		}
@@ -111,7 +111,7 @@ class WC_Braintree_API_Customer_Response extends WC_Braintree_API_Vault_Response
 
 		foreach ( $this->response->paymentMethods as $method ) {
 
-			// only credit cards or PayPal accounts
+			// only credit cards or PayPal accounts.
 			if ( ! in_array( get_class( $method ), array( 'Braintree\CreditCard', 'Braintree\PayPalAccount', 'Braintree\ApplePayCard' ), true ) ) {
 				continue;
 			}
@@ -192,6 +192,4 @@ class WC_Braintree_API_Customer_Response extends WC_Braintree_API_Vault_Response
 			return isset( $this->response->customer->paypalAccounts ) && is_array( $this->response->customer->creditCards ) ? $this->response->customer->paypalAccounts[0] : null;
 		}
 	}
-
-
 }

@@ -43,14 +43,14 @@ abstract class WC_Braintree_API_Vault_Response extends WC_Braintree_API_Response
 	 * Get the payment token data from the given payment method
 	 *
 	 * @since 3.0.0
-	 * @param \Braintree\CreditCard|\Braintree\PayPalAccount $payment_method payment method object
+	 * @param \Braintree\CreditCard|\Braintree\PayPalAccount $payment_method payment method object.
 	 * @return array
 	 */
 	protected function get_payment_token_data( $payment_method ) {
 
 		if ( 'Braintree\CreditCard' === get_class( $payment_method ) || 'Braintree\ApplePayCard' === get_class( $payment_method ) ) {
 
-			// credit card
+			// credit card.
 			return array(
 				'default'            => false,
 				'type'               => WC_Braintree_Payment_Method::CREDIT_CARD_TYPE,
@@ -63,15 +63,13 @@ abstract class WC_Braintree_API_Vault_Response extends WC_Braintree_API_Response
 
 		} else {
 
-			// PayPal account
+			// PayPal account.
 			return array(
 				'default'     => false,
 				'type'        => WC_Braintree_Payment_Method::PAYPAL_TYPE,
 				'payer_email' => $payment_method->email,
-				'payer_id'    => null, // not available when added outside of a transaction
+				'payer_id'    => null, // not available when added outside of a transaction.
 			);
 		}
 	}
-
-
 }

@@ -1,7 +1,13 @@
 /**
  * External dependencies
  */
-import { useCallback, useMemo, useState } from '@wordpress/element';
+import {
+	useCallback,
+	useMemo,
+	useState,
+	useRef,
+	useEffect,
+} from '@wordpress/element';
 
 /**
  * Internal dependencies
@@ -51,7 +57,10 @@ export const usePaymentForm = ({
 	isExpress = false,
 	needsShipping = false,
 }) => {
+	const [shouldSubmit, setShouldSubmit] = useState( false );
 	const [paymentNonce, setPaymentNonce] = useState(cartPaymentNonce || '');
+	const paymentNonceRef = useRef( paymentNonce );
+
 	const [deviceData, setDeviceData] = useState('');
 	const [testAmount, setTestAmount] = useState('');
 
@@ -66,6 +75,14 @@ export const usePaymentForm = ({
 	if (isExpress) {
 		buttonStyles.label = 'checkout';
 	}
+
+	// Update the ref when the payment nonce changes and trigger the onSubmit callback if the payment nonce is set.
+	useEffect( () => {
+		paymentNonceRef.current = paymentNonce;
+		if ( shouldSubmit && paymentNonce ) {
+			onSubmit();
+		}
+	}, [ paymentNonce, onSubmit, shouldSubmit ] );
 
 	const renderPayPalButtons = useCallback(
 		(paypalCheckoutInstance, containerId) => {
@@ -109,16 +126,8 @@ export const usePaymentForm = ({
 							}
 							setPaymentNonce(payload.nonce);
 
-							/**
-							 * We're using setTimeout here to place the order in the next event loop cycle to ensure that the nonce is set before the order is placed.
-							 *
-							 * This is necessary due to React 18's batched updates.
-							 *
-							 * @see https://github.com/woocommerce/woocommerce/pull/52473
-							 *
-							 * TODO: This is not an ideal solution and feels like a workaround. We need to find a better solution for this.
-							 */
-							setTimeout( onSubmit, 0 ); // Place an Order.
+							// Set the submit state to true to trigger the onSubmit callback.
+							setShouldSubmit( true );
 						});
 				},
 				onError(error) {
@@ -155,7 +164,7 @@ export const usePaymentForm = ({
 				return paypal.Buttons(options).render(`#${containerId}`);
 			}
 		},
-		[amount, currencyCode, isExpress, isSingleUse, needsShipping, onSubmit]
+		[ amount, currencyCode, isExpress, isSingleUse, needsShipping ]
 	);
 
 	/**
@@ -257,7 +266,7 @@ export const usePaymentForm = ({
 
 	const getPaymentMethodData = useCallback(() => {
 		const paymentMethodData = {
-			wc_braintree_paypal_payment_nonce: paymentNonce,
+			wc_braintree_paypal_payment_nonce: paymentNonceRef.current,
 			wc_braintree_device_data: deviceData,
 		};
 		if (!isSingleUse) {
@@ -279,7 +288,7 @@ export const usePaymentForm = ({
 		}
 
 		return paymentMethodData;
-	}, [deviceData, isSingleUse, paymentNonce, testAmount, token]);
+	}, [ deviceData, isSingleUse, testAmount, token ] );
 
 	return {
 		amount,

@@ -4,7 +4,7 @@ Tags: ecommerce, e-commerce, commerce, woothemes, wordpress ecommerce, store, sa
 Requires at least: 6.6
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 3.2.8
+Stable tag: 3.2.9
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
@@ -89,6 +89,13 @@ First, [review our documentation](https://woocommerce.com/document/woocommerce-g
 6. Checkout with PayPal directly from the product page
 
 == Changelog ==
+
+= 3.2.9 - 2025-07-14 =
+* Add - Consent checkbox for vaulting Apple Pay cards for Subscription products.
+* Fix - Ensure that 'Pay with PayPal' functions properly in Block Checkout when using the Safari browser.
+* Dev - Applied PHPCS auto-fixes and documentation comment updates.
+* Dev - Bump WooCommerce "tested up to" version 10.0.
+* Dev - Bump WooCommerce minimum supported version to 9.8.
 
 = 3.2.8 - 2025-06-25 =
 * Fix - Upgrade SkyVerge Framework from 5.12.7 to 5.15.10 which helps resolve a few fatal errors around Subscriptions.

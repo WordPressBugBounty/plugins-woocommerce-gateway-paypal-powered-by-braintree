@@ -39,10 +39,10 @@ defined( 'ABSPATH' ) or exit;
 class WC_Braintree_Payment_Method extends Framework\SV_WC_Payment_Gateway_Payment_Token {
 
 
-	/** credit card payment method type */
+	/** Credit card payment method type */
 	const CREDIT_CARD_TYPE = 'credit_card';
 
-	/** paypal payment method type */
+	/** Paypal payment method type */
 	const PAYPAL_TYPE = 'paypal';
 
 
@@ -115,7 +115,7 @@ class WC_Braintree_Payment_Method extends Framework\SV_WC_Payment_Gateway_Paymen
 	 *
 	 * @since 2.5.0
 	 *
-	 * @param \WC_Payment_Token $token WooCommerce core token
+	 * @param \WC_Payment_Token $token WooCommerce core token.
 	 *
 	 * @return string
 	 */
@@ -144,6 +144,4 @@ class WC_Braintree_Payment_Method extends Framework\SV_WC_Payment_Gateway_Paymen
 
 		return parent::make_new_woocommerce_payment_token();
 	}
-
-
 }

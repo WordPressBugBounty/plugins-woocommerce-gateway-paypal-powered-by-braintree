@@ -41,7 +41,7 @@ class Capture extends Framework\Payment_Gateway\Handlers\Capture {
 	 *
 	 * @since 2.2.0
 	 *
-	 * @param \WC_Order $order
+	 * @param \WC_Order $order The order object.
 	 * @return bool
 	 */
 	public function has_order_authorization_expired( \WC_Order $order ) {
@@ -65,18 +65,16 @@ class Capture extends Framework\Payment_Gateway\Handlers\Capture {
 	 *
 	 * @since 2.2.0
 	 *
-	 * @param \WC_Order $order order object
+	 * @param \WC_Order $order order object.
 	 * @return bool
 	 */
 	public function order_can_be_captured( \WC_Order $order ) {
 
-		// if v1 never set the capture status, assume it has been captured
+		// if v1 never set the capture status, assume it has been captured.
 		if ( ! in_array( $this->get_gateway()->get_order_meta( $order, 'charge_captured' ), array( 'yes', 'no' ), true ) ) {
 			$this->get_gateway()->update_order_meta( $order, 'charge_captured', 'yes' );
 		}
 
 		return parent::order_can_be_captured( $order );
 	}
-
-
 }

@@ -76,7 +76,12 @@ class Product extends Abstract_Button {
 
 		parent::add_button_hooks();
 
-		add_action( 'wp', function() { $this->init_product(); } );
+		add_action(
+			'wp',
+			function () {
+				$this->init_product();
+			}
+		);
 
 		add_action( 'woocommerce_api_' . stripslashes( strtolower( get_class( $this->get_gateway() ) ) ) . '_product_button_checkout', [ $this, 'handle_wc_api' ] );
 
@@ -176,8 +181,8 @@ class Product extends Abstract_Button {
 
 			parent::process_wc_api_request();
 
-		// generic Exception to catch any exceptions that may be thrown by third-party code during add_to_cart()
-		} catch ( \Exception $e) {
+			// generic Exception to catch any exceptions that may be thrown by third-party code during add_to_cart().
+		} catch ( \Exception $e ) {
 
 			$this->get_gateway()->get_plugin()->log( 'Error while processing button callback: ' . $e->getMessage() );
 
@@ -228,10 +233,12 @@ class Product extends Abstract_Button {
 		 */
 		$is_valid = (bool) apply_filters( 'wc_' . $this->get_gateway()->get_id() . '_product_button_validate_product_data', true, $this );
 
-		wp_send_json_success( [
-			'order_amount' => $this->get_order_amount_from_form( Framework\SV_WC_Helper::get_posted_value( 'cart_form', '' ) ),
-			'is_valid'     => $is_valid,
-		] );
+		wp_send_json_success(
+			[
+				'order_amount' => $this->get_order_amount_from_form( Framework\SV_WC_Helper::get_posted_value( 'cart_form', '' ) ),
+				'is_valid'     => $is_valid,
+			]
+		);
 	}
 
 
@@ -244,10 +251,13 @@ class Product extends Abstract_Button {
 	 */
 	protected function get_order_amount_from_form( $form ) {
 
-		$form = wp_parse_args( $form, [
-			'variation_id' => null,
-			'quantity'     => 1,
-		] );
+		$form = wp_parse_args(
+			$form,
+			[
+				'variation_id' => null,
+				'quantity'     => 1,
+			]
+		);
 
 		if ( ( $variation = wc_get_product( (int) $form['variation_id'] ) ) && $variation instanceof \WC_Product ) {
 			return (float) $variation->get_price() * (int) $form['quantity'];
@@ -366,6 +376,4 @@ class Product extends Abstract_Button {
 
 		return $this->get_gateway()->get_id() . '_product_button';
 	}
-
-
 }

@@ -43,7 +43,7 @@ abstract class WC_Braintree_Payment_Form extends Framework\SV_WC_Payment_Gateway
 	 *
 	 * @since 2.4.0
 	 *
-	 * @param Framework\SV_WC_Payment_Gateway|Framework\SV_WC_Payment_Gateway_Direct $gateway gateway for form
+	 * @param Framework\SV_WC_Payment_Gateway|Framework\SV_WC_Payment_Gateway_Direct $gateway gateway for form.
 	 */
 	public function __construct( $gateway ) {
 
@@ -51,7 +51,7 @@ abstract class WC_Braintree_Payment_Form extends Framework\SV_WC_Payment_Gateway
 
 		$this->gateway = $gateway;
 
-		// hook up rendering
+		// hook up rendering.
 		$this->add_hooks();
 	}
 
@@ -69,7 +69,7 @@ abstract class WC_Braintree_Payment_Form extends Framework\SV_WC_Payment_Gateway
 
 		$gateway_id = $this->get_gateway()->get_id();
 
-		remove_action( "wc_{$gateway_id}_payment_form_end",   [ $this, 'render_js' ], 5 );
+		remove_action( "wc_{$gateway_id}_payment_form_end", [ $this, 'render_js' ], 5 );
 		add_action( 'wp_footer', [ $this, 'render_js' ], 5 );
 	}
 
@@ -83,7 +83,7 @@ abstract class WC_Braintree_Payment_Form extends Framework\SV_WC_Payment_Gateway
 	 */
 	public function render() {
 
-		// maybe load tokens
+		// maybe load tokens.
 		$this->get_tokens();
 
 		parent::render();
@@ -105,7 +105,8 @@ abstract class WC_Braintree_Payment_Form extends Framework\SV_WC_Payment_Gateway
 
 		if ( $this->get_gateway()->is_test_environment() && $this->get_gateway()->is_credit_card_gateway() ) {
 
-			?><p>Test credit card numbers: <code>378282246310005</code> or <code>4111111111111111</code></p><?php
+			?><p>Test credit card numbers: <code>378282246310005</code> or <code>4111111111111111</code></p>
+			<?php
 		}
 
 		if ( $this->get_gateway()->is_test_environment() && ! is_add_payment_method_page() ) {
@@ -131,8 +132,9 @@ abstract class WC_Braintree_Payment_Form extends Framework\SV_WC_Payment_Gateway
 	 */
 	public function render_payment_fields() {
 
-		?><input type="hidden" id="<?php echo esc_attr( 'wc_' . $this->get_gateway()->get_id() . '_payment_nonce' ); ?>" name="<?php echo esc_attr( 'wc_' . $this->get_gateway()->get_id() . '_payment_nonce' ); ?>" /><?php
-		?><input type="hidden" id="<?php echo esc_attr( 'wc_braintree_device_data' ); ?>" name="<?php echo esc_attr( 'wc_braintree_device_data' ); ?>" /><?php
+		?>
+		<input type="hidden" id="<?php echo esc_attr( 'wc_' . $this->get_gateway()->get_id() . '_payment_nonce' ); ?>" name="<?php echo esc_attr( 'wc_' . $this->get_gateway()->get_id() . '_payment_nonce' ); ?>" /><input type="hidden" id="<?php echo esc_attr( 'wc_braintree_device_data' ); ?>" name="<?php echo esc_attr( 'wc_braintree_device_data' ); ?>" />
+		<?php
 
 		parent::render_payment_fields();
 	}
@@ -163,7 +165,7 @@ abstract class WC_Braintree_Payment_Form extends Framework\SV_WC_Payment_Gateway
 	 */
 	public function render_js() {
 
-		// bail if not on a payment form page
+		// bail if not on a payment form page.
 		if ( ! $this->get_gateway()->is_available() || ! $this->get_gateway()->is_payment_form_page() ) {
 			return;
 		}
@@ -188,7 +190,6 @@ abstract class WC_Braintree_Payment_Form extends Framework\SV_WC_Payment_Gateway
 
 			return WC()->cart->total;
 		}
-
 	}
 
 
@@ -201,19 +202,20 @@ abstract class WC_Braintree_Payment_Form extends Framework\SV_WC_Payment_Gateway
 	 */
 	protected function get_js_handler_args() {
 
-		$args = array_merge( [
-			'id'                 => $this->get_gateway()->get_id(),
-			'id_dasherized'      => $this->get_gateway()->get_id_dasherized(),
-			'name'               => $this->get_gateway()->get_method_title(),
-			'debug'              => $this->get_gateway()->debug_log(),
-			'type'               => str_replace( '-', '_', $this->get_gateway()->get_payment_type() ),
-			'client_token_nonce' => wp_create_nonce( 'wc_' . $this->get_gateway()->get_id() . '_get_client_token' ),
-			'is_block_theme'     => wp_is_block_theme(),
-			'card_tokens'        => $this->get_gateway()->get_payment_tokens_handler()->get_apple_pay_card_tokens(),
-		], $this->get_payment_form_handler_js_params() );
+		$args = array_merge(
+			[
+				'id'                 => $this->get_gateway()->get_id(),
+				'id_dasherized'      => $this->get_gateway()->get_id_dasherized(),
+				'name'               => $this->get_gateway()->get_method_title(),
+				'debug'              => $this->get_gateway()->debug_log(),
+				'type'               => str_replace( '-', '_', $this->get_gateway()->get_payment_type() ),
+				'client_token_nonce' => wp_create_nonce( 'wc_' . $this->get_gateway()->get_id() . '_get_client_token' ),
+				'is_block_theme'     => wp_is_block_theme(),
+				'card_tokens'        => $this->get_gateway()->get_payment_tokens_handler()->get_apple_pay_card_tokens(),
+			],
+			$this->get_payment_form_handler_js_params()
+		);
 
 		return $args;
 	}
-
-
 }

@@ -96,6 +96,4 @@ abstract class WC_Braintree_API_Vault_Request extends WC_Braintree_API_Request {
 			$this->request_data['deviceData'] = $device_data;
 		}
 	}
-
-
 }

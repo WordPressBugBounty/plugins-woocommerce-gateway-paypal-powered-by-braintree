@@ -57,12 +57,12 @@ abstract class WC_Braintree_API_Response implements Framework\SV_WC_API_Response
 	 * Setup the response
 	 *
 	 * @since 3.0.0
-	 * @param mixed $response response data from Braintree SDK
-	 * @param string $response_type indicates whether the response is from a credit card or PayPal request
+	 * @param mixed  $response response data from Braintree SDK.
+	 * @param string $response_type indicates whether the response is from a credit card or PayPal request.
 	 */
 	public function __construct( $response, $response_type ) {
 
-		$this->response = $response;
+		$this->response      = $response;
 		$this->response_type = $response_type;
 	}
 
@@ -133,17 +133,17 @@ abstract class WC_Braintree_API_Response implements Framework\SV_WC_API_Response
 	 * Get the success status info for the given parameter, either code or message
 	 *
 	 * @since 3.0.0
-	 * @param string $type status info type, either `code` or `message`
+	 * @param string $type status info type, either `code` or `message`.
 	 * @return string
 	 */
 	public function get_success_status_info( $type ) {
 
-		// determine which type of response, transaction or credit card verification from adding customer/payment method
+		// determine which type of response, transaction or credit card verification from adding customer/payment method.
 		$transaction = ! empty( $this->response->transaction ) ? $this->response->transaction : $this->response->creditCardVerification;
 
 		if ( isset( $transaction->processorSettlementResponseCode ) ) {
 
-			// submitting a previously authorized charge for settlement
+			// submitting a previously authorized charge for settlement.
 			$status = array(
 				'code'    => $transaction->processorSettlementResponseCode,
 				'message' => $transaction->processorSettlementResponseText,
@@ -151,7 +151,7 @@ abstract class WC_Braintree_API_Response implements Framework\SV_WC_API_Response
 
 		} else {
 
-			// regular transactions
+			// regular transactions.
 			$status = array(
 				'code'    => $transaction->processorResponseCode,
 				'message' => $transaction->processorResponseText,
@@ -166,12 +166,12 @@ abstract class WC_Braintree_API_Response implements Framework\SV_WC_API_Response
 	 * Get the failure status info for the given parameter, either code or message
 	 *
 	 * @since 3.0.0
-	 * @param string $type status info type, either `code` or `message`
+	 * @param string $type status info type, either `code` or `message`.
 	 * @return string
 	 */
 	public function get_failure_status_info( $type ) {
 
-		// check for validation errors first
+		// check for validation errors first.
 		if ( $this->has_validation_errors() ) {
 
 			$errors = $this->get_validation_errors();
@@ -179,40 +179,37 @@ abstract class WC_Braintree_API_Response implements Framework\SV_WC_API_Response
 			return implode( ', ', ( 'code' === $type ? array_keys( $errors ) : array_values( $errors ) ) );
 		}
 
-		// determine which type of response, transaction or credit card verification from adding customer/payment method
+		// determine which type of response, transaction or credit card verification from adding customer/payment method.
 		$transaction = ! empty( $this->response->transaction ) ? $this->response->transaction : $this->response->creditCardVerification;
 
-		// see https://developers.braintreepayments.com/reference/response/transaction/php#unsuccessful-result
+		// see https://developers.braintreepayments.com/reference/response/transaction/php#unsuccessful-result.
 		switch ( $transaction->status ) {
 
-			// gateway rejections are due to CVV, AVS, fraud, etc
+			// gateway rejections are due to CVV, AVS, fraud, etc.
 			case 'gateway_rejected':
-
 				$status = array(
 					'code'    => $transaction->gatewayRejectionReason,
 					'message' => $this->response->message,
 				);
 				break;
 
-			// soft/hard decline directly from merchant processor
+			// soft/hard decline directly from merchant processor.
 			case 'processor_declined':
-
 				$status = array(
 					'code'    => $transaction->processorResponseCode,
 					'message' => $transaction->processorResponseText . ( ! empty( $transaction->additionalProcessorResponse ) ? ' (' . $transaction->additionalProcessorResponse . ')' : '' ),
 				);
 				break;
 
-			// only can occur when attempting to settle a previously authorized charge
+			// only can occur when attempting to settle a previously authorized charge.
 			case 'settlement_declined':
-
 				$status = array(
-					'code' => $transaction->processorSettlementResponseCode,
+					'code'    => $transaction->processorSettlementResponseCode,
 					'message' => $transaction->processorSettlementResponseText,
 				);
 				break;
 
-			// this path shouldn't execute, but for posterity
+			// this path shouldn't execute, but for posterity.
 			default:
 				$status = array(
 					'code'    => $transaction->status,
@@ -220,7 +217,7 @@ abstract class WC_Braintree_API_Response implements Framework\SV_WC_API_Response
 				);
 		}
 
-		return isset( $status[ $type] ) ? $status[ $type ] : null;
+		return isset( $status[ $type ] ) ? $status[ $type ] : null;
 	}
 
 
@@ -287,7 +284,7 @@ abstract class WC_Braintree_API_Response implements Framework\SV_WC_API_Response
 	 */
 	public function to_string() {
 
-		// TODO: print this nicer and with less irrelevant information (e.g. subscription attributes, etc) @MR 2015-11-05
+		// TODO: print this nicer and with less irrelevant information (e.g. subscription attributes, etc) @MR 2015-11-05.
 		return print_r( $this->response, true );
 	}
 
@@ -301,7 +298,7 @@ abstract class WC_Braintree_API_Response implements Framework\SV_WC_API_Response
 	 */
 	public function to_string_safe() {
 
-		// no idea yet
+		// no idea yet.
 		return $this->to_string();
 	}
 
@@ -339,6 +336,4 @@ abstract class WC_Braintree_API_Response implements Framework\SV_WC_API_Response
 	protected function is_credit_card_response() {
 		return 'credit-card' === $this->get_response_type();
 	}
-
-
 }

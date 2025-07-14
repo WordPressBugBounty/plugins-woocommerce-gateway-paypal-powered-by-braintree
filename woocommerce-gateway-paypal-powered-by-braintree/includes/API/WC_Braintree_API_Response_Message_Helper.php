@@ -43,10 +43,18 @@ defined( 'ABSPATH' ) or exit;
 class WC_Braintree_API_Response_Message_Helper extends Framework\SV_WC_Payment_Gateway_API_Response_Message_Helper {
 
 
-	/** @var \WC_Braintree_API_Response response */
+	/**
+	 * API response.
+	 *
+	 * @var \WC_Braintree_API_Response
+	 */
 	protected $response;
 
-	/** @var array decline codes */
+	/**
+	 * Decline codes.
+	 *
+	 * @var array
+	 */
 	protected $decline_codes = array(
 		'cvv'  => 'csc_mismatch',
 		'avs'  => 'avs_mismatch',
@@ -81,7 +89,7 @@ class WC_Braintree_API_Response_Message_Helper extends Framework\SV_WC_Payment_G
 	 * Initialize the API response message handler
 	 *
 	 * @since 3.0.0
-	 * @param \WC_Braintree_API_Response $response
+	 * @param \WC_Braintree_API_Response $response API response.
 	 */
 	public function __construct( $response ) {
 
@@ -99,17 +107,17 @@ class WC_Braintree_API_Response_Message_Helper extends Framework\SV_WC_Payment_G
 	 */
 	public function get_message() {
 
-		// not handling specific validation error messages right now
+		// not handling specific validation error messages right now.
 		if ( $this->get_response()->has_validation_errors() ) {
 			return $this->get_user_message( 'error' );
 		}
 
 		// note that $this->get_response()->response->message contains a Braintree-provided humanized error message, but it's generally
-		// not appropriate for display to customers so it's not used here
+		// not appropriate for display to customers so it's not used here.
 
 		$response_code = $this->get_response()->get_failure_status_info( 'code' );
 
-		// If the order was authorized for later capture, then there is no decline message
+		// If the order was authorized for later capture, then there is no decline message.
 		if ( 'authorized' === $response_code ) {
 			return '';
 		}
@@ -128,7 +136,7 @@ class WC_Braintree_API_Response_Message_Helper extends Framework\SV_WC_Payment_G
 	 *
 	 * @since 2.0.0
 	 * @see SV_WC_Payment_Gateway_API_Response_Message_Helper::get_user_message()
-	 * @param string $message_id identifies the message to return
+	 * @param string $message_id identifies the message to return.
 	 * @return string a user message
 	 */
 	public function get_user_message( $message_id ) {
@@ -168,6 +176,4 @@ class WC_Braintree_API_Response_Message_Helper extends Framework\SV_WC_Payment_G
 
 		return $this->response;
 	}
-
-
 }

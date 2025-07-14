@@ -42,7 +42,7 @@ class WC_Braintree_API_Client_Token_Request extends WC_Braintree_API_Request {
 	 * @see https://developers.braintreepayments.com/javascript+php/reference/request/client-token/generate
 	 *
 	 * @since 3.0.0
-	 * @param array $args token args
+	 * @param array $args token args.
 	 */
 	public function get_token( array $args ) {
 
@@ -51,6 +51,4 @@ class WC_Braintree_API_Client_Token_Request extends WC_Braintree_API_Request {
 
 		$this->request_data = array( 'merchantAccountId' => $args['merchantAccountId'] );
 	}
-
-
 }
