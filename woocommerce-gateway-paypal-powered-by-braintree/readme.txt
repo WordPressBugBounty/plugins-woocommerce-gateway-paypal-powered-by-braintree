@@ -4,7 +4,7 @@ Tags: ecommerce, e-commerce, commerce, woothemes, wordpress ecommerce, store, sa
 Requires at least: 6.6
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 3.2.9
+Stable tag: 3.3.0
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
@@ -90,6 +90,21 @@ First, [review our documentation](https://woocommerce.com/document/woocommerce-g
 
 == Changelog ==
 
+= 3.3.0 - 2025-09-08 =
+* Add - Handle incoming webhook events.
+* Add - Implement a feature flag system to enable controlled rollout of new features.
+* Fix - Limit the Apple Pay `displayName` (store name) to a maximum of 64 characters to comply with Apple’s requirements.
+* Fix - Remove duplicate HTML element IDs.
+* Fix - Accessibility: Improve display of credit card field labels to avoid cropping.
+* Fix - Disabled `failOnDuplicatePaymentMethod` in sandbox mode.
+* Dev - Bump WooCommerce "tested up to" version 10.1.
+* Dev - Bump WooCommerce minimum supported version to 9.9.
+* Dev - Bump WordPress minimum supported version to 6.7.
+* Dev - Add PHPUnit test setup and run PHPUnit tests for every PR.
+* Dev - Update the dev setup instructions in the README.
+* Dev - Fix e2e test Github Actions workflow.
+* Dev - Add pre-commit hooks to enforce phpcs rules.
+
 = 3.2.9 - 2025-07-14 =
 * Add - Consent checkbox for vaulting Apple Pay cards for Subscription products.
 * Fix - Ensure that 'Pay with PayPal' functions properly in Block Checkout when using the Safari browser.
@@ -158,151 +173,6 @@ First, [review our documentation](https://woocommerce.com/document/woocommerce-g
 * Fix - Credit card input boxes not visible.
 * Dev - Bump WooCommerce "tested up to" version 9.2.
 * Dev - Bump WooCommerce minimum supported version to 9.0.
-
-= 3.1.7 - 2024-07-22 =
-* Dev - Bump WooCommerce "tested up to" version 9.1.
-* Dev - Bump WooCommerce minimum supported version to 8.9.
-* Dev - Bump WordPress minimum supported version to 6.4.
-* Dev - Bump WordPress "tested up to" version 6.6.
-* Dev - Update NPM packages and node version to v20 to modernize developer experience.
-* Dev - Fix QIT E2E tests and add support for a few new test types.
-* Dev - Exclude the Woo Comment Hook `@since` sniff.
-
-= 3.1.6 - 2024-05-20 =
-* Dev - Bump WooCommerce "tested up to" version 8.9.
-* Dev - Bump WooCommerce minimum supported version to 8.7.
-
-= 3.1.5 - 2024-03-25 =
-* Dev - Bump WooCommerce "tested up to" version 8.7.
-* Dev - Bump WooCommerce minimum supported version to 8.5
-* Dev - Bump WordPress "tested up to" version 6.5.
-* Dev - Update documentation around why billing agreements are being created for one-time purchases.
-* Fix - Ensure that the order status updates to 'refunded' only once after a successful refund.
-* Fix - Missing dependencies error on non-payment pages when advanced fraud tool is enabled.
-* Fix - Make the error notice UI consistent with Block Cart/Checkout UI.
-
-= 3.1.4 - 2024-03-11 =
-* Tweak - Move PayPal buttons below "add to cart" button on product pages.
-* Dev - Bump WooCommerce "tested up to" version 8.6.
-* Dev - Bump WooCommerce minimum supported version to 8.4.
-* Dev - Bump WordPress minimum supported version to 6.3.
-* Fix - Saved payment methods no longer appear in the Block checkout when tokenization is disabled.
-
-= 3.1.3 - 2024-02-05 =
-* Add - Cart and Checkout block support for PayPal Express Checkout.
-* Dev - Bump WooCommerce "tested up to" version 8.5.
-* Dev - Bump WooCommerce minimum supported version to 8.3.
-* Dev - Bump WordPress minimum supported version to 6.3.
-
-= 3.1.2 - 2024-01-22 =
-* Fix - Ensure correct functionality of dynamic descriptor name validation.
-
-= 3.1.1 - 2024-01-09 =
-* Dev - Declare compatibility with Product Editor.
-* Dev - Declare compatibility with WooCommerce Blocks.
-* Dev - Bump WooCommerce "tested up to" version 8.4.
-* Dev - Bump WooCommerce minimum supported version to 8.2.
-* Tweak - Bump PHP "tested up to" version 8.3.
-
-= 3.1.0 - 2023-12-04 =
-* Dev - Update PHPCS and PHPCompatibility GitHub Actions.
-* Tweak - Admin settings colour to match admin theme colour scheme.
-
-= 3.0.9 - 2023-11-20 =
-* Dev - Added critical flows end-to-end tests.
-* Dev - Bump Woocommerce "requires at least" 8.1.
-* Dev - Bump Woocommerce "tested up to" version 8.3.
-* Dev - Bump WordPress "tested up to" version 6.4.
-* Dev - Bump WordPress minimum supported version to 6.2.
-
-= 3.0.8 - 2023-10-30 =
-* Fix - Ensure Braintree block checkout works with FSE themes.
-* Fix - Prevent PHP warnings if no Credit Card logos are displayed.
-
-= 3.0.7 - 2023-10-23 =
-* Dev - Bump WooCommerce "tested up to" version 8.1.
-* Dev - Bump WooCommerce minimum supported version to 7.9.
-* Tweak - Bump `skyverge/wc-plugin-framework` from 5.10.15 to 5.11.8.
-* Tweak - Bump minimum PHP version from 7.3 to 7.4.
-
-= 3.0.6 - 2023-09-18 =
-* Tweak - Payment method text for subscriptions via the PayPal button gateway.
-* Dev - Bump WordPress "tested up to" version to 6.3.
-* Dev - Bump WooCommerce "tested up to" version 7.9.
-* Dev - Bump WooCommerce minimum supported version to 7.7.
-
-= 3.0.5 - 2023-08-29 =
-* Fix - Link to merchant account IDs documentation within the settings pages.
-
-= 3.0.4 - 2023-07-25 =
-* Fix - Check whether wc_get_notices function exists before using it.
-* Dev - Add Playwright end-to-end tests.
-* Dev - Bump Braintree SDK from 3.73.1 to 3.94.0.
-
-= 3.0.3 - 2023-07-05 =
-* Dev - Bump WooCommerce "tested up to" version 7.8.
-* Dev - Bump WooCommerce minimum supported version from 6.8 to 7.2.
-* Dev - Bump WordPress minimum supported version from 5.8 to 6.1.
-* Dev - Ensure translations are properly defined.
-* Dev - Remove deprecated class aliases for framework classes renamed in 2.4.0.
-* Dev - Resolve coding standards issues.
-* Fix - Admin can now save multiple merchant Account IDs.
-
-= 3.0.2 - 2023-05-24 =
-* Add – Support for Cart and Checkout blocks.
-* Dev – Bump WooCommerce minimum supported version from 6.0 to 6.8.
-* Dev – Bump WooCommerce “tested up to” version 7.4.
-* Dev – Bump WooCommerce “tested up to” version 7.6.
-* Dev – Bump WordPress minimum supported version from 5.6 to 5.8.
-* Dev – Bump WordPress “tested up to” version 6.2.
-
-= 3.0.1 - 2023-04-04 =
-* Dev – Build with `Gulp` instead of using `skyverge/sake`
-
-= 3.0.0 - 2023-03-16 =
-- Dev - Bump WooCommerce "tested up to" version 7.3.0.
-- Dev - Resolve linting issues.
-
-= 2.9.1 - 2022-12-19 =
-*  Added – Warning about Braintree payment method at User delete confirmation screen.
-*  Fix – Don’t delete the payment method at Braintree if website is staging environment.
-*  Fix – Billing address details do not get autofilled on the checkout page when using express checkout.
-*  Update – Node version from v12 to v16.
-*  Update – Npm version to v8.
-
-= 2.9.0 - 2022-11-01 =
-* Add – Support for High-performance Order Storage (“HPOS”).
-* Add – Declare compatibility with High-Performance Order Storage (“HPOS”).
-* Fix – Display more detailed error messages on checkout.
-
-= 2.8.0 - 2022-10-12 =
-* Add - Support for 3DS2 / EMV 3DS cards.
-* Fix - Upgrade Braintree PHP SDK from v3.34.0 to v6.7.0.
-* Tweak - Bump minimum WP version from 4.4 to 5.6.
-* Tweak - Bump minimum PHP version from 5.4 to 7.3.
-* Tweak - Bump minimum WC version from 3.0.9 to 6.0.
-* Tweak - Bump WC tested up to version to 6.7.
-
-= 2.7.0 - 2022-09-06 =
-* Add - PayPal Pay Later support to buyers from Italy and Spain.
-
-= 2.6.5 - 2022-06-14 =
-* Tweak - Update development tools
-* Tweak - Bump "WordPress tested up to" version to 6.0
-
-= 2.6.4 - 2022-04-04 =
-* Fix – Improve Subscriptions with WooCommerce Payments feature compatibility with Braintree (PayPal) Buttons
-* Tweak – Fraud tools setting description improvements
-
-= 2.6.3 - 2022-03-16 =
-* Fix - is_ajax deprecation message
-* Fix - URL for dynamic descriptors documentation in settings page
-* Fix - Don't show "- OR -" if Apple Pay enabled but not available in current browser
-
-= 2.6.2 - 2021-11-16 =
-* Feature - Add support for disabling funding methods
-* Feature - Allow updating of expiration dates for credit cards in 'My Account'
-* Tweak - Update 'device data' capture inner workings
 
 [See changelog for all versions](https://plugins.svn.wordpress.org/woocommerce-gateway-paypal-powered-by-braintree/trunk/changelog.txt).
 

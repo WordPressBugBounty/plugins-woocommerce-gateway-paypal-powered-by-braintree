@@ -80,7 +80,15 @@ abstract class WC_Braintree_API_Vault_Request extends WC_Braintree_API_Request {
 			$options['verificationMerchantAccountId'] = $this->get_order()->payment->merchant_account_id;
 		}
 
-		return $options;
+		/**
+		 * Filters the credit card options for the vault request.
+		 *
+		 * @since 3.3.0
+		 *
+		 * @param array    $options The credit card options.
+		 * @param WC_Order $order   The order object.
+		 */
+		return apply_filters( 'wc_braintree_api_vault_request_credit_card_options', $options, $this->get_order() );
 	}
 
 

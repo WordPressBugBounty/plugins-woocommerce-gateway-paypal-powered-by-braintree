@@ -93,7 +93,7 @@ export const BraintreeCreditCardFields = (props) => {
 								htmlFor={`wc-${PAYMENT_METHOD_NAME}-expiry-hosted`}
 							>
 								{__(
-									'Expiration (MMYY)',
+									'Expiry date',
 									'woocommerce-gateway-paypal-powered-by-braintree'
 								)}
 							</label>
@@ -117,7 +117,7 @@ export const BraintreeCreditCardFields = (props) => {
 							}`}
 						>
 							{__(
-								'Card Security Code',
+								'Security Code',
 								'woocommerce-gateway-paypal-powered-by-braintree'
 							)}
 						</label>

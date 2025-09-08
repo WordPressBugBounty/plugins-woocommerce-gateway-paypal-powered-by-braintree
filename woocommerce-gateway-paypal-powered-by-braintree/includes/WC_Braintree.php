@@ -670,6 +670,6 @@ class WC_Braintree extends Framework\SV_WC_Payment_Gateway_Plugin {
  * @return WC_Braintree
  */
 function wc_braintree() {
-
+	WC_Braintree_Webhook_Handler::instance();
 	return WC_Braintree::instance();
 }

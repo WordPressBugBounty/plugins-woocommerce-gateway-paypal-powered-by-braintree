@@ -154,6 +154,9 @@ class WC_Gateway_Braintree_Credit_Card extends WC_Gateway_Braintree {
 		// get the client token via AJAX.
 		add_filter( 'wp_ajax_wc_' . $this->get_id() . '_get_client_token', array( $this, 'ajax_get_client_token' ) );
 		add_filter( 'wp_ajax_nopriv_wc_' . $this->get_id() . '_get_client_token', array( $this, 'ajax_get_client_token' ) );
+
+		// Disable fail on duplicate payment method for test environment.
+		add_filter( 'wc_braintree_api_vault_request_credit_card_options', array( $this, 'disable_fail_on_duplicate_payment_method' ) );
 	}
 
 
@@ -1034,5 +1037,18 @@ class WC_Gateway_Braintree_Credit_Card extends WC_Gateway_Braintree {
 		}
 
 		return $is_valid;
+	}
+
+	/**
+	 * Disable fail on duplicate payment method for test environment.
+	 *
+	 * @param array $options The credit card options.
+	 * @return array
+	 */
+	public function disable_fail_on_duplicate_payment_method( $options ) {
+		if ( $this->is_test_environment() && isset( $options['failOnDuplicatePaymentMethod'] ) ) {
+			$options['failOnDuplicatePaymentMethod'] = false;
+		}
+		return $options;
 	}
 }

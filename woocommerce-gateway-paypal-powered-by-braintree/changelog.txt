@@ -1,5 +1,20 @@
 *** Changelog ***
 
+= 3.3.0 - 2025-09-08 =
+* Add - Handle incoming webhook events.
+* Add - Implement a feature flag system to enable controlled rollout of new features.
+* Fix - Limit the Apple Pay `displayName` (store name) to a maximum of 64 characters to comply with Apple’s requirements.
+* Fix - Remove duplicate HTML element IDs.
+* Fix - Accessibility: Improve display of credit card field labels to avoid cropping.
+* Fix - Disabled `failOnDuplicatePaymentMethod` in sandbox mode.
+* Dev - Bump WooCommerce "tested up to" version 10.1.
+* Dev - Bump WooCommerce minimum supported version to 9.9.
+* Dev - Bump WordPress minimum supported version to 6.7.
+* Dev - Add PHPUnit test setup and run PHPUnit tests for every PR.
+* Dev - Update the dev setup instructions in the README.
+* Dev - Fix e2e test Github Actions workflow.
+* Dev - Add pre-commit hooks to enforce phpcs rules.
+
 = 3.2.9 - 2025-07-14 =
 * Add - Consent checkbox for vaulting Apple Pay cards for Subscription products.
 * Fix - Ensure that 'Pay with PayPal' functions properly in Block Checkout when using the Safari browser.

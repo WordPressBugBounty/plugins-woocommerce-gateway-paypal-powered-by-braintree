@@ -1,9 +1,9 @@
+/* eslint-disable react/react-in-jsx-scope */
 /**
  * External dependencies
  */
 import { __ } from '@wordpress/i18n';
-import { select, dispatch } from '@wordpress/data';
-import { addAction } from '@wordpress/hooks';
+import { select, dispatch, subscribe } from '@wordpress/data';
 
 /**
  * Internal dependencies
@@ -24,39 +24,40 @@ const {
 } = getBraintreePayPalServerData();
 
 const BraintreePayPalLabel = () => {
-	return <img src={logoUrl} alt={title} />;
+	return <img src={ logoUrl } alt={ title } />;
 };
 
 /**
  * Payment method content component
  *
- * @param {Object}                                  props                   Incoming props for component (including props from Payments API)
+ * @param {Object}          props                   Incoming props for component (including props from Payments API)
  * @param {BraintreePayPal} props.RenderedComponent Component to render
  */
-const BraintreePayPalComponent = ({ RenderedComponent, ...props }) => {
-	const isEditor = !!select('core/editor');
+const BraintreePayPalComponent = ( { RenderedComponent, ...props } ) => {
+	const isEditor = !! select( 'core/editor' );
 	// Don't render anything if we're in the editor.
-	if (isEditor) {
+	if ( isEditor ) {
 		return null;
 	}
-	return <RenderedComponent {...props} />;
+	return <RenderedComponent { ...props } />;
 };
 
 let features = supports;
-if (isCheckoutConfirmation) {
-	// Set the payment method as active when the checkout form is rendered.
-	addAction(
-		'experimental__woocommerce_blocks-checkout-render-checkout-form',
-		'woocommerce-gateway-paypal-powered-by-braintree',
-		() => {
-			dispatch(PAYMENT_STORE_KEY).__internalSetActivePaymentMethod(
+if ( isCheckoutConfirmation ) {
+	// Set the PayPal payment method as active.
+	const unsubscribe = subscribe( () => {
+		const paymentMethodsInitialized =
+			select( PAYMENT_STORE_KEY ).paymentMethodsInitialized();
+		if ( paymentMethodsInitialized ) {
+			unsubscribe();
+			dispatch( PAYMENT_STORE_KEY ).__internalSetActivePaymentMethod(
 				PAYMENT_METHOD_ID
 			);
 		}
-	);
+	}, PAYMENT_STORE_KEY );
 
 	// Add 'braintree_paypal_checkout_confirmation' feature to the list of features.
-	features = [...supports, 'braintree_paypal_checkout_confirmation'];
+	features = [ ...supports, 'braintree_paypal_checkout_confirmation' ];
 }
 
 const braintreePayPalPaymentMethod = {
@@ -67,11 +68,11 @@ const braintreePayPalPaymentMethod = {
 		'woocommerce-gateway-paypal-powered-by-braintree'
 	),
 	canMakePayment: () => true,
-	content: <BraintreePayPalComponent RenderedComponent={BraintreePayPal} />,
-	edit: <BraintreePayPalComponent RenderedComponent={BraintreePayPal} />,
+	content: <BraintreePayPalComponent RenderedComponent={ BraintreePayPal } />,
+	edit: <BraintreePayPalComponent RenderedComponent={ BraintreePayPal } />,
 	savedTokenComponent: (
 		<BraintreePayPalComponent
-			RenderedComponent={BraintreePayPalSavedToken}
+			RenderedComponent={ BraintreePayPalSavedToken }
 		/>
 	),
 	supports: {

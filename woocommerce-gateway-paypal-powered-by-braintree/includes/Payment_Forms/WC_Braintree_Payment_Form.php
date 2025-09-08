@@ -132,8 +132,12 @@ abstract class WC_Braintree_Payment_Form extends Framework\SV_WC_Payment_Gateway
 	 */
 	public function render_payment_fields() {
 
+		$gateway_id     = $this->get_gateway()->get_id_dasherized();
+		$device_data_id = "wc-{$gateway_id}-device-data";
+
 		?>
-		<input type="hidden" id="<?php echo esc_attr( 'wc_' . $this->get_gateway()->get_id() . '_payment_nonce' ); ?>" name="<?php echo esc_attr( 'wc_' . $this->get_gateway()->get_id() . '_payment_nonce' ); ?>" /><input type="hidden" id="<?php echo esc_attr( 'wc_braintree_device_data' ); ?>" name="<?php echo esc_attr( 'wc_braintree_device_data' ); ?>" />
+		<input type="hidden" id="<?php echo esc_attr( 'wc_' . $this->get_gateway()->get_id() . '_payment_nonce' ); ?>" name="<?php echo esc_attr( 'wc_' . $this->get_gateway()->get_id() . '_payment_nonce' ); ?>" />
+		<input type="hidden" id="<?php echo esc_attr( $device_data_id ); ?>" name="<?php echo esc_attr( 'wc_braintree_device_data' ); ?>" />
 		<?php
 
 		parent::render_payment_fields();

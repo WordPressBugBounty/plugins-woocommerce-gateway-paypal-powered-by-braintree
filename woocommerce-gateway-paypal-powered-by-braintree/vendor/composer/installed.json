@@ -82,6 +82,9 @@
             "type": "library",
             "installation-source": "dist",
             "autoload": {
+                "psr-4": {
+                    "SkyVerge\\WooCommerce\\PluginFramework\\v5_15_10\\": "woocommerce/"
+                },
                 "classmap": [
                     "woocommerce/admin",
                     "woocommerce/api",
@@ -98,23 +101,16 @@
                     "woocommerce/class-sv-wc-plugin-dependencies.php",
                     "woocommerce/class-sv-wc-plugin-exception.php",
                     "woocommerce/class-sv-wp-admin-message-handler.php"
-                ],
-                "psr-4": {
-                    "SkyVerge\\WooCommerce\\PluginFramework\\v5_15_10\\": "woocommerce/"
-                }
+                ]
             },
-            "autoload-dev": {
-                "psr-4": {
-                    "SkyVerge\\WooCommerce\\PluginFramework\\v5_15_10\\Tests\\": "tests/"
-                }
-            },
+            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "GPL-3.0"
             ],
             "description": "The official SkyVerge WooCommerce plugin framework",
             "support": {
-                "source": "https://github.com/godaddy-wordpress/wc-plugin-framework/tree/5.15.10",
-                "issues": "https://github.com/godaddy-wordpress/wc-plugin-framework/issues"
+                "issues": "https://github.com/godaddy-wordpress/wc-plugin-framework/issues",
+                "source": "https://github.com/godaddy-wordpress/wc-plugin-framework/tree/5.15.10"
             },
             "install-path": "../skyverge/wc-plugin-framework"
         }

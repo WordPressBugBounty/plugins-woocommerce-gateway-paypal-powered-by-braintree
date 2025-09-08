@@ -89,7 +89,7 @@ class Frontend extends Framework\SV_WC_Payment_Gateway_Apple_Pay_Frontend {
 
 		$params = parent::get_js_handler_args();
 
-		$params['store_name']         = get_bloginfo( 'name' );
+		$params['store_name']         = mb_substr( get_bloginfo( 'name' ), 0, 64 );
 		$params['client_token_nonce'] = wp_create_nonce( 'wc_' . $this->get_gateway()->get_id() . '_get_client_token' );
 		$params['force_tokenization'] = $this->is_tokenization_forced();
 

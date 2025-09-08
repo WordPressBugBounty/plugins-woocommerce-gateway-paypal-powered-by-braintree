@@ -103,8 +103,8 @@ class WC_Braintree_Hosted_Fields_Payment_Form extends WC_Braintree_Payment_Form 
 		}
 
 		// adjust expiry date label.
-		$fields['card-expiry']['label'] = esc_html__( 'Expiration (MMYY)', 'woocommerce-gateway-paypal-powered-by-braintree' );
-
+		$fields['card-expiry']['label'] = esc_html__( 'Expiry date', 'woocommerce-gateway-paypal-powered-by-braintree' );
+		$fields['card-csc']['label']    = esc_html__( 'Security Code', 'woocommerce-gateway-paypal-powered-by-braintree' );
 		return $fields;
 	}
 
