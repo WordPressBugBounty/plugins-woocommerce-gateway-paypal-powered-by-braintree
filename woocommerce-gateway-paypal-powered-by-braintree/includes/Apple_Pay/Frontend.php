@@ -25,6 +25,7 @@
 namespace WC_Braintree\Apple_Pay;
 
 use SkyVerge\WooCommerce\PluginFramework\v5_15_10 as Framework;
+use WC_Braintree\WC_Braintree_Express_Checkout_Frontend;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -35,6 +36,7 @@ defined( 'ABSPATH' ) || exit;
  */
 class Frontend extends Framework\SV_WC_Payment_Gateway_Apple_Pay_Frontend {
 
+	use WC_Braintree_Express_Checkout_Frontend;
 
 	/**
 	 * Gets the JS handler class name.
@@ -96,81 +98,6 @@ class Frontend extends Framework\SV_WC_Payment_Gateway_Apple_Pay_Frontend {
 		return $params;
 	}
 
-
-	/**
-	 * Determines if tokenization should be forced for Digital Wallets
-	 * depending on the page on which they're used.
-	 *
-	 * @since 3.2.0
-	 *
-	 * @return boolean
-	 */
-	protected function is_tokenization_forced() {
-		$product = wc_get_product();
-
-		if ( ! $this->get_plugin()->is_subscriptions_active() ) {
-			return false;
-		}
-
-		// Check if page is single product page and product type is subscription.
-		if ( is_product() && $product && \WC_Subscriptions_Product::is_subscription( $product ) ) {
-			return true;
-		}
-
-		if ( ( is_cart() || is_checkout() ) && \WC_Subscriptions_Cart::cart_contains_subscription() ) {
-			return true;
-		}
-
-		return false;
-	}
-
-	/**
-	 * Determines if the external checkout frontend should be initialized on a product page.
-	 *
-	 * @since 3.2.0
-	 *
-	 * @param array $locations configured display locations.
-	 * @return bool
-	 */
-	protected function should_init_on_product_page( $locations = array() ): bool {
-		if ( ! is_user_logged_in() ) {
-			return parent::should_init_on_product_page( $locations ) && ! $this->is_tokenization_forced();
-		}
-
-		return parent::should_init_on_product_page( $locations );
-	}
-
-	/**
-	 * Determines if the external checkout frontend should be initialized on a cart page.
-	 *
-	 * @since 3.2.0
-	 *
-	 * @param array $locations configured display locations.
-	 * @return bool
-	 */
-	protected function should_init_on_cart_page( $locations = array() ): bool {
-		if ( ! is_user_logged_in() ) {
-			return parent::should_init_on_cart_page( $locations ) && ! $this->is_tokenization_forced();
-		}
-
-		return parent::should_init_on_cart_page( $locations );
-	}
-
-	/**
-	 * Determines if the external checkout frontend should be initialized on a checkout page.
-	 *
-	 * @since 3.2.0
-	 *
-	 * @param array $locations configured display locations.
-	 * @return bool
-	 */
-	protected function should_init_on_checkout_page( $locations = array() ): bool {
-		if ( ! is_user_logged_in() ) {
-			return parent::should_init_on_checkout_page( $locations ) && ! $this->is_tokenization_forced();
-		}
-
-		return parent::should_init_on_checkout_page( $locations );
-	}
 
 	/**
 	 * Renders an Apple Pay button.

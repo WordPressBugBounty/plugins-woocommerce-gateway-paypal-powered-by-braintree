@@ -25,7 +25,9 @@
 namespace WC_Braintree;
 
 use SkyVerge\WooCommerce\PluginFramework\v5_15_10 as Framework;
+use SkyVerge\WooCommerce\PluginFramework\v5_15_10\SV_WC_Payment_Gateway_Helper;
 use WC_Braintree\Payment_Forms\WC_Braintree_Hosted_Fields_Payment_Form;
+use WC_Order;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -110,29 +112,35 @@ class WC_Gateway_Braintree_Credit_Card extends WC_Gateway_Braintree {
 	 */
 	public function __construct() {
 
+		$supports = [
+			self::FEATURE_PRODUCTS,
+			self::FEATURE_CARD_TYPES,
+			self::FEATURE_PAYMENT_FORM,
+			self::FEATURE_TOKENIZATION,
+			self::FEATURE_CREDIT_CARD_CHARGE,
+			self::FEATURE_CREDIT_CARD_CHARGE_VIRTUAL,
+			self::FEATURE_CREDIT_CARD_AUTHORIZATION,
+			self::FEATURE_CREDIT_CARD_CAPTURE,
+			self::FEATURE_DETAILED_CUSTOMER_DECLINE_MESSAGES,
+			self::FEATURE_REFUNDS,
+			self::FEATURE_VOIDS,
+			self::FEATURE_CUSTOMER_ID,
+			self::FEATURE_ADD_PAYMENT_METHOD,
+			self::FEATURE_TOKEN_EDITOR,
+			self::FEATURE_APPLE_PAY,
+		];
+
+		if ( WC_Braintree_Feature_Flags::is_google_pay_enabled() ) {
+			$supports[] = self::FEATURE_GOOGLE_PAY;
+		}
+
 		parent::__construct(
 			WC_Braintree::CREDIT_CARD_GATEWAY_ID,
 			wc_braintree(),
 			array(
 				'method_title'       => __( 'Braintree (Credit Card)', 'woocommerce-gateway-paypal-powered-by-braintree' ),
 				'method_description' => __( 'Allow customers to securely pay using their credit card via Braintree.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
-				'supports'           => array(
-					self::FEATURE_PRODUCTS,
-					self::FEATURE_CARD_TYPES,
-					self::FEATURE_PAYMENT_FORM,
-					self::FEATURE_TOKENIZATION,
-					self::FEATURE_CREDIT_CARD_CHARGE,
-					self::FEATURE_CREDIT_CARD_CHARGE_VIRTUAL,
-					self::FEATURE_CREDIT_CARD_AUTHORIZATION,
-					self::FEATURE_CREDIT_CARD_CAPTURE,
-					self::FEATURE_DETAILED_CUSTOMER_DECLINE_MESSAGES,
-					self::FEATURE_REFUNDS,
-					self::FEATURE_VOIDS,
-					self::FEATURE_CUSTOMER_ID,
-					self::FEATURE_ADD_PAYMENT_METHOD,
-					self::FEATURE_TOKEN_EDITOR,
-					self::FEATURE_APPLE_PAY,
-				),
+				'supports'           => $supports,
 				'payment_type'       => self::PAYMENT_TYPE_CREDIT_CARD,
 				'environments'       => $this->get_braintree_environments(),
 				'shared_settings'    => $this->shared_settings_names,
@@ -571,6 +579,31 @@ class WC_Gateway_Braintree_Credit_Card extends WC_Gateway_Braintree {
 		return $order;
 	}
 
+	/** Google Pay Methods *********************************************************************************************/
+
+	/**
+	 * Gets the order for Google Pay transactions.
+	 *
+	 * @since 3.4.0
+	 *
+	 * @param \WC_Order   $order order object.
+	 * @param mixed|array $response authorized payment response data.
+	 * @return \WC_Order
+	 */
+	public function get_order_for_google_pay( WC_Order $order, $response ): WC_Order {
+
+		$order = parent::get_order_for_google_pay( $order, $response );
+
+		// SkyVerge does not have a Google Pay response object wrapper, so we need to parse the tokenization data manually.
+		if ( isset( $response ) && is_array( $response ) ) {
+			$token = json_decode( $response['paymentMethodData']['tokenizationData']['token'] ?? '', true );
+			if ( is_array( $token ) && isset( $token['androidPayCards'][0] ) ) {
+				$order->payment->nonce = $token['androidPayCards'][0]['nonce'] ?? null;
+			}
+		}
+
+		return $order;
+	}
 
 	/** Refund/Void feature ***************************************************/
 
