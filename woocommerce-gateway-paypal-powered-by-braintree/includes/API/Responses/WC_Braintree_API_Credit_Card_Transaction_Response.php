@@ -24,7 +24,6 @@
 
 namespace WC_Braintree\API\Responses;
 
-use Braintree\PaymentInstrumentType;
 use SkyVerge\WooCommerce\PluginFramework\v5_15_10 as Framework;
 use WC_Braintree\WC_Braintree_Payment_Method;
 
@@ -89,11 +88,8 @@ class WC_Braintree_API_Credit_Card_Transaction_Response extends WC_Braintree_API
 	public function get_instrument_property() {
 		$instrument_type = $this->response->transaction->paymentInstrumentType;
 
-		if ( PaymentInstrumentType::APPLE_PAY_CARD === $instrument_type ) {
+		if ( 'apple_pay_card' === $instrument_type ) {
 			return 'applePayCardDetails';
-		}
-		if ( 'android_pay_card' === $instrument_type ) {
-			return 'googlePayCardDetails';
 		}
 
 		return 'creditCardDetails';

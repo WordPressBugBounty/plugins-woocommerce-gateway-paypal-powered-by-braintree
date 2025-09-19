@@ -1,16 +1,5 @@
 *** Changelog ***
 
-= 3.4.0 - 2025-09-15 =
-* Add - Add GooglePay express checkout button in the product page.
-* Add - Allow Google Pay to be used for Subscriptions.
-* Add - Automatic customer account creation for subscription purchases through Apple Pay when the user is not logged in.
-* Add - Automatic customer account creation for subscription purchases through Google Pay when the user is not logged in.
-* Add - Google Pay settings page.
-* Add - Ability to view transaction data in order page.
-* Add - Include level 2 and level 3 data when creating transactions.
-* Dev - Bump WooCommerce "tested up to" version 10.2.
-* Dev - Bump WooCommerce minimum supported version to 10.0.
-
 = 3.3.0 - 2025-09-08 =
 * Add - Handle incoming webhook events.
 * Add - Implement a feature flag system to enable controlled rollout of new features.

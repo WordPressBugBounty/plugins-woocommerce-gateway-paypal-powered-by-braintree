@@ -215,10 +215,7 @@ abstract class WC_Braintree_Payment_Form extends Framework\SV_WC_Payment_Gateway
 				'type'               => str_replace( '-', '_', $this->get_gateway()->get_payment_type() ),
 				'client_token_nonce' => wp_create_nonce( 'wc_' . $this->get_gateway()->get_id() . '_get_client_token' ),
 				'is_block_theme'     => wp_is_block_theme(),
-				'card_tokens'        => array_merge(
-					$this->get_gateway()->get_payment_tokens_handler()->get_apple_pay_card_tokens(),
-					$this->get_gateway()->get_payment_tokens_handler()->get_google_pay_card_tokens()
-				),
+				'card_tokens'        => $this->get_gateway()->get_payment_tokens_handler()->get_apple_pay_card_tokens(),
 			],
 			$this->get_payment_form_handler_js_params()
 		);

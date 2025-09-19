@@ -76,23 +76,6 @@ class WC_Braintree_API_Transaction_Request extends WC_Braintree_API_Request {
 
 
 	/**
-	 * Find a transaction by ID
-	 *
-	 * @link https://developers.braintreepayments.com/reference/request/transaction/find/php
-	 *
-	 * @since 3.4.0
-	 * @param string $transaction_id Transaction ID.
-	 */
-	public function find_transaction( $transaction_id ) {
-
-		$this->set_resource( 'transaction' );
-		$this->set_callback( 'find' );
-
-		$this->request_data = $transaction_id;
-	}
-
-
-	/**
 	 * Creates a credit card charge request for the payment method / customer
 	 *
 	 * @link https://developers.braintreepayments.com/reference/request/transaction/sale/php
@@ -187,21 +170,9 @@ class WC_Braintree_API_Transaction_Request extends WC_Braintree_API_Request {
 			'options'           => $this->get_options( $settlement_type ),
 			'channel'           => $this->get_channel(),
 			'deviceData'        => empty( $this->get_order()->payment->device_data ) ? null : $this->get_order()->payment->device_data,
+			'taxAmount'         => Framework\SV_WC_Helper::number_format( $this->get_order()->get_total_tax() ),
 			'taxExempt'         => $this->get_order()->get_user_id() > 0 && is_callable( array( WC()->customer, 'is_vat_exempt' ) ) ? WC()->customer->is_vat_exempt() : false,
 		);
-
-		// Add Level 2 data
-		// Note: purchaseOrderNumber is not available in WC core, can be added via `wc_braintree_transaction_data` filter.
-		$this->request_data['taxAmount'] = Framework\SV_WC_Helper::number_format( $this->get_order()->get_total_tax() );
-
-		// Add Level 3 data.
-		$this->request_data['shippingAmount']      = Framework\SV_WC_Helper::number_format( $this->get_order()->get_shipping_total() );
-		$this->request_data['shippingTaxAmount']   = Framework\SV_WC_Helper::number_format( $this->get_order()->get_shipping_tax() );
-		$this->request_data['discountAmount']      = Framework\SV_WC_Helper::number_format( $this->get_order()->get_discount_total() );
-		$this->request_data['shipsFromPostalCode'] = WC()->countries->get_base_postcode();
-
-		// Add line items for Level 3 data.
-		$this->set_line_items();
 
 		// set customer data.
 		$this->set_customer();
@@ -298,7 +269,7 @@ class WC_Braintree_API_Transaction_Request extends WC_Braintree_API_Request {
 	 */
 	protected function get_shipping_address() {
 
-		$shipping_address = array(
+		return array(
 			'firstName'         => $this->get_order_prop( 'shipping_first_name' ),
 			'lastName'          => $this->get_order_prop( 'shipping_last_name' ),
 			'company'           => $this->get_order_prop( 'shipping_company' ),
@@ -309,17 +280,6 @@ class WC_Braintree_API_Transaction_Request extends WC_Braintree_API_Request {
 			'postalCode'        => $this->get_order_prop( 'shipping_postcode' ),
 			'countryCodeAlpha2' => $this->get_order_prop( 'shipping_country' ),
 		);
-
-		// Add countryCodeAlpha3 for Level 3 data.
-		$alpha2_code = $this->get_order_prop( 'shipping_country' );
-		if ( $alpha2_code ) {
-			$alpha3_code = $this->convert_country_code_to_alpha3( $alpha2_code );
-			if ( $alpha3_code ) {
-				$shipping_address['countryCodeAlpha3'] = $alpha3_code;
-			}
-		}
-
-		return $shipping_address;
 	}
 
 
@@ -420,303 +380,5 @@ class WC_Braintree_API_Transaction_Request extends WC_Braintree_API_Request {
 	protected function get_channel() {
 
 		return $this->channel;
-	}
-
-
-	/**
-	 * Set line items for Level 3 transaction data
-	 */
-	protected function set_line_items() {
-
-		$line_items = array();
-
-		// Get order items.
-		foreach ( $this->get_order()->get_items() as $item ) {
-
-			// Note: L3 fields, commodityCode and unitOfMeasure are not available in WC core, can be added via `wc_braintree_transaction_data` filter.
-			$line_item = array(
-				'name'           => Framework\SV_WC_Helper::str_truncate( $item->get_name(), 35, '' ),
-				'kind'           => 'debit',
-				'quantity'       => (string) $item->get_quantity(),
-				'unitAmount'     => Framework\SV_WC_Helper::number_format( $this->get_order()->get_item_subtotal( $item, false ) ),
-				'unitTaxAmount'  => Framework\SV_WC_Helper::number_format( $this->get_order()->get_item_tax( $item ) / $item->get_quantity() ),
-				'totalAmount'    => Framework\SV_WC_Helper::number_format( $this->get_order()->get_line_total( $item, false ) ),
-				'taxAmount'      => Framework\SV_WC_Helper::number_format( $this->get_order()->get_line_tax( $item ) ),
-				'discountAmount' => Framework\SV_WC_Helper::number_format( $item->get_subtotal() - $item->get_total() ),
-				'productCode'    => Framework\SV_WC_Helper::str_truncate( $item->get_product()->get_sku(), 12, '' ),
-			);
-
-			$line_items[] = $line_item;
-		}
-
-		if ( ! empty( $line_items ) ) {
-			$this->request_data['lineItems'] = $line_items;
-		}
-	}
-
-
-	/**
-	 * Convert ISO 3166-1 alpha-2 country code to alpha-3
-	 * https://www.iban.com/country-codes
-	 *
-	 * @param string $alpha2_code The 2-letter country code.
-	 * @return string|null The 3-letter country code or null if not found
-	 */
-	private function convert_country_code_to_alpha3( $alpha2_code ) {
-
-		// ISO 3166-1 alpha-2 to alpha-3 mapping.
-		$country_codes = array(
-			'AD' => 'AND',
-			'AE' => 'ARE',
-			'AF' => 'AFG',
-			'AG' => 'ATG',
-			'AI' => 'AIA',
-			'AL' => 'ALB',
-			'AM' => 'ARM',
-			'AO' => 'AGO',
-			'AQ' => 'ATA',
-			'AR' => 'ARG',
-			'AS' => 'ASM',
-			'AT' => 'AUT',
-			'AU' => 'AUS',
-			'AW' => 'ABW',
-			'AX' => 'ALA',
-			'AZ' => 'AZE',
-			'BA' => 'BIH',
-			'BB' => 'BRB',
-			'BD' => 'BGD',
-			'BE' => 'BEL',
-			'BF' => 'BFA',
-			'BG' => 'BGR',
-			'BH' => 'BHR',
-			'BI' => 'BDI',
-			'BJ' => 'BEN',
-			'BL' => 'BLM',
-			'BM' => 'BMU',
-			'BN' => 'BRN',
-			'BO' => 'BOL',
-			'BQ' => 'BES',
-			'BR' => 'BRA',
-			'BS' => 'BHS',
-			'BT' => 'BTN',
-			'BV' => 'BVT',
-			'BW' => 'BWA',
-			'BY' => 'BLR',
-			'BZ' => 'BLZ',
-			'CA' => 'CAN',
-			'CC' => 'CCK',
-			'CD' => 'COD',
-			'CF' => 'CAF',
-			'CG' => 'COG',
-			'CH' => 'CHE',
-			'CI' => 'CIV',
-			'CK' => 'COK',
-			'CL' => 'CHL',
-			'CM' => 'CMR',
-			'CN' => 'CHN',
-			'CO' => 'COL',
-			'CR' => 'CRI',
-			'CU' => 'CUB',
-			'CV' => 'CPV',
-			'CW' => 'CUW',
-			'CX' => 'CXR',
-			'CY' => 'CYP',
-			'CZ' => 'CZE',
-			'DE' => 'DEU',
-			'DJ' => 'DJI',
-			'DK' => 'DNK',
-			'DM' => 'DMA',
-			'DO' => 'DOM',
-			'DZ' => 'DZA',
-			'EC' => 'ECU',
-			'EE' => 'EST',
-			'EG' => 'EGY',
-			'EH' => 'ESH',
-			'ER' => 'ERI',
-			'ES' => 'ESP',
-			'ET' => 'ETH',
-			'FI' => 'FIN',
-			'FJ' => 'FJI',
-			'FK' => 'FLK',
-			'FM' => 'FSM',
-			'FO' => 'FRO',
-			'FR' => 'FRA',
-			'GA' => 'GAB',
-			'GB' => 'GBR',
-			'GD' => 'GRD',
-			'GE' => 'GEO',
-			'GF' => 'GUF',
-			'GG' => 'GGY',
-			'GH' => 'GHA',
-			'GI' => 'GIB',
-			'GL' => 'GRL',
-			'GM' => 'GMB',
-			'GN' => 'GIN',
-			'GP' => 'GLP',
-			'GQ' => 'GNQ',
-			'GR' => 'GRC',
-			'GS' => 'SGS',
-			'GT' => 'GTM',
-			'GU' => 'GUM',
-			'GW' => 'GNB',
-			'GY' => 'GUY',
-			'HK' => 'HKG',
-			'HM' => 'HMD',
-			'HN' => 'HND',
-			'HR' => 'HRV',
-			'HT' => 'HTI',
-			'HU' => 'HUN',
-			'ID' => 'IDN',
-			'IE' => 'IRL',
-			'IL' => 'ISR',
-			'IM' => 'IMN',
-			'IN' => 'IND',
-			'IO' => 'IOT',
-			'IQ' => 'IRQ',
-			'IR' => 'IRN',
-			'IS' => 'ISL',
-			'IT' => 'ITA',
-			'JE' => 'JEY',
-			'JM' => 'JAM',
-			'JO' => 'JOR',
-			'JP' => 'JPN',
-			'KE' => 'KEN',
-			'KG' => 'KGZ',
-			'KH' => 'KHM',
-			'KI' => 'KIR',
-			'KM' => 'COM',
-			'KN' => 'KNA',
-			'KP' => 'PRK',
-			'KR' => 'KOR',
-			'KW' => 'KWT',
-			'KY' => 'CYM',
-			'KZ' => 'KAZ',
-			'LA' => 'LAO',
-			'LB' => 'LBN',
-			'LC' => 'LCA',
-			'LI' => 'LIE',
-			'LK' => 'LKA',
-			'LR' => 'LBR',
-			'LS' => 'LSO',
-			'LT' => 'LTU',
-			'LU' => 'LUX',
-			'LV' => 'LVA',
-			'LY' => 'LBY',
-			'MA' => 'MAR',
-			'MC' => 'MCO',
-			'MD' => 'MDA',
-			'ME' => 'MNE',
-			'MF' => 'MAF',
-			'MG' => 'MDG',
-			'MH' => 'MHL',
-			'MK' => 'MKD',
-			'ML' => 'MLI',
-			'MM' => 'MMR',
-			'MN' => 'MNG',
-			'MO' => 'MAC',
-			'MP' => 'MNP',
-			'MQ' => 'MTQ',
-			'MR' => 'MRT',
-			'MS' => 'MSR',
-			'MT' => 'MLT',
-			'MU' => 'MUS',
-			'MV' => 'MDV',
-			'MW' => 'MWI',
-			'MX' => 'MEX',
-			'MY' => 'MYS',
-			'MZ' => 'MOZ',
-			'NA' => 'NAM',
-			'NC' => 'NCL',
-			'NE' => 'NER',
-			'NF' => 'NFK',
-			'NG' => 'NGA',
-			'NI' => 'NIC',
-			'NL' => 'NLD',
-			'NO' => 'NOR',
-			'NP' => 'NPL',
-			'NR' => 'NRU',
-			'NU' => 'NIU',
-			'NZ' => 'NZL',
-			'OM' => 'OMN',
-			'PA' => 'PAN',
-			'PE' => 'PER',
-			'PF' => 'PYF',
-			'PG' => 'PNG',
-			'PH' => 'PHL',
-			'PK' => 'PAK',
-			'PL' => 'POL',
-			'PM' => 'SPM',
-			'PN' => 'PCN',
-			'PR' => 'PRI',
-			'PS' => 'PSE',
-			'PT' => 'PRT',
-			'PW' => 'PLW',
-			'PY' => 'PRY',
-			'QA' => 'QAT',
-			'RE' => 'REU',
-			'RO' => 'ROU',
-			'RS' => 'SRB',
-			'RU' => 'RUS',
-			'RW' => 'RWA',
-			'SA' => 'SAU',
-			'SB' => 'SLB',
-			'SC' => 'SYC',
-			'SD' => 'SDN',
-			'SE' => 'SWE',
-			'SG' => 'SGP',
-			'SH' => 'SHN',
-			'SI' => 'SVN',
-			'SJ' => 'SJM',
-			'SK' => 'SVK',
-			'SL' => 'SLE',
-			'SM' => 'SMR',
-			'SN' => 'SEN',
-			'SO' => 'SOM',
-			'SR' => 'SUR',
-			'SS' => 'SSD',
-			'ST' => 'STP',
-			'SV' => 'SLV',
-			'SX' => 'SXM',
-			'SY' => 'SYR',
-			'SZ' => 'SWZ',
-			'TC' => 'TCA',
-			'TD' => 'TCD',
-			'TF' => 'ATF',
-			'TG' => 'TGO',
-			'TH' => 'THA',
-			'TJ' => 'TJK',
-			'TK' => 'TKL',
-			'TL' => 'TLS',
-			'TM' => 'TKM',
-			'TN' => 'TUN',
-			'TO' => 'TON',
-			'TR' => 'TUR',
-			'TT' => 'TTO',
-			'TV' => 'TUV',
-			'TW' => 'TWN',
-			'TZ' => 'TZA',
-			'UA' => 'UKR',
-			'UG' => 'UGA',
-			'UM' => 'UMI',
-			'US' => 'USA',
-			'UY' => 'URY',
-			'UZ' => 'UZB',
-			'VA' => 'VAT',
-			'VC' => 'VCT',
-			'VE' => 'VEN',
-			'VG' => 'VGB',
-			'VI' => 'VIR',
-			'VN' => 'VNM',
-			'VU' => 'VUT',
-			'WF' => 'WLF',
-			'WS' => 'WSM',
-			'YE' => 'YEM',
-			'YT' => 'MYT',
-			'ZA' => 'ZAF',
-			'ZM' => 'ZMB',
-			'ZW' => 'ZWE',
-		);
-
-		return $country_codes[ $alpha2_code ] ?? null;
 	}
 }

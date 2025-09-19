@@ -25,9 +25,8 @@
 namespace WC_Braintree\Apple_Pay;
 
 use SkyVerge\WooCommerce\PluginFramework\v5_15_10 as Framework;
-use WC_Braintree\Apple_Pay\Frontend;
+use \WC_Braintree\Apple_Pay\Frontend;
 use WC_Braintree\Apple_Pay\API\Payment_Response;
-use WC_Braintree\WC_Braintree_Express_Checkout;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -38,7 +37,6 @@ defined( 'ABSPATH' ) || exit;
  */
 class Apple_Pay extends Framework\SV_WC_Payment_Gateway_Apple_Pay {
 
-	use WC_Braintree_Express_Checkout;
 
 	/**
 	 * Initializes the frontend handler.
@@ -50,6 +48,29 @@ class Apple_Pay extends Framework\SV_WC_Payment_Gateway_Apple_Pay {
 		$this->frontend = new Frontend( $this->get_plugin(), $this );
 		// Runs at priority 11 to ensure that the button is moved after the framework's init fires.
 		add_action( 'wp', array( $this, 'post_init' ), 11 );
+	}
+
+	/**
+	 * Modify Apple Pay button after framework has been initialized.
+	 *
+	 * Moves the Apple Pay button to the new location following the framework's initialization.
+	 * As the framework uses a protected function for determining the locations in which buttons
+	 * are displayed, we determine whether it has registered the actions and move them if required.
+	 *
+	 * @see https://github.com/woocommerce/woocommerce-gateway-paypal-powered-by-braintree/pull/535
+	 */
+	public function post_init() {
+		if ( has_action( 'woocommerce_before_add_to_cart_button', array( $this->frontend, 'maybe_render_external_checkout' ) ) ) {
+			remove_action( 'woocommerce_before_add_to_cart_button', array( $this->frontend, 'maybe_render_external_checkout' ) );
+			add_action( 'woocommerce_after_add_to_cart_button', array( $this->frontend, 'maybe_render_external_checkout' ) );
+		}
+
+		if ( has_action( 'woocommerce_proceed_to_checkout', array( $this->frontend, 'maybe_render_external_checkout' ) ) ) {
+			remove_action( 'woocommerce_proceed_to_checkout', array( $this->frontend, 'maybe_render_external_checkout' ) );
+			add_action( 'woocommerce_proceed_to_checkout', array( $this->frontend, 'maybe_render_external_checkout' ), 30 );
+		}
+
+		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 	}
 
 	/**
@@ -203,19 +224,7 @@ class Apple_Pay extends Framework\SV_WC_Payment_Gateway_Apple_Pay {
 
 			$this->log( "Payment Response:\n" . $payment_response->to_string_safe() . "\n" );
 
-			// Create user account if guest and account creation is enabled.
-			$user_id = 0;
-			if ( $this->should_create_account_for_guest() ) {
-				$user_id = $this->create_user_account( $payment_response );
-				$this->log( 'Created user account for the guest user with id: ' . $user_id );
-			}
-
 			$order = Framework\Payment_Gateway\External_Checkout\Orders::create_order( WC()->cart, array( 'created_via' => 'apple_pay' ) );
-
-			// Set the user ID if account was created.
-			if ( $user_id > 0 ) {
-				$order->set_customer_id( $user_id );
-			}
 
 			$order->set_payment_method( $this->get_processing_gateway() );
 
@@ -239,11 +248,7 @@ class Apple_Pay extends Framework\SV_WC_Payment_Gateway_Apple_Pay {
 				throw new Framework\SV_WC_Payment_Gateway_Exception( 'Gateway processing error.' );
 			}
 
-			// Log in the newly created user AFTER successful payment processing.
-			// This ensures the session data remains intact during payment processing.
-			if ( $user_id > 0 && ! is_user_logged_in() ) {
-				wc_set_customer_auth_cookie( $user_id );
-			}
+			$user_id = $order->get_user_id();
 
 			if ( $user_id ) {
 				$this->update_customer_addresses( $user_id, $payment_response );
@@ -335,48 +340,5 @@ class Apple_Pay extends Framework\SV_WC_Payment_Gateway_Apple_Pay {
 	public function requires_merchant_id() {
 
 		return false;
-	}
-
-
-	/**
-	 * Creates a user account from the Apple Pay payment response.
-	 *
-	 * @since 3.4.0
-	 *
-	 * @param Payment_Response $payment_response The Apple Pay payment response.
-	 * @return int User ID if created successfully.
-	 * @throws Framework\SV_WC_Payment_Gateway_Exception If user already exists or account creation fails.
-	 */
-	protected function create_user_account( $payment_response ) {
-		$billing_address = $payment_response->get_billing_address();
-		$email           = $billing_address['email'] ?? '';
-
-		if ( empty( $email ) ) {
-			throw new Framework\SV_WC_Payment_Gateway_Exception( esc_html__( 'Email address is required to create an account.', 'woocommerce-gateway-paypal-powered-by-braintree' ) );
-		}
-
-		if ( email_exists( $email ) ) {
-			throw new Framework\SV_WC_Payment_Gateway_Exception( esc_html__( 'An account with this email address already exists. Please log in to continue.', 'woocommerce-gateway-paypal-powered-by-braintree' ) );
-		}
-
-		$first_name = $billing_address['first_name'] ?? '';
-		$last_name  = $billing_address['last_name'] ?? '';
-
-		$user_id = wc_create_new_customer(
-			$email,
-			'',
-			'',
-			array(
-				'first_name' => $first_name,
-				'last_name'  => $last_name,
-			)
-		);
-
-		if ( is_wp_error( $user_id ) ) {
-			/* translators: %s: error message from user creation */
-			throw new Framework\SV_WC_Payment_Gateway_Exception( sprintf( esc_html__( 'Could not create user account: %s', 'woocommerce-gateway-paypal-powered-by-braintree' ), esc_html( $user_id->get_error_message() ) ) );
-		}
-
-		return $user_id;
 	}
 }

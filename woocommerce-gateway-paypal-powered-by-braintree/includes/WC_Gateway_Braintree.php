@@ -24,10 +24,8 @@
 
 namespace WC_Braintree;
 
-use Braintree;
 use SkyVerge\WooCommerce\PluginFramework\v5_15_10 as Framework;
 use WC_Braintree\API\WC_Braintree_API;
-use WC_Order;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -127,13 +125,6 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 	 * @var \WC_Braintree_API
 	 */
 	protected $api;
-
-	/**
-	 * Braintree\Gateway instance.
-	 *
-	 * @var \Braintree\Gateway
-	 */
-	protected $sdk;
 
 	/**
 	 * Shared settings names.
@@ -305,7 +296,7 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 			$order->payment->nonce = Framework\SV_WC_Helper::get_posted_value( 'wc_' . $this->get_id() . '_payment_nonce' );
 		}
 
-		$order->payment->tokenize = $this->get_payment_tokens_handler()->should_tokenize() || $this->should_tokenize_apple_pay_card() || $this->should_tokenize_google_pay_card();
+		$order->payment->tokenize = $this->get_payment_tokens_handler()->should_tokenize() || $this->should_tokenize_apple_pay_card();
 
 		// billing address ID if using existing payment token.
 		if ( ! empty( $order->payment->token ) && $this->get_payment_tokens_handler()->user_has_token( $order->get_user_id(), $order->payment->token ) ) {
@@ -383,25 +374,6 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 	}
 
 	/**
-	 * Gets the payment data that is submitted by the Google Pay payment method.
-	 *
-	 * @since 3.4.0
-	 *
-	 * @return array
-	 */
-	public function get_google_pay_payment_data(): array {
-		$payment_data = sanitize_text_field( wp_unslash( $_POST['paymentData'] ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
-
-		if ( ! empty( $payment_data ) ) {
-			$payment_data = json_decode( $payment_data, true );
-		} else {
-			$payment_data = array();
-		}
-
-		return $payment_data;
-	}
-
-	/**
 	 * Returns true if the payment method is Apple Pay, false otherwise.
 	 *
 	 * @since 3.2.0
@@ -412,19 +384,6 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 		$payment_data = $this->get_apple_pay_payment_data();
 
 		return isset( $payment_data['source'] ) && 'apple_pay' === $payment_data['source'];
-	}
-
-	/**
-	 * Returns true if the payment method is Google Pay, false otherwise.
-	 *
-	 * @since 3.4.0
-	 *
-	 * @return bool
-	 */
-	public function is_google_pay(): bool {
-		$payment_data = $this->get_google_pay_payment_data();
-
-		return isset( $payment_data['source'] ) && 'google_pay' === $payment_data['source'];
 	}
 
 	/**
@@ -440,23 +399,6 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 		}
 
 		$payment_data = $this->get_apple_pay_payment_data();
-
-		return isset( $payment_data['force_tokenization'] ) && $payment_data['force_tokenization'];
-	}
-
-	/**
-	 * Determines whether Google Pay card should be tokenized.
-	 *
-	 * @since 3.4.0
-	 *
-	 * @return bool
-	 */
-	public function should_tokenize_google_pay_card(): bool {
-		if ( ! $this->is_google_pay() ) {
-			return false;
-		}
-
-		$payment_data = $this->get_google_pay_payment_data();
 
 		return isset( $payment_data['force_tokenization'] ) && $payment_data['force_tokenization'];
 	}
@@ -482,11 +424,10 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 	 * @param \WC_Order $order the order being paid for.
 	 * @return bool
 	 */
-	protected function should_tokenize_before_sale( WC_Order $order ): bool {
-		$tokenize_credit_card     = $this->get_payment_tokens_handler()->should_tokenize();
-		$tokenize_apple_pay_card  = $this->should_tokenize_apple_pay_card();
-		$tokenize_google_pay_card = $this->should_tokenize_google_pay_card();
-		$result                   = ( $tokenize_credit_card || $tokenize_apple_pay_card || $tokenize_google_pay_card ) && ( '0.00' === $order->payment_total || $this->tokenize_before_sale() );
+	protected function should_tokenize_before_sale( \WC_Order $order ): bool {
+		$tokenize_credit_card    = $this->get_payment_tokens_handler()->should_tokenize();
+		$tokenize_apple_pay_card = $this->should_tokenize_apple_pay_card();
+		$result                  = ( $tokenize_credit_card || $tokenize_apple_pay_card ) && ( '0.00' === $order->payment_total || $this->tokenize_before_sale() );
 
 		/**
 		 * Filters whether tokenization should be performed before the sale, for a given order.
@@ -525,7 +466,7 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 
 		$result = $this->supports_tokenization() &&
 				0 !== (int) $order->get_user_id() &&
-				( $this->get_payment_tokens_handler()->should_tokenize() || $this->should_tokenize_apple_pay_card() || $this->should_tokenize_google_pay_card() ) &&
+				( $this->get_payment_tokens_handler()->should_tokenize() || $this->should_tokenize_apple_pay_card() ) &&
 				( $this->tokenize_with_sale() || $this->tokenize_after_sale() ) &&
 				$this->can_tokenize_with_or_after_sale( $order );
 
@@ -1526,30 +1467,6 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 		return $this->api = new WC_Braintree_API( $this );
 	}
 
-	/**
-	 * Get the SDK object
-	 *
-	 * @since 3.4.0
-	 *
-	 * @return \Braintree\Gateway instance
-	 */
-	public function get_sdk() {
-
-		if ( is_object( $this->sdk ) ) {
-			return $this->sdk;
-		}
-
-		$this->sdk = new Braintree\Gateway(
-			[
-				'environment' => $this->get_environment(),
-				'merchantId'  => $this->get_merchant_id(),
-				'publicKey'   => $this->get_public_key(),
-				'privateKey'  => $this->get_private_key(),
-			]
-		);
-
-		return $this->sdk;
-	}
 
 	/**
 	 * Returns true if the current gateway environment is configured to 'sandbox'
@@ -1960,16 +1877,6 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 					foreach ( $stored_tokens as $stored_token_id => $stored_token_object ) {
 						if ( $stored_token_object->get_token() === $order->payment->token ) {
 							$stored_token_object->add_meta_data( 'instrument_type', 'apple_pay' );
-							$stored_token_object->save();
-						}
-					}
-				}
-				if ( $this->should_tokenize_google_pay_card() ) {
-					$stored_tokens = \WC_Payment_Tokens::get_customer_tokens( get_current_user_id(), \WC_Braintree\WC_Braintree::CREDIT_CARD_GATEWAY_ID );
-
-					foreach ( $stored_tokens as $stored_token_id => $stored_token_object ) {
-						if ( $stored_token_object->get_token() === $order->payment->token ) {
-							$stored_token_object->add_meta_data( 'instrument_type', 'google_pay' );
 							$stored_token_object->save();
 						}
 					}

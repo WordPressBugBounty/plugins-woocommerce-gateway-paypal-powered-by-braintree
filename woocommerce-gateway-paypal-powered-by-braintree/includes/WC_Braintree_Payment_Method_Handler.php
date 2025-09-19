@@ -153,28 +153,4 @@ class WC_Braintree_Payment_Method_Handler extends Framework\SV_WC_Payment_Gatewa
 
 		return $tokens;
 	}
-
-	/**
-	 * Returns the Google Pay card tokens for the current user.
-	 *
-	 * @since 3.4.0
-	 *
-	 * @return array
-	 */
-	public function get_google_pay_card_tokens() {
-		if ( ! $this->get_gateway()->tokenization_enabled() ) {
-			return array();
-		}
-
-		$tokens        = array();
-		$stored_tokens = \WC_Payment_Tokens::get_customer_tokens( get_current_user_id(), \WC_Braintree\WC_Braintree::CREDIT_CARD_GATEWAY_ID );
-
-		foreach ( $stored_tokens as $token ) {
-			if ( 'google_pay' === $token->get_meta( 'instrument_type', true ) ) {
-				$tokens[] = $token->get_token();
-			}
-		}
-
-		return $tokens;
-	}
 }
