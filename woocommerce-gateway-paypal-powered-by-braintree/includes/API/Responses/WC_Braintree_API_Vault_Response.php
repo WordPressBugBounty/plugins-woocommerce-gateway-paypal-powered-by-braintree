@@ -48,7 +48,7 @@ abstract class WC_Braintree_API_Vault_Response extends WC_Braintree_API_Response
 	 */
 	protected function get_payment_token_data( $payment_method ) {
 
-		if ( 'Braintree\CreditCard' === get_class( $payment_method ) || 'Braintree\ApplePayCard' === get_class( $payment_method ) ) {
+		if ( 'Braintree\CreditCard' === get_class( $payment_method ) || 'Braintree\ApplePayCard' === get_class( $payment_method ) || 'Braintree\GooglePayCard' === get_class( $payment_method ) ) {
 
 			// credit card.
 			return array(

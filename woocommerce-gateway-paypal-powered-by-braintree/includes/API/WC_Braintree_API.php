@@ -31,6 +31,7 @@ use WC_Braintree\API\Requests\WC_Braintree_API_Transaction_Request;
 use WC_Braintree\API\Requests\WC_Braintree_API_Customer_Request;
 use WC_Braintree\API\Requests\WC_Braintree_API_Payment_Method_Request;
 use WC_Braintree\API\Requests\WC_Braintree_API_Payment_Method_Nonce_Request;
+use WC_Braintree\WC_Braintree_Payment_Method;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -125,6 +126,31 @@ class WC_Braintree_API extends Framework\SV_WC_API_Base implements Framework\SV_
 		);
 
 		$request->get_token( $args );
+
+		return $this->perform_request( $request );
+	}
+
+
+	/**
+	 * Get transaction details by transaction ID
+	 *
+	 * @since 3.4.0
+	 *
+	 * @param string $transaction_id Transaction ID.
+	 * @param string $payment_method Payment method (credit_card or paypal).
+	 * @return \WC_Braintree_API_Transaction_Response
+	 * @throws Framework\SV_WC_Plugin_Exception If transaction lookup fails.
+	 */
+	public function get_transaction( $transaction_id, $payment_method = null ) {
+
+		$request = $this->get_new_request(
+			array(
+				'type'           => 'transaction-find',
+				'payment_method' => $payment_method,
+			)
+		);
+
+		$request->find_transaction( $transaction_id );
 
 		return $this->perform_request( $request );
 	}
@@ -724,6 +750,16 @@ class WC_Braintree_API extends Framework\SV_WC_API_Base implements Framework\SV_
 			case 'payment-method-nonce':
 				$this->set_response_handler( 'WC_Braintree\\API\\Responses\\WC_Braintree_API_Payment_Method_Nonce_Response' );
 				return new WC_Braintree_API_Payment_Method_Nonce_Request();
+
+			case 'transaction-find':
+				// Determine the response handler based on payment method.
+				$payment_method = $args['payment_method'] ?? null;
+				if ( WC_Braintree_Payment_Method::PAYPAL_TYPE === $payment_method ) {
+					$this->set_response_handler( 'WC_Braintree\\API\\Responses\\WC_Braintree_API_PayPal_Transaction_Find_Response' );
+				} else {
+					$this->set_response_handler( 'WC_Braintree\\API\\Responses\\WC_Braintree_API_Credit_Card_Transaction_Find_Response' );
+				}
+				return new WC_Braintree_API_Transaction_Request( $this->order, ( $this->is_braintree_auth() ) ? self::BT_AUTH_CHANNEL : self::API_CHANNEL );
 
 			default:
 				throw new Framework\SV_WC_API_Exception( 'Invalid request type' );

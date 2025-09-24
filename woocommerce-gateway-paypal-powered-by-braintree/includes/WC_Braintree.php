@@ -193,6 +193,11 @@ class WC_Braintree extends Framework\SV_WC_Payment_Gateway_Plugin {
 		if ( $this->is_plugin_active( 'woocommerce-product-addons.php' ) ) {
 			new \WC_Braintree\Integrations\Product_Addons();
 		}
+
+		// admin includes.
+		if ( is_admin() ) {
+			new \WC_Braintree\Admin\Order();
+		}
 	}
 
 	/**
@@ -418,6 +423,32 @@ class WC_Braintree extends Framework\SV_WC_Payment_Gateway_Plugin {
 	 */
 	protected function build_apple_pay_instance() {
 		return new \WC_Braintree\Apple_Pay\Apple_Pay( $this );
+	}
+
+
+	/** Google Pay Methods *********************************************************************************************/
+
+
+	/**
+	 * Initializes the Google Pay feature.
+	 *
+	 * @since 3.4.0
+	 */
+	public function maybe_init_google_pay() {
+		add_filter( 'wc_payment_gateway_' . $this->get_id() . '_activate_google_pay', '__return_true' );
+
+		parent::maybe_init_google_pay();
+	}
+
+	/**
+	 * Builds the Google Pay handler instance.
+	 *
+	 * @since 3.4.0
+	 *
+	 * @return \WC_Braintree\Google_Pay\Google_Pay
+	 */
+	protected function build_google_pay_instance() {
+		return new \WC_Braintree\Google_Pay\Google_Pay( $this );
 	}
 
 

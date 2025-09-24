@@ -187,7 +187,7 @@ class WC_Braintree_Hosted_Fields_Payment_Form extends WC_Braintree_Payment_Form 
 
 		$enable = false;
 
-		if ( ! is_add_payment_method_page() && $this->get_gateway()->is_3d_secure_enabled() ) {
+		if ( ! is_add_payment_method_page() && $this->get_gateway()->is_3d_secure_enabled() && $this->get_gateway()->is_3d_secure_available() ) {
 
 			// disable 3D Secure if we can't determine a non-zero cart total, as $0 verifications are currently not supported.
 			$enable = $this->get_order_total_for_3d_secure() !== 0.0;

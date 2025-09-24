@@ -4,7 +4,7 @@ Tags: ecommerce, e-commerce, commerce, woothemes, wordpress ecommerce, store, sa
 Requires at least: 6.6
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 3.3.0
+Stable tag: 3.4.1
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
@@ -89,6 +89,17 @@ First, [review our documentation](https://woocommerce.com/document/woocommerce-g
 6. Checkout with PayPal directly from the product page
 
 == Changelog ==
+
+= 3.4.1 - 2025-09-24 =
+* Fix - Error when placing orders with 3DS disabled on the Braintree account.
+* Fix - Credit Card payments fail with Zero-Amount line items.
+
+= 3.4.0 - 2025-09-15 =
+* Add - Automatic customer account creation for subscription purchases through Apple Pay when the user is not logged in.
+* Add - Ability to view transaction data in order page.
+* Add - Include level 2 and level 3 data when creating transactions.
+* Dev - Bump WooCommerce "tested up to" version 10.2.
+* Dev - Bump WooCommerce minimum supported version to 10.0.
 
 = 3.3.0 - 2025-09-08 =
 * Add - Handle incoming webhook events.
