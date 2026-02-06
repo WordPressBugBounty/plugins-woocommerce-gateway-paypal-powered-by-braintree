@@ -231,6 +231,45 @@ class WC_Braintree_PayPal_Payment_Form extends WC_Braintree_Payment_Form {
 
 
 	/**
+	 * Gets the "Use a new PayPal account" input HTML.
+	 *
+	 * Overridden to display "Use a new PayPal account" instead of "Use a new bank account".
+	 *
+	 * @since 3.7.0
+	 *
+	 * @return string
+	 */
+	protected function get_use_new_payment_method_input_html() {
+
+		// input.
+		$html = sprintf(
+			'<input type="radio" id="wc-%1$s-use-new-payment-method" name="wc-%1$s-payment-token" class="js-sv-wc-payment-token js-wc-%1$s-payment-token" style="width:auto; margin-right: .5em;" value="" %2$s />',
+			esc_attr( $this->get_gateway()->get_id_dasherized() ),
+			checked( $this->default_new_payment_method(), true, false )
+		);
+
+		// label.
+		$html .= sprintf(
+			'<label style="display:inline;" for="wc-%s-use-new-payment-method">%s</label>',
+			esc_attr( $this->get_gateway()->get_id_dasherized() ),
+			esc_html__( 'Use a new PayPal account', 'woocommerce-gateway-paypal-powered-by-braintree' )
+		);
+
+		/**
+		 * Payment Gateway Payment Form New Payment Method Input HTML.
+		 *
+		 * Filters the HTML rendered for the "Use a new PayPal account" radio button.
+		 *
+		 * @since 3.7.0
+		 *
+		 * @param string $html the input HTML
+		 * @param \WC_Braintree\Payment_Forms\WC_Braintree_PayPal_Payment_Form $this payment form instance
+		 */
+		return apply_filters( 'wc_' . $this->get_gateway()->get_id() . '_payment_form_new_payment_method_input_html', $html, $this );
+	}
+
+
+	/**
 	 * Render the PayPal container div, which is replaced by the PayPal button
 	 * when the frontend JS executes. This also renders 3 hidden inputs:
 	 *

@@ -34,18 +34,39 @@ defined( 'ABSPATH' ) or exit;
 class WC_Braintree_Feature_Flags {
 
 	/**
+	 * The name of the option that stores the early access feature settings.
+	 *
+	 * @var string
+	 */
+	public const EARLY_ACCESS_OPTION_NAME = 'wc_braintree_early_access_enabled';
+
+	/**
 	 * The name of the option that stores the feature flags.
 	 *
 	 * @var string
 	 */
-	private const FEATURE_FLAGS_OPTION_NAME = 'wc_braintree_feature_flags';
+	public const FEATURE_FLAGS_OPTION_NAME = 'wc_braintree_feature_flags';
 
 	/**
-	 * The name of the feature flag for Google Pay.
+	 * The name of the feature flag for ACH.
 	 *
 	 * @var string
 	 */
-	private const FEATURE_GOOGLE_PAY = 'google_pay';
+	private const FEATURE_ACH = 'ach';
+
+	/**
+	 * The name of the feature flag for SEPA.
+	 *
+	 * @var string
+	 */
+	private const FEATURE_SEPA = 'sepa';
+
+	/**
+	 * The name of the feature flag for Local Payments.
+	 *
+	 * @var string
+	 */
+	private const FEATURE_LOCAL_PAYMENTS = 'local_payments';
 
 	/**
 	 * Default values for feature flags.
@@ -53,7 +74,9 @@ class WC_Braintree_Feature_Flags {
 	 * @var array<string, string> Feature flags
 	 */
 	private array $feature_flags = [
-		self::FEATURE_GOOGLE_PAY => 'no',
+		self::FEATURE_SEPA           => 'no',
+		self::FEATURE_ACH            => 'no',
+		self::FEATURE_LOCAL_PAYMENTS => 'no',
 	];
 
 	/**
@@ -91,6 +114,15 @@ class WC_Braintree_Feature_Flags {
 	}
 
 	/**
+	 * Check if early access features are enabled
+	 *
+	 * @return bool True if the early access feature option is enabled, false otherwise.
+	 */
+	private function is_early_access_enabled(): bool {
+		return 'yes' === get_option( self::EARLY_ACCESS_OPTION_NAME, 'no' );
+	}
+
+	/**
 	 * Check if a feature flag is enabled.
 	 *
 	 * @param string $feature_flag_name The feature flag to check.
@@ -123,26 +155,60 @@ class WC_Braintree_Feature_Flags {
 
 	/** Specific Feature Flags Methods ***************************************************************************************/
 
-
 	/**
-	 * Check if Google Pay feature is enabled.
+	 * Check if Venmo feature is enabled.
 	 *
-	 * @since 3.3.0
+	 * @since 3.5.0
+	 * @deprecated 3.7.0 Venmo is now generally available.
 	 *
-	 * @return bool True if Google Pay is enabled, false otherwise.
+	 * @return bool Always returns true since Venmo is generally available.
 	 */
-	public static function is_google_pay_enabled(): bool {
-		return self::instance()->is_feature_flag_enabled( self::FEATURE_GOOGLE_PAY );
+	public static function is_venmo_enabled(): bool {
+		wc_deprecated_function( __METHOD__, '3.7.0', 'Venmo is now generally available and this method always returns true.' );
+		return true;
 	}
 
 	/**
-	 * Set the status of the Google Pay feature flag.
+	 * Check if ACH feature is enabled.
 	 *
-	 * @since 3.3.0
+	 * @since 3.7.0
 	 *
-	 * @param bool $enabled True if Google Pay should be enabled, false otherwise.
+	 * @return bool True if ACH is enabled, false otherwise.
 	 */
-	public static function toggle_google_pay_enabled( bool $enabled ): void {
-		self::instance()->toggle_feature_flag_enabled( self::FEATURE_GOOGLE_PAY, $enabled );
+	public static function is_ach_enabled(): bool {
+		return self::instance()->is_early_access_enabled() && self::instance()->is_feature_flag_enabled( self::FEATURE_ACH );
+	}
+
+	/**
+	 * Check if SEPA feature is enabled.
+	 *
+	 * @since 3.5.0
+	 *
+	 * @return bool True if SEPA is enabled, false otherwise.
+	 */
+	public static function is_sepa_enabled(): bool {
+		return self::instance()->is_early_access_enabled() && self::instance()->is_feature_flag_enabled( self::FEATURE_SEPA );
+	}
+
+	/**
+	 * Check if Fastlane feature is enabled.
+	 *
+	 * @since 3.7.0
+	 *
+	 * @return bool True if Fastlane is enabled, false otherwise.
+	 */
+	public static function is_fastlane_enabled(): bool {
+		return self::instance()->is_early_access_enabled();
+	}
+
+	/**
+	 * Check if Local Payments are enabled.
+	 *
+	 * @since 3.7.0
+	 *
+	 * @return bool True if Local Payments are enabled, false otherwise.
+	 */
+	public static function are_local_payments_enabled(): bool {
+		return self::instance()->is_early_access_enabled() && self::instance()->is_feature_flag_enabled( self::FEATURE_LOCAL_PAYMENTS );
 	}
 }

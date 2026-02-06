@@ -75,6 +75,33 @@ class WC_Braintree_API_Customer_Request extends WC_Braintree_API_Vault_Request {
 		$this->add_device_data();
 	}
 
+	/**
+	 * Create a new blank customer, without any associated payment method, this is used when validating ACH, SEPA and
+	 * other LPMs.
+	 *
+	 * @link https://developer.paypal.com/braintree/docs/reference/request/customer/create/php/#blank-customer
+	 *
+	 * @since 3.7.0
+	 * @param \WC_Order $order The order object.
+	 */
+	public function create_blank_customer( \WC_Order $order ) {
+
+		$this->order = $order;
+
+		$this->set_resource( 'customer' );
+		$this->set_callback( 'create' );
+
+		$this->request_data = array(
+			'company'   => $order->get_billing_company( 'edit' ),
+			'email'     => $order->get_billing_email( 'edit' ),
+			'phone'     => Framework\SV_WC_Helper::str_truncate( preg_replace( '/[^\d\-().]/', '', $order->get_billing_phone( 'edit' ) ), 14, '' ),
+			'firstName' => $order->get_billing_first_name( 'edit' ),
+			'lastName'  => $order->get_billing_last_name( 'edit' ),
+		);
+
+		// fraud data.
+		$this->add_device_data();
+	}
 
 	/**
 	 * Get the payment methods for a given customer

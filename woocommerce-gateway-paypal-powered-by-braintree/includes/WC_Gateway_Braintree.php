@@ -140,7 +140,38 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 	 *
 	 * @var array
 	 */
-	protected $shared_settings_names = array( 'public_key', 'private_key', 'merchant_id', 'sandbox_public_key', 'sandbox_private_key', 'sandbox_merchant_id', 'name_dynamic_descriptor' );
+	protected $shared_settings_names = array( 'environment', 'public_key', 'private_key', 'merchant_id', 'sandbox_public_key', 'sandbox_private_key', 'sandbox_merchant_id', 'name_dynamic_descriptor' );
+
+	/**
+	 * Whether this gateway can store credentials.
+	 *
+	 * Should be overridden to return true for gateways that are permitted to store their own Braintree connection credentials.
+	 *
+	 * @since 3.7.0
+	 * @return bool Whether this gateway instance can store its own Braintree connection credentials.
+	 */
+	protected function can_gateway_store_credentials(): bool {
+		return false;
+	}
+
+	/**
+	 * Stores credentials from all gateway sources for populating read-only fields.
+	 *
+	 * @since 3.7.0
+	 * @var array
+	 */
+	protected $gateway_credentials = array();
+
+	/**
+	 * Whether credentials are unavailable for this gateway.
+	 *
+	 * Set to true when no credential sources are available and gateway cannot use manual credentials.
+	 * Used to hide credential fields in get_method_form_fields().
+	 *
+	 * @since 3.7.0
+	 * @var bool
+	 */
+	protected $no_credentials_available = false;
 
 	/**
 	 * Braintree API environment
@@ -148,6 +179,13 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 	 * @var \WC_Braintree_Payment_Method_Handler
 	 */
 	protected $auth_environment;
+
+	/**
+	 * The remote configuration for the current gateway.
+	 *
+	 * @var \WC_Braintree\WC_Braintree_Remote_Configuration|null
+	 */
+	protected $remote_config = null;
 
 	/**
 	 * WC_Gateway_Braintree constructor.
@@ -160,7 +198,7 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 
 		parent::__construct( $id, $plugin, $args );
 
-		add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_admin_scripts' ] );
+		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_scripts' ) );
 	}
 
 	/**
@@ -176,10 +214,22 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 
 			wp_enqueue_script( 'wc-backbone-modal', null, [ 'backbone' ] );
 
-			wp_enqueue_script( 'wc-braintree-admin', $this->get_plugin()->get_plugin_url() . '/assets/js/admin/wc-braintree.min.js', [ 'jquery' ], $this->get_plugin()->get_version() );
+			wp_enqueue_script(
+				'wc-braintree-admin',
+				$this->get_plugin()->get_plugin_url() . '/assets/js/admin/wc-braintree.min.js',
+				[ 'jquery', 'wp-i18n' ],
+				$this->get_plugin()->get_version(),
+				[ 'in_footer' => false ],
+			);
 
-			if ( ! empty( $params = $this->get_admin_params() ) ) {
+			wp_enqueue_style( 'wc-braintree-admin-settings', $this->get_plugin()->get_plugin_url() . '/assets/css/admin/settings.min.css', [], $this->get_plugin()->get_version() );
 
+			// Only localize script for the current gateway's settings page to avoid overwriting params.
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			$current_section = isset( $_GET['section'] ) ? sanitize_text_field( wp_unslash( $_GET['section'] ) ) : '';
+			$params          = $this->get_admin_params();
+
+			if ( $current_section === $this->get_id() && ! empty( $params ) ) {
 				wp_localize_script( 'wc-braintree-admin', 'wc_braintree_admin_params', $params );
 			}
 		}
@@ -195,8 +245,68 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 	 * @return array
 	 */
 	protected function get_admin_params() {
+		$merchant_account_configuration_params = $this->get_merchant_account_configuration_params();
 
-		return [];
+		return array(
+			'merchant_accounts_by_currency' => $merchant_account_configuration_params['merchant_accounts_by_currency'],
+			'current_values_by_currency'    => $merchant_account_configuration_params['current_values_by_currency'],
+			'gateway_id'                    => $this->get_id(),
+			'invalid_merchant_account_text' => esc_html__( 'This merchant account ID is invalid or not available for the selected currency.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+			'no_merchant_account_text'      => esc_html__( 'No merchant account ID available for the selected currency.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+			'default_label_text'            => esc_html__( '[default]', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+			'invalid_label_text'            => esc_html__( '[invalid]', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+			/* translators: %s: currency code, e.g. USD, EUR, GBP, AUD */
+			'merchant_account_id_title'     => esc_html__( 'Merchant Account ID (%s)', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+			'remove_merchant_account_title' => esc_attr__( 'Remove this merchant account ID', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+		);
+	}
+
+	/**
+	 * Gets the merchant account configuration parameters.
+	 *
+	 * @return array
+	 */
+	public function get_merchant_account_configuration_params() {
+		$merchant_accounts_by_currency = array();
+		$current_values_by_currency    = array();
+
+		try {
+			$remote_config = $this->get_remote_config();
+
+			// Get eligible merchant account per supported currency.
+			$eligible_merchant_accounts = $remote_config->get_merchant_accounts_by_payment_gateway( $this->get_id() );
+			foreach ( $eligible_merchant_accounts as $eligible_merchant_account ) {
+				$currency_code = $eligible_merchant_account->get_currency();
+				if ( '' !== $currency_code && ! isset( $merchant_accounts_by_currency[ $currency_code ] ) ) {
+					$merchant_accounts_by_currency[ $currency_code ] = array();
+				}
+				$merchant_accounts_by_currency[ $currency_code ][] = [
+					'id'         => $eligible_merchant_account->get_id(),
+					'is_default' => $eligible_merchant_account->is_default_merchant_account(),
+				];
+
+				// Get current saved value for this currency.
+				if ( ! isset( $current_values_by_currency[ $currency_code ] ) ) {
+					$currency_lower = strtolower( $currency_code );
+					$current_value  = $this->get_option( "merchant_account_id_{$currency_lower}" );
+					if ( ! empty( $current_value ) ) {
+						$current_values_by_currency[ $currency_code ] = $current_value;
+					}
+				}
+			}
+		} catch ( \Exception $e ) {
+			// If there's an error fetching merchant accounts, continue with empty data.
+			\WC_Braintree\Logger::error( 'Failed to fetch merchant accounts for admin params', array( 'error' => $e->getMessage() ) );
+			return array(
+				'merchant_accounts_by_currency' => array(),
+				'current_values_by_currency'    => array(),
+			);
+		}
+
+		return array(
+			'merchant_accounts_by_currency' => $merchant_accounts_by_currency,
+			'current_values_by_currency'    => $current_values_by_currency,
+		);
 	}
 
 
@@ -211,6 +321,61 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 
 		$this->auth_access_token = get_option( 'wc_braintree_auth_access_token', '' );
 		$this->auth_environment  = get_option( 'wc_braintree_auth_environment', self::ENVIRONMENT_PRODUCTION );
+
+		// Load shared settings from source gateway if inheriting credentials.
+		$this->load_shared_settings();
+	}
+
+
+	/**
+	 * Loads any shared settings from the selected source gateway.
+	 *
+	 * @since 3.7.0
+	 */
+	protected function load_shared_settings() {
+
+		// Get the selected source gateway ID.
+		$source_gateway_id = $this->get_option( 'inherit_settings_source', 'manual' );
+
+		// If manual or no source specified, don't inherit.
+		if ( 'manual' === $source_gateway_id || empty( $source_gateway_id ) ) {
+			return;
+		}
+
+		// Load the source gateway.
+		$source_gateway = $this->get_plugin()->get_gateway( $source_gateway_id );
+
+		if ( ! $source_gateway ) {
+			return;
+		}
+
+		// Copy shared settings from the source gateway.
+		foreach ( $this->shared_settings_names as $setting_key ) {
+			if ( isset( $source_gateway->$setting_key ) ) {
+				$this->$setting_key = $source_gateway->$setting_key;
+			}
+		}
+	}
+
+
+	/**
+	 * Gets the list of gateway IDs that can be used as credential sources.
+	 *
+	 * @since 3.7.0
+	 * @return array Array of gateway IDs.
+	 */
+	protected function get_available_credential_source_gateways() {
+
+		// Credit Card and PayPal are always potential sources.
+		$source_gateways = array(
+			WC_Braintree::CREDIT_CARD_GATEWAY_ID,
+			WC_Braintree::PAYPAL_GATEWAY_ID,
+		);
+
+		// Remove current gateway from the list.
+		$source_gateways = array_diff( $source_gateways, array( $this->get_id() ) );
+
+		return $source_gateways;
 	}
 
 
@@ -247,7 +412,16 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 
 		try {
 
-			$result = $this->get_api()->get_client_token( array( 'merchantAccountId' => $this->get_merchant_account_id() ) );
+			$args = array( 'merchantAccountId' => $this->get_merchant_account_id() );
+
+			// Add domain parameter for Fastlane if enabled on Credit Card gateway.
+			if ( WC_Braintree::CREDIT_CARD_GATEWAY_ID === $this->get_id() && $this->is_fastlane_enabled() ) {
+				$site_url        = wp_parse_url( home_url(), PHP_URL_HOST );
+				$domain          = preg_replace( '/^www\./', '', $site_url );
+				$args['domains'] = array( $domain );
+			}
+
+			$result = $this->get_api()->get_client_token( $args );
 
 			wp_send_json_success( $result->get_client_token() );
 
@@ -625,53 +799,60 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 	 */
 	protected function get_method_form_fields() {
 
-		return array(
+		// Credential fields - only included if credentials are available.
+		// The no_credentials_available flag is set in add_shared_settings_form_fields().
+		$credential_fields = array();
 
-			// production.
-			'merchant_id'                => array(
-				'title'    => __( 'Merchant ID', 'woocommerce-gateway-paypal-powered-by-braintree' ),
-				'type'     => 'text',
-				'class'    => 'environment-field production-field',
-				'desc_tip' => __( 'The Merchant ID for your Braintree account.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+		if ( ! $this->no_credentials_available ) {
+			$credential_fields = array(
+				// Production.
+				'merchant_id'         => array(
+					'title'    => __( 'Merchant ID', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+					'type'     => 'text',
+					'class'    => 'environment-field production-field',
+					'desc_tip' => __( 'The Merchant ID for your Braintree account.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+				),
+				'public_key'          => array(
+					'title'    => __( 'Public Key', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+					'type'     => 'text',
+					'class'    => 'environment-field production-field',
+					'desc_tip' => __( 'The Public Key for your Braintree account.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+				),
+				'private_key'         => array(
+					'title'    => __( 'Private Key', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+					'type'     => 'password',
+					'class'    => 'environment-field production-field',
+					'desc_tip' => __( 'The Private Key for your Braintree account.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+				),
+				// Sandbox.
+				'sandbox_merchant_id' => array(
+					'title'    => __( 'Sandbox Merchant ID', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+					'type'     => 'text',
+					'class'    => 'environment-field sandbox-field',
+					'desc_tip' => __( 'The Merchant ID for your Braintree sandbox account.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+				),
+				'sandbox_public_key'  => array(
+					'title'    => __( 'Sandbox Public Key', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+					'type'     => 'text',
+					'class'    => 'environment-field sandbox-field',
+					'desc_tip' => __( 'The Public Key for your Braintree sandbox account.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+				),
+				'sandbox_private_key' => array(
+					'title'    => __( 'Sandbox Private Key', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+					'type'     => 'password',
+					'class'    => 'environment-field sandbox-field',
+					'desc_tip' => __( 'The Private Key for your Braintree sandbox account.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+				),
+			);
+		}
+
+		// Additional form fields - always included.
+		$additional_fields = array(
+			'webhook_info'               => array(
+				'title' => __( 'Webhook Info', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+				'type'  => 'webhook_info',
 			),
-
-			'public_key'                 => array(
-				'title'    => __( 'Public Key', 'woocommerce-gateway-paypal-powered-by-braintree' ),
-				'type'     => 'text',
-				'class'    => 'environment-field production-field',
-				'desc_tip' => __( 'The Public Key for your Braintree account.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
-			),
-
-			'private_key'                => array(
-				'title'    => __( 'Private Key', 'woocommerce-gateway-paypal-powered-by-braintree' ),
-				'type'     => 'password',
-				'class'    => 'environment-field production-field',
-				'desc_tip' => __( 'The Private Key for your Braintree account.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
-			),
-
-			// sandbox.
-			'sandbox_merchant_id'        => array(
-				'title'    => __( 'Sandbox Merchant ID', 'woocommerce-gateway-paypal-powered-by-braintree' ),
-				'type'     => 'text',
-				'class'    => 'environment-field sandbox-field',
-				'desc_tip' => __( 'The Merchant ID for your Braintree sandbox account.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
-			),
-
-			'sandbox_public_key'         => array(
-				'title'    => __( 'Sandbox Public Key', 'woocommerce-gateway-paypal-powered-by-braintree' ),
-				'type'     => 'text',
-				'class'    => 'environment-field sandbox-field',
-				'desc_tip' => __( 'The Public Key for your Braintree sandbox account.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
-			),
-
-			'sandbox_private_key'        => array(
-				'title'    => __( 'Sandbox Private Key', 'woocommerce-gateway-paypal-powered-by-braintree' ),
-				'type'     => 'password',
-				'class'    => 'environment-field sandbox-field',
-				'desc_tip' => __( 'The Private Key for your Braintree sandbox account.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
-			),
-
-			// merchant account ID per currency feature.
+			// Merchant account ID per currency feature.
 			'merchant_account_id_title'  => array(
 				'title'       => __( 'Merchant Account IDs', 'woocommerce-gateway-paypal-powered-by-braintree' ),
 				'type'        => 'title',
@@ -682,17 +863,14 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 					'&nbsp;&rarr;</a>'
 				),
 			),
-
 			'merchant_account_id_fields' => array( 'type' => 'merchant_account_ids' ),
-
-			// dynamic descriptors.
+			// Dynamic descriptors.
 			'dynamic_descriptor_title'   => array(
 				'title'       => __( 'Dynamic Descriptors', 'woocommerce-gateway-paypal-powered-by-braintree' ),
 				'type'        => 'title',
 				/* translators: Placeholders: %1$s - </p> tag (intended to precede the opening tag to account for Settings API markup), %2$s - <p> tag, %3$s - <a> tag, %4$s - </a> tag */
 				'description' => sprintf( esc_html__( 'Dynamic descriptors define what will appear on your customers\' credit card statements for a specific purchase. Contact Braintree to enable these for your account.%1$s %2$sPlease ensure that you have %3$sread the documentation on dynamic descriptors%4$s and are using an accepted format.', 'woocommerce-gateway-paypal-powered-by-braintree' ), '</p>', '<p style="font-weight: bold;">', '<a target="_blank" href="https://docs.woocommerce.com/document/woocommerce-gateway-paypal-powered-by-braintree/#dynamic-descriptors-setup">', '</a>' ),
 			),
-
 			'name_dynamic_descriptor'    => array(
 				'title'             => __( 'Name', 'woocommerce-gateway-paypal-powered-by-braintree' ),
 				'type'              => 'text',
@@ -700,7 +878,6 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 				'desc_tip'          => __( 'The value in the business name field of a customer\'s statement. Company name/DBA section must be either 3, 7 or 12 characters and the product descriptor can be up to 18, 14, or 9 characters respectively (with an * in between for a total descriptor name of 22 characters).', 'woocommerce-gateway-paypal-powered-by-braintree' ),
 				'custom_attributes' => array( 'maxlength' => 22 ),
 			),
-
 			'phone_dynamic_descriptor'   => array(
 				'title'             => __( 'Phone', 'woocommerce-gateway-paypal-powered-by-braintree' ),
 				'type'              => 'text',
@@ -708,7 +885,6 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 				'desc_tip'          => __( 'The value in the phone number field of a customer\'s statement. Phone must be exactly 10 characters and can only contain numbers, dashes, parentheses and periods.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
 				'custom_attributes' => array( 'maxlength' => 14 ),
 			),
-
 			'url_dynamic_descriptor'     => array(
 				'title'             => __( 'URL', 'woocommerce-gateway-paypal-powered-by-braintree' ),
 				'type'              => 'text',
@@ -717,6 +893,8 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 				'custom_attributes' => array( 'maxlength' => 13 ),
 			),
 		);
+
+		return array_merge( $credential_fields, $additional_fields );
 	}
 
 
@@ -730,42 +908,146 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 	 */
 	protected function add_shared_settings_form_fields( $form_fields ) {
 
-		$form_fields = parent::add_shared_settings_form_fields( $form_fields );
-
 		$this->load_settings();
 
-		// if this gateway can't connect to Braintree Auth, no need to continue.
-		if ( ! $this->can_connect() ) {
-			return $form_fields;
-		}
-
-		// only show this option when connected via auth flow.
-		if ( $this->is_connected() && ! $this->is_connected_manually() ) {
-
-			// used to move the environment field below.
+		// Save and remove environment field to add it after connection settings.
+		$environment_field = null;
+		if ( isset( $form_fields['environment'] ) ) {
 			$environment_field = $form_fields['environment'];
 			unset( $form_fields['environment'] );
+		}
 
-			$form_fields = Framework\SV_WC_Helper::array_insert_after(
-				$form_fields,
-				'connection_settings',
-				[
-					'braintree_auth'   => [
-						/** Field type. @see \WC_Gateway_Braintree::generate_braintree_auth_html() */
-						'type' => 'braintree_auth',
-					],
-					'connect_manually' => [
-						'type'    => 'checkbox',
-						'label'   => __( 'Enter connection credentials manually', 'woocommerce-gateway-paypal-powered-by-braintree' ),
-						'default' => 'no',
-					],
-					'environment'      => $environment_field,
-				]
+		// Add connection settings title.
+		$form_fields['connection_settings'] = array(
+			'title' => esc_html__( 'Connection Settings', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+			'type'  => 'title',
+		);
+
+		// Build options for the credentials source dropdown.
+		$source_options            = array();
+		$this->gateway_credentials = array(); // Store credentials for populating read-only fields.
+
+		// Add manual option if this gateway allows it.
+		if ( $this->can_gateway_store_credentials() ) {
+			$source_options['manual'] = esc_html__( 'Manual credentials', 'woocommerce-gateway-paypal-powered-by-braintree' );
+		}
+
+		// Add available gateway sources.
+		$available_gateways = $this->get_available_credential_source_gateways();
+
+		foreach ( $available_gateways as $gateway_id ) {
+			$gateway_settings = $this->get_plugin()->get_gateway_settings( $gateway_id );
+
+			// Skip gateways that are themselves inheriting from another gateway.
+			// Only allow inheriting from gateways with manual credentials to avoid circular dependencies.
+			$inherit_source = isset( $gateway_settings['inherit_settings_source'] ) ? $gateway_settings['inherit_settings_source'] : 'manual';
+			if ( 'manual' !== $inherit_source ) {
+				continue;
+			}
+
+			// Check which environments this gateway has credentials for.
+			$has_production = ! empty( $gateway_settings['merchant_id'] )
+				&& ! empty( $gateway_settings['public_key'] )
+				&& ! empty( $gateway_settings['private_key'] );
+
+			$has_sandbox = ! empty( $gateway_settings['sandbox_merchant_id'] )
+				&& ! empty( $gateway_settings['sandbox_public_key'] )
+				&& ! empty( $gateway_settings['sandbox_private_key'] );
+
+			// Only add gateway if it has credentials for at least one environment.
+			if ( $has_production || $has_sandbox ) {
+				$gateway = $this->get_plugin()->get_gateway( $gateway_id );
+
+				$source_options[ $gateway_id ] = sprintf(
+					/* translators: %s: Gateway title */
+					esc_html__( 'Use credentials from %s', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+					$gateway->get_method_title()
+				);
+
+				// Store credentials for this gateway.
+				$this->gateway_credentials[ $gateway_id ] = array(
+					'environment'         => isset( $gateway_settings['environment'] ) ? $gateway_settings['environment'] : 'production',
+					'merchant_id'         => isset( $gateway_settings['merchant_id'] ) ? $gateway_settings['merchant_id'] : '',
+					'public_key'          => isset( $gateway_settings['public_key'] ) ? $gateway_settings['public_key'] : '',
+					'private_key'         => isset( $gateway_settings['private_key'] ) ? $gateway_settings['private_key'] : '',
+					'sandbox_merchant_id' => isset( $gateway_settings['sandbox_merchant_id'] ) ? $gateway_settings['sandbox_merchant_id'] : '',
+					'sandbox_public_key'  => isset( $gateway_settings['sandbox_public_key'] ) ? $gateway_settings['sandbox_public_key'] : '',
+					'sandbox_private_key' => isset( $gateway_settings['sandbox_private_key'] ) ? $gateway_settings['sandbox_private_key'] : '',
+				);
+			}
+		}
+
+		// Only show dropdown if there are options.
+		if ( ! empty( $source_options ) ) {
+			// Determine default source.
+			$default_source = $this->can_gateway_store_credentials() ? 'manual' : key( $source_options );
+
+			$form_fields['inherit_settings_source'] = array(
+				'title'       => $this->can_gateway_store_credentials()
+					? esc_html__( 'Credentials source', 'woocommerce-gateway-paypal-powered-by-braintree' )
+					: esc_html__( 'Use credentials from', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+				'type'        => 'select',
+				'class'       => 'wc-enhanced-select',
+				'description' => $this->can_gateway_store_credentials()
+					? esc_html__( 'Choose whether to enter Braintree API credentials manually or use credentials from another gateway.', 'woocommerce-gateway-paypal-powered-by-braintree' )
+					: esc_html__( "Select which gateway's Braintree API credentials to use.", 'woocommerce-gateway-paypal-powered-by-braintree' ),
+				'default'     => $default_source,
+				'options'     => $source_options,
 			);
+		} elseif ( ! $this->can_gateway_store_credentials() ) {
+			// No source options available and this gateway cannot use manual credentials.
+			// Show a warning and flag to hide credential fields in get_method_form_fields().
+			$this->no_credentials_available = true;
 
-		} else {
+			$credit_card_settings_url = admin_url( 'admin.php?page=wc-settings&tab=checkout&section=' . WC_Braintree::CREDIT_CARD_GATEWAY_ID );
+			$paypal_settings_url      = admin_url( 'admin.php?page=wc-settings&tab=checkout&section=' . WC_Braintree::PAYPAL_GATEWAY_ID );
 
-			$this->connect_manually = 'yes';
+			$form_fields['no_credentials_notice'] = array(
+				'title'       => esc_html__( 'Credentials Required', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+				'type'        => 'title',
+				'description' => sprintf(
+					/* translators: %1$s - opening strong tag, %2$s - closing strong tag, %3$s - opening Credit Card link tag, %4$s - closing link tag, %5$s - opening PayPal link tag */
+					esc_html__( '%1$sNo Braintree credentials available.%2$s Please configure your Braintree API credentials in the %3$sCredit Card%4$s or %5$sPayPal%4$s gateway settings first. This gateway will use the credentials from one of those gateways.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+					'<strong>',
+					'</strong>',
+					'<a href="' . esc_url( $credit_card_settings_url ) . '">',
+					'</a>',
+					'<a href="' . esc_url( $paypal_settings_url ) . '">'
+				),
+			);
+		}
+
+		// Add environment field after credentials source (if it was saved earlier).
+		// Skip if no credentials are available (no source options and can't use manual credentials).
+		if ( $environment_field && ! $this->no_credentials_available ) {
+			$form_fields['environment'] = $environment_field;
+		}
+
+		// Handle Braintree Auth if this gateway supports it.
+		if ( $this->can_connect() ) {
+
+			// only show this option when connected via auth flow.
+			if ( $this->is_connected() && ! $this->is_connected_manually() ) {
+
+				$form_fields = Framework\SV_WC_Helper::array_insert_after(
+					$form_fields,
+					'connection_settings',
+					[
+						'braintree_auth'   => [
+							/** Field type. @see \WC_Gateway_Braintree::generate_braintree_auth_html() */
+							'type' => 'braintree_auth',
+						],
+						'connect_manually' => [
+							'type'    => 'checkbox',
+							'label'   => __( 'Enter connection credentials manually', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+							'default' => 'no',
+						],
+					]
+				);
+			} else {
+
+				$this->connect_manually = 'yes';
+			}
 		}
 
 		return $form_fields;
@@ -940,7 +1222,8 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 			$query_args['business_region'] = $query_args['user_region'] = $base_location['state'];
 		}
 
-		if ( $site_name = get_bloginfo( 'name' ) ) {
+		$site_name = \WC_Braintree\WC_Braintree::get_braintree_store_name();
+		if ( $site_name ) {
 			$query_args['business_name'] = $site_name;
 		}
 
@@ -1005,7 +1288,10 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 						</option>
 					<?php endforeach; ?>
 				</select>
-				<p><a href="#" class="button js-add-merchant-account-id"><?php echo esc_html( $button_text ); ?></a></p>
+				<p class="wc-braintree-merchant-account-button-row">
+					<a href="#" class="button js-add-merchant-account-id"><?php echo esc_html( $button_text ); ?></a>
+					<span class="spinner wc-braintree-merchant-account-loader"></span>
+				</p>
 			</td>
 		</tr>
 		<?php
@@ -1013,15 +1299,68 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 		$html = ob_get_clean();
 		// generate HTML for saved merchant account IDs.
 		foreach ( array_keys( $this->settings ) as $key ) {
-			if ( preg_match( '/merchant_account_id_[a-z]{3}$/', $key ) ) {
+			if ( preg_match( '/merchant_account_id_([a-z]{3})$/', $key, $matches ) ) {
+				$currency      = $matches[1];
+				$current_value = $this->get_option( "merchant_account_id_{$currency}" );
 
-				$currency = substr( $key, -3 );
-
-				$html .= $this->generate_merchant_account_id_html( $currency );
+				// Only generate HTML if there's a saved value (not empty).
+				if ( ! empty( $current_value ) ) {
+					$html .= $this->generate_merchant_account_id_html( $currency );
+				}
 			}
 		}
 
 		return $html;
+	}
+
+
+	/**
+	 * Generate the webhook info section HTML
+	 *
+	 * @since 3.5.0
+	 * @return string HTML
+	 */
+	protected function generate_webhook_info_html() {
+		$webhook_url       = $this->get_webhook_url();
+		$documentation_url = 'https://developer.paypal.com/braintree/docs/guides/webhooks/create/php/';
+
+		ob_start();
+		?>
+		<tr valign="top">
+			<th scope="row" class="titledesc">
+				<?php esc_html_e( 'Webhook URL', 'woocommerce-gateway-paypal-powered-by-braintree' ); ?>
+			</th>
+			<td class="forminp">
+				<div class="wc-braintree-webhook-info">
+						<div class="wc-braintree-webhook-url-container" style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px;">
+							<input type="text" class="wc-braintree-webhook-url-input" value="<?php echo esc_attr( $webhook_url ); ?>" readonly />
+							<button
+								type="button"
+								class="button wc-braintree-copy-webhook-url"
+								onclick="navigator.clipboard.writeText('<?php echo esc_js( $webhook_url ); ?>').then(() => this.textContent = '<?php esc_attr_e( 'Copied!', 'woocommerce-gateway-paypal-powered-by-braintree' ); ?>'); setTimeout(() => this.textContent = '<?php esc_attr_e( 'Copy', 'woocommerce-gateway-paypal-powered-by-braintree' ); ?>', 2000);"
+							>
+								<?php esc_html_e( 'Copy', 'woocommerce-gateway-paypal-powered-by-braintree' ); ?>
+							</button>
+						</div>
+						<p class="description">
+							<?php esc_html_e( 'This is the URL that Braintree uses to send notifications for order status updates and payment processing.', 'woocommerce-gateway-paypal-powered-by-braintree' ); ?>
+						</p>
+						<p class="description">
+							<?php
+							printf(
+								/* translators: 1: Opening link tag to webhooks documentation. 2: Closing link tag. */
+								esc_html__( 'You can configure it in your Braintree Dashboard. %1$sLearn more%2$s', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+								'<a target="_blank" href="' . esc_url( $documentation_url ) . '">',
+								'&nbsp;&rarr;</a>'
+							);
+							?>
+						</p>
+				</div>
+			</td>
+		</tr>
+		<?php
+
+		return ob_get_clean();
 	}
 
 
@@ -1036,6 +1375,75 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 
 		parent::admin_options();
 
+		// Add JavaScript to toggle credential and environment fields visibility based on inherit_settings_source.
+		if ( ! empty( $this->shared_settings_names ) ) {
+			$braintree_gateway_credentials = wp_json_encode( $this->gateway_credentials );
+
+			ob_start();
+			?>
+			// Gateway credentials data
+			var braintree_gateway_credentials = <?php echo $braintree_gateway_credentials; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Data is already JSON encoded ?>;
+
+			// Show/hide credential and environment fields based on inherit_settings_source selection
+			$( '#woocommerce_<?php echo esc_js( $this->get_id() ); ?>_inherit_settings_source' ).on( 'change', function() {
+				var source = $( this ).val();
+				var $credentialFields = $( '.environment-field' ).closest( 'tr' );
+				var $environmentField = $( '#woocommerce_<?php echo esc_js( $this->get_id() ); ?>_environment' ).closest( 'tr' );
+				var $environmentSelect = $( '#woocommerce_<?php echo esc_js( $this->get_id() ); ?>_environment' );
+				var gatewayId = '<?php echo esc_js( $this->get_id() ); ?>';
+
+				// Always show fields
+				$credentialFields.show();
+				$environmentField.show();
+
+				if ( source === 'manual' ) {
+					// Make fields editable
+					$credentialFields.find( 'input' ).prop( 'readonly', false );
+					$environmentSelect.prop( 'disabled', false );
+				} else {
+					// Make fields read-only and populate with source gateway values
+					$credentialFields.find( 'input' ).prop( 'readonly', true );
+					$environmentSelect.prop( 'disabled', true );
+
+					if ( braintree_gateway_credentials[ source ] ) {
+						var credentials = braintree_gateway_credentials[ source ];
+
+						// Set environment from source gateway
+						$environmentSelect.val( credentials.environment );
+
+						// Set credentials from source gateway
+						$( '#woocommerce_' + gatewayId + '_merchant_id' ).val( credentials.merchant_id );
+						$( '#woocommerce_' + gatewayId + '_public_key' ).val( credentials.public_key );
+						$( '#woocommerce_' + gatewayId + '_private_key' ).val( credentials.private_key );
+						$( '#woocommerce_' + gatewayId + '_sandbox_merchant_id' ).val( credentials.sandbox_merchant_id );
+						$( '#woocommerce_' + gatewayId + '_sandbox_public_key' ).val( credentials.sandbox_public_key );
+						$( '#woocommerce_' + gatewayId + '_sandbox_private_key' ).val( credentials.sandbox_private_key );
+					}
+				}
+
+				// Trigger environment change to show only relevant fields
+				$( '#woocommerce_<?php echo esc_js( $this->get_id() ); ?>_environment' ).change();
+			} ).change();
+
+			// Show/hide production vs sandbox fields based on environment selection
+			$( '#woocommerce_<?php echo esc_js( $this->get_id() ); ?>_environment' ).on( 'change', function() {
+				var environment = $( this ).val();
+				var $productionFields = $( '.production-field' ).closest( 'tr' );
+				var $sandboxFields = $( '.sandbox-field' ).closest( 'tr' );
+
+				// Show/hide fields based on environment
+				if ( environment === 'production' ) {
+					$productionFields.show();
+					$sandboxFields.hide();
+				} else {
+					$productionFields.hide();
+					$sandboxFields.show();
+				}
+			} ).change();
+			<?php
+			wc_enqueue_js( ob_get_clean() );
+		}
+
 		?>
 		<style type="text/css">
 
@@ -1047,6 +1455,26 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 			}
 			.wc-braintree-auth.disabled .wc-braintree-connect-button {
 				cursor: default;
+			}
+
+			.wc-braintree-webhook-info code {
+				background: #f1f1f1;
+				padding: 2px 4px 4px 0;
+				border-radius: 3px;
+			}
+
+			.wc-braintree-webhook-info .wc-braintree-webhook-url-input {
+				flex: 1;
+				padding: 8px;
+				border: 1px solid #ddd;
+				border-radius: 4px;
+				background-color: #f9f9f9;
+				font-family: monospace;
+				font-size: 13px;
+			}
+
+			.wc-braintree-webhook-info .wc-braintree-copy-webhook-url {
+				white-space: nowrap;
 			}
 
 		</style>
@@ -1098,27 +1526,166 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 			$( '.js-add-merchant-account-id' ).text( '<?php esc_html_e( 'Add merchant account ID for ', 'woocommerce-gateway-paypal-powered-by-braintree' ); ?>' + $( this ).val() )
 		} );
 
+		/**
+		 * Render merchant account HTML for a given currency.
+		 *
+		 * @param {string} currencyCode - The currency code (e.g., 'USD')
+		 * @return {HTMLTableRowElement} TR element for the merchant account row.
+		 */
+		function getMerchantAccountRow( currencyCode ) {
+			var params = wc_braintree_admin_params || {};
+			var gatewayId = params.gateway_id;
+			var currencyLower = currencyCode.toLowerCase();
+			var currencyUpper = currencyCode.toUpperCase();
+			var id = 'woocommerce_' + gatewayId + '_merchant_account_id_' + currencyLower;
+			var name = 'woocommerce_' + gatewayId + '_merchant_account_id[' + currencyLower + ']';
+			var title = wp.i18n.sprintf( params.merchant_account_id_title, currencyUpper );
+			var merchantAccounts = params.merchant_accounts_by_currency[ currencyCode ] || [];
+			var currentValue = params.current_values_by_currency[ currencyCode ] || '';
+			var hasAccounts = merchantAccounts.length > 0;
+			var isInvalid = currentValue && ! merchantAccounts.some( function( account ) {
+				return account.id === currentValue;
+			} );
+
+			const trElement = document.createElement( 'tr' );
+			trElement.setAttribute( 'valign', 'top' );
+
+			const thElement = document.createElement( 'th' );
+			thElement.setAttribute( 'scope', 'row' );
+			thElement.className = 'titledesc';
+
+			trElement.appendChild( thElement );
+
+			const labelElement = document.createElement( 'label' );
+			labelElement.htmlFor = id;
+			labelElement.innerText = title;
+
+			thElement.appendChild( labelElement );
+
+			const tdElement = document.createElement( 'td' );
+			tdElement.className = 'forminp wc-braintree-merchant-account-row';
+
+			trElement.appendChild( tdElement );
+
+			const fieldsetElement = document.createElement( 'fieldset' );
+			tdElement.appendChild( fieldsetElement );
+
+			const legendElement = document.createElement( 'legend' );
+			fieldsetElement.appendChild( legendElement );
+			legendElement.className = 'screen-reader-text';
+
+			const legendSpanElement = document.createElement( 'span' );
+			legendElement.appendChild( legendSpanElement );
+			legendSpanElement.innerText = title;
+
+			const containerDivElement = document.createElement( 'div' );
+			containerDivElement.className = 'wc-braintree-merchant-account-container';
+			fieldsetElement.appendChild( containerDivElement );
+
+			if ( ! hasAccounts ) {
+				const errorDivElement = document.createElement( 'div' );
+				containerDivElement.appendChild( errorDivElement );
+
+				const errorInputElement = document.createElement( 'input' );
+				errorInputElement.className = 'input-text regular-input js-merchant-account-id-input' + ( isInvalid ? ' error' : '' );
+				errorInputElement.type = 'text';
+				errorInputElement.name = name;
+				errorInputElement.id = id;
+				errorInputElement.value = currentValue;
+				errorInputElement.placeholder = '';
+				errorInputElement.disabled = true;
+				errorDivElement.appendChild( errorInputElement );
+
+				const errorParagraphElement = document.createElement( 'p' );
+				errorParagraphElement.className = 'description wc-braintree-merchant-account-error';
+				errorParagraphElement.innerText = isInvalid ? params.invalid_merchant_account_text : params.no_merchant_account_text;
+				errorDivElement.appendChild( errorParagraphElement );
+			} else {
+				const controlsDivElement = document.createElement( 'div' );
+				containerDivElement.appendChild( controlsDivElement );
+
+				const selectElement = document.createElement( 'select' );
+				controlsDivElement.appendChild( selectElement );
+
+				selectElement.className = 'wc-enhanced-select js-merchant-account-id-input js-merchant-account-id-select' + ( isInvalid ? ' error' : '' );
+				selectElement.name = name;
+				selectElement.id = id;
+				if ( isInvalid ) {
+					selectElement.dataset.invalidValue = currentValue;
+
+					if ( currentValue ) {
+						const invalidOptionElement = document.createElement( 'option' );
+						selectElement.appendChild( invalidOptionElement );
+
+						invalidOptionElement.value = currentValue;
+						invalidOptionElement.innerText = currentValue + ' ' + params.invalid_label_text;
+						invalidOptionElement.selected = true;
+					}
+				}
+
+				merchantAccounts.forEach( function( account ) {
+					const optionElement = document.createElement( 'option' );
+					selectElement.appendChild( optionElement );
+
+					optionElement.value = account.id;
+					optionElement.innerText = account.id + ( account.is_default ? ' ' + params.default_label_text : '' );
+					optionElement.selected = ( currentValue === account.id );
+				} );
+
+				const invalidPElement = document.createElement( 'p' );
+				controlsDivElement.appendChild( invalidPElement );
+
+				invalidPElement.className = 'description wc-braintree-merchant-account-error';
+				invalidPElement.style.display = isInvalid ? 'block' : 'none';
+				invalidPElement.innerText = params.invalid_merchant_account_text;
+			}
+
+			const removeAccountLinkElement = document.createElement( 'a' );
+			containerDivElement.appendChild( removeAccountLinkElement );
+
+			removeAccountLinkElement.href = '#';
+			removeAccountLinkElement.title = params.remove_merchant_account_title;
+			removeAccountLinkElement.className = 'js-remove-merchant-account-id';
+
+			const iconSpanElement = document.createElement( 'span' );
+			iconSpanElement.className = 'dashicons dashicons-trash';
+			removeAccountLinkElement.appendChild( iconSpanElement );
+
+			return trElement;
+		}
+
 		// add new merchant account ID field
 		$( '.js-add-merchant-account-id' ).click( function( e ) {
 			e.preventDefault();
+			var currency = $( 'select#wc_braintree_merchant_account_id_currency' ).val();
+			var $button = $( this );
 
-			// The HTML is being escaped by the function itself.
-			var row_fragment = '<?php echo $this->generate_merchant_account_id_html(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>',
-				currency     = $( 'select#wc_braintree_merchant_account_id_currency' ).val();
-
-			// replace currency placeholders with selected currency
-			row_fragment = row_fragment.replace( /{{currency_display}}/g, currency ).replace( /{{currency_code}}/g, currency.toLowerCase() );
-
-			// prevent adding more than 1 merchant account ID for the same currency
-			if ( $( 'input[name="' + $( row_fragment ).find( '.js-merchant-account-id-input' ).attr( 'name' ) + '"]' ).length ) {
+			if ( ! currency ) {
 				return;
 			}
 
-			// inject field HTML
+			// Check if this currency already has a merchant account field
+			var fieldName = 'woocommerce_' + wc_braintree_admin_params.gateway_id + '_merchant_account_id[' + currency.toLowerCase() + ']';
+			if ( $( 'input[name="' + fieldName + '"], select[name="' + fieldName + '"]' ).length ) {
+				return;
+			}
+
+			// Render and inject HTML
+			const trElement = getMerchantAccountRow( currency );
+
+			// Find the sibling element.
+			let siblingDomElement = null;
 			if ( $( '.js-merchant-account-id-input' ).length ) {
-				$( '.js-merchant-account-id-input' ).closest( 'tr' ).last().after( row_fragment );
+				siblingDomElement = $( '.js-merchant-account-id-input' ).closest( 'tr' ).last().get( 0 );
 			} else {
-				$( this ).closest( 'tr' ).after( row_fragment );
+				siblingDomElement = $button.closest( 'tr' ).get( 0 );
+			}
+			// Insert the new row.
+			siblingDomElement?.parentElement?.appendChild( trElement );
+
+			// Initialize the select if it's a dropdown
+			if ( $( trElement ).find( 'select.wc-enhanced-select' ).length ) {
+				$( trElement ).find( 'select.wc-enhanced-select' ).selectWoo();
 			}
 		} );
 
@@ -1129,6 +1696,32 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 			$( this ).closest( 'tr' ).delay( 50 ).fadeOut( 400, function() {
 				$( this ).remove();
 			} );
+		} );
+
+		// Show/hide error message based on selected merchant account value
+		function toggleMerchantAccountError( $select ) {
+			var $errorMessage = $select.siblings( '.wc-braintree-merchant-account-error' );
+			if ( ! $errorMessage.length ) {
+				return;
+			}
+
+			var invalidValue = $select.data( 'invalid-value' )?.toString();
+			var selectedValue = $select.val()?.toString();
+
+			if ( invalidValue && selectedValue === invalidValue ) {
+				// Selected value is invalid, show error message
+				$errorMessage.show();
+				$select.addClass( 'error' );
+			} else {
+				// Selected value is valid, hide error message
+				$errorMessage.hide();
+				$select.removeClass( 'error' );
+			}
+		}
+
+		// Handle change event for merchant account selects.
+		$( '.form-table' ).on( 'change', 'select.js-merchant-account-id-select', function() {
+			toggleMerchantAccountError( $( this ) );
 		} );
 
 		$( '#woocommerce_braintree_credit_card_name_dynamic_descriptor' ).after( '<span style="margin-top:4px;" class="dashicons dashicons-yes js-dynamic-descriptor-icon"></span>' );
@@ -1198,6 +1791,14 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 		/* translators: %s: currency code */
 		$title = sprintf( __( 'Merchant Account ID (%s)', 'woocommerce-gateway-paypal-powered-by-braintree' ), $currency_display );
 
+		$remote_config     = $this->get_remote_config();
+		$merchant_accounts = $remote_config->find_eligible_merchant_accounts_by_currency_and_payment_gateway( $currency_code, $this->get_id() );
+
+		$current_value = $this->get_option( "merchant_account_id_{$currency_code}" );
+		$is_invalid    = ! $this->is_current_merchant_account_id_valid( $current_value );
+
+		$invalidity_reason = $is_invalid ? $this->get_current_id_invalidity_reason( $current_value, $currency_code ) : '';
+
 		ob_start();
 		?>
 		<tr valign="top">
@@ -1206,9 +1807,59 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 			</th>
 			<td class="forminp">
 				<fieldset>
-					<legend class="screen-reader-text"><span><?php echo esc_html( $title ); ?></span></legend>
-					<input class="input-text regular-input js-merchant-account-id-input" type="text" name="<?php printf( 'woocommerce_%s_merchant_account_id[%s]', esc_attr( $this->get_id() ), esc_attr( $currency_code ) ); ?>" id="<?php echo esc_attr( $id ); ?>" value="<?php echo esc_attr( $this->get_option( "merchant_account_id_{$currency_code}" ) ); ?>" placeholder="<?php esc_attr_e( 'Enter merchant account ID', 'woocommerce-gateway-paypal-powered-by-braintree' ); ?>" />
-					<a href="#" title="<?php esc_attr_e( 'Remove this merchant account ID', 'woocommerce-gateway-paypal-powered-by-braintree' ); ?>" class="js-remove-merchant-account-id"><span class="dashicons dashicons-trash"></span></a>
+				<legend class="screen-reader-text"><span><?php echo esc_html( $title ); ?></span></legend>
+					<div class="wc-braintree-merchant-account-container">
+						<?php if ( count( $merchant_accounts ) === 0 ) : ?>
+							<?php
+							$input_class = 'input-text regular-input js-merchant-account-id-input';
+							if ( $is_invalid ) {
+								$input_class .= ' error';
+							}
+							?>
+							<div>
+								<input class="<?php echo esc_attr( $input_class ); ?>" type="text" name="<?php printf( 'woocommerce_%s_merchant_account_id[%s]', esc_attr( $this->get_id() ), esc_attr( $currency_code ) ); ?>" id="<?php echo esc_attr( $id ); ?>" value="<?php echo esc_attr( $current_value ); ?>" placeholder="" disabled ?>
+								<p class="description wc-braintree-merchant-account-error">
+									<?php if ( $is_invalid ) : ?>
+										<?php echo esc_html( $invalidity_reason ); ?>
+									<?php elseif ( count( $merchant_accounts ) === 0 ) : ?>
+										<?php esc_html_e( 'No merchant account ID available for the selected currency.', 'woocommerce-gateway-paypal-powered-by-braintree' ); ?>
+									<?php endif; ?>
+								</p>
+							</div>
+						<?php else : ?>
+							<div>
+								<?php
+								$select_class = 'wc-enhanced-select js-merchant-account-id-input js-merchant-account-id-select';
+								if ( $is_invalid ) {
+									$select_class .= ' error';
+								}
+								?>
+								<select class="<?php echo esc_attr( $select_class ); ?>" name="<?php printf( 'woocommerce_%s_merchant_account_id[%s]', esc_attr( $this->get_id() ), esc_attr( $currency_code ) ); ?>" id="<?php echo esc_attr( $id ); ?>" <?php echo $is_invalid && ! empty( $current_value ) ? 'data-invalid-value="' . esc_attr( $current_value ) . '"' : ''; ?>>
+									<?php if ( $is_invalid ) : ?>
+										<option value="<?php echo esc_attr( $current_value ); ?>" selected="selected"><?php echo esc_html( $current_value ) . ' [invalid]'; ?></option>
+									<?php endif; ?>
+									<?php
+									foreach ( $merchant_accounts as $merchant_account ) :
+										$account_id = $merchant_account->get_id();
+										$is_default = $merchant_account->is_default_merchant_account();
+										$label      = $account_id;
+
+										if ( $is_default ) {
+											$label .= esc_html__( ' [default]', 'woocommerce-gateway-paypal-powered-by-braintree' );
+										}
+										?>
+										<option value="<?php echo esc_attr( $account_id ); ?>" <?php selected( $current_value, $account_id ); ?>>
+											<?php echo esc_html( $label ); ?>
+										</option>
+									<?php endforeach; ?>
+								</select>
+								<p class="description wc-braintree-merchant-account-error" <?php echo $is_invalid ? '' : 'style="display: none;"'; ?>>
+									<?php echo esc_html( $invalidity_reason ); ?>
+								</p>
+							</div>
+						<?php endif; ?>
+						<a href="#" title="<?php esc_attr_e( 'Remove this merchant account ID', 'woocommerce-gateway-paypal-powered-by-braintree' ); ?>" class="js-remove-merchant-account-id"><span class="dashicons dashicons-trash"></span></a>
+					</div>
 				</fieldset>
 			</td>
 		</tr>
@@ -1219,13 +1870,62 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 		return trim( preg_replace( "/[\n\r\t]/", '', ob_get_clean() ) );
 	}
 
+	/**
+	 * Check if the current merchant account ID saved in the settings is a valid and supported merchant account for this gateway.
+	 *
+	 * @param string $current_merchant_account_id The current merchant account ID.
+	 * @return bool True if the current merchant account ID is valid, false otherwise.
+	 */
+	private function is_current_merchant_account_id_valid( $current_merchant_account_id = null ) {
+		if ( empty( $current_merchant_account_id ) ) {
+			return false;
+		}
+
+		$remote_config         = $this->get_remote_config();
+		$current_value_account = $remote_config->get_merchant_account( $current_merchant_account_id );
+
+		return null !== $current_value_account;
+	}
 
 	/**
-	 * Filter admin options before saving to dynamically inject valid merchant
-	 * account IDs so they're persisted to settings
+	 * Gets the reason why the current merchant account ID is invalid.
+	 *
+	 * @param string $current_merchant_account_id The current merchant account ID.
+	 * @param string $currency The currency to check.
+	 * @return string The reason why the current merchant account ID is invalid.
+	 */
+	private function get_current_id_invalidity_reason( $current_merchant_account_id, $currency ) {
+		$default_reason   = __( 'This merchant account ID is invalid or not available for the selected currency.', 'woocommerce-gateway-paypal-powered-by-braintree' );
+		$remote_config    = $this->get_remote_config();
+		$merchant_account = $remote_config->get_merchant_account( $current_merchant_account_id );
+
+		if ( null === $merchant_account ) {
+			return __( 'The merchant account does not exist.', 'woocommerce-gateway-paypal-powered-by-braintree' );
+		}
+
+		if ( $merchant_account->get_currency() !== $currency ) {
+			/* translators: %1$s: currency code */
+			return sprintf( __( 'The merchant account does not support %1$s as a currency.', 'woocommerce-gateway-paypal-powered-by-braintree' ), $currency );
+		}
+
+		if ( ! $merchant_account->is_payment_gateway_supported( $this->get_id() ) ) {
+			/* translators: %1$s: payment method title */
+			return sprintf( __( 'The merchant account does not accept payments for %1$s.', 'woocommerce-gateway-paypal-powered-by-braintree' ), $this->get_method_title() );
+		}
+
+		return $default_reason;
+	}
+
+	/**
+	 * Filter admin options before saving.
+	 *
+	 * Handles:
+	 * - Copying shared settings (credentials, environment) from source gateway when inheriting.
+	 * - Dynamically injecting valid merchant account IDs so they're persisted to settings.
 	 *
 	 * @since 3.0.3 update logic to sanitize multiple merchant account IDs.
 	 * @since 3.3.0
+	 * @since 3.7.0 Added shared settings inheritance support.
 	 * @param array $sanitized_fields Sanitized fields.
 	 * @return array
 	 */
@@ -1235,7 +1935,22 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 		unset( $sanitized_fields['braintree_auth'] );
 		unset( $sanitized_fields['merchant_account_id_title'] );
 		unset( $sanitized_fields['merchant_account_ids'] );
+		unset( $sanitized_fields['webhook_info'] );
 		unset( $sanitized_fields['dynamic_descriptor_title'] );
+
+		// When inheriting settings from another gateway, copy shared settings from the source.
+		// This is necessary because disabled form fields are not submitted.
+		$source_gateway_id = isset( $sanitized_fields['inherit_settings_source'] ) ? $sanitized_fields['inherit_settings_source'] : 'manual';
+
+		if ( 'manual' !== $source_gateway_id && ! empty( $source_gateway_id ) ) {
+			$source_settings = get_option( 'woocommerce_' . $source_gateway_id . '_settings', array() );
+
+			foreach ( $this->shared_settings_names as $setting_key ) {
+				if ( isset( $source_settings[ $setting_key ] ) ) {
+					$sanitized_fields[ $setting_key ] = $source_settings[ $setting_key ];
+				}
+			}
+		}
 
 		// first unset all merchant account IDs from settings so they can be freshly set.
 		foreach ( array_keys( $sanitized_fields ) as $name ) {
@@ -1406,7 +2121,6 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 		// default to false as a customer must be created first.
 		return false;
 	}
-
 
 
 	/**
@@ -1591,6 +2305,39 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 		return $environment;
 	}
 
+	/**
+	 * Get the remote configuration for this gateway (lazy loaded).
+	 *
+	 * @since 3.7.0
+	 * @return \WC_Braintree\WC_Braintree_Remote_Configuration
+	 */
+	protected function get_remote_config() {
+		if ( null === $this->remote_config ) {
+			// If the credentials are manual, use the current gateway ID.
+			// Otherwise, use the credentials source gateway ID.
+			$this->remote_config = WC_Braintree_Remote_Configuration::get_remote_configuration( $this->get_credentials_source() );
+		}
+
+		return $this->remote_config;
+	}
+
+	/**
+	 * Returns the source gateway ID for the gateway credentials.
+	 * If the source gateway is manual, return the current gateway ID.
+	 * Otherwise, return the source gateway ID.
+	 *
+	 * @since 3.7.0
+	 * @return string
+	 */
+	public function get_credentials_source() {
+		$source_gateway_id = $this->get_option( 'inherit_settings_source', 'manual' );
+		if ( 'manual' === $source_gateway_id ) {
+			return $this->get_id();
+		}
+
+		return $source_gateway_id;
+	}
+
 
 	/**
 	 * Returns true if the gateway is PayPal
@@ -1601,6 +2348,18 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 	public function is_paypal_gateway() {
 
 		return WC_Gateway_Braintree_PayPal::PAYMENT_TYPE_PAYPAL === $this->get_payment_type();
+	}
+
+
+	/**
+	 * Returns true if the gateway is Venmo
+	 *
+	 * @since 3.6.0
+	 * @return bool
+	 */
+	public function is_venmo_gateway() {
+
+		return WC_Gateway_Braintree_Venmo::PAYMENT_TYPE_VENMO === $this->get_payment_type();
 	}
 
 
@@ -2088,6 +2847,17 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 			}
 		}
 
+		// Replace error message for status code 91564 (Cannot use a paymentMethodNonce more than once).
+		if ( isset( $result['message'] ) && false !== strpos( $result['message'], 'Status code 91564:' ) ) {
+			wc_clear_notices();
+			// Add custom user-friendly notice.
+			wc_add_notice(
+				esc_html__( 'An error occurred while processing your payment, please reload the page and try again, or try an alternate payment method.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+				'error'
+			);
+			// No need to update the result, we just want to replace the customer facing message.
+		}
+
 		return $result;
 	}
 
@@ -2120,6 +2890,22 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 	}
 
 	/**
+	 * Checks if the cart contains a subscription product.
+	 *
+	 * @since 3.7.0
+	 *
+	 * @return bool
+	 */
+	public function cart_contains_subscription() {
+
+		if ( ! $this->get_plugin()->is_subscriptions_active() || ! class_exists( 'WC_Subscriptions_Cart' ) || ! method_exists( 'WC_Subscriptions_Cart', 'cart_contains_subscription' ) ) {
+			return false;
+		}
+
+		return \WC_Subscriptions_Cart::cart_contains_subscription();
+	}
+
+	/**
 	 * Returns true if the current gateway environment is configured to 'sandbox'
 	 *
 	 * @since 3.2.6
@@ -2137,5 +2923,23 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 	 */
 	public function needs_setup() {
 		return ! $this->is_configured();
+	}
+
+
+	/** Webhook Methods *******************************************************/
+
+	/**
+	 * Get the webhook URL for the current environment
+	 *
+	 * @since 3.5.0
+	 * @return string
+	 */
+	public function get_webhook_url() {
+		return add_query_arg(
+			[
+				'wc-api' => 'wc_braintree',
+			],
+			home_url( '/' )
+		);
 	}
 }

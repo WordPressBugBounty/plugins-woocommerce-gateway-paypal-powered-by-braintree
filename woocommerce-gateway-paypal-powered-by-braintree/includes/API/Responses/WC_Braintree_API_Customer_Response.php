@@ -111,8 +111,17 @@ class WC_Braintree_API_Customer_Response extends WC_Braintree_API_Vault_Response
 
 		foreach ( $this->response->paymentMethods as $method ) {
 
-			// only credit cards (including Apple Pay and Google Pay) or PayPal accounts.
-			if ( ! in_array( get_class( $method ), array( 'Braintree\CreditCard', 'Braintree\PayPalAccount', 'Braintree\ApplePayCard', 'Braintree\GooglePayCard' ), true ) ) {
+			// only credit cards (including Apple Pay and Google Pay), PayPal accounts, Venmo, and ACH.
+			$allowed_payment_method_types = array(
+				\Braintree\CreditCard::class,
+				\Braintree\PayPalAccount::class,
+				\Braintree\ApplePayCard::class,
+				\Braintree\GooglePayCard::class,
+				\Braintree\VenmoAccount::class,
+				\Braintree\UsBankAccount::class,
+			);
+
+			if ( ! in_array( get_class( $method ), $allowed_payment_method_types, true ) ) {
 				continue;
 			}
 

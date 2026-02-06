@@ -130,4 +130,26 @@ class WC_Braintree_API_Payment_Method_Request extends WC_Braintree_API_Vault_Req
 
 		$this->request_data = array( $token, $update_data );
 	}
+
+	/**
+	 * Verify the ACH Direct debit nonce for a transaction.
+	 * This must be done prior to processing the actual transaction.
+	 *
+	 * @since 3.7.0
+	 *
+	 * @param \WC_Order $order The order object.
+	 */
+	public function verify_ach_direct_debit_account( \WC_Order $order ) {
+
+		$this->set_resource( 'paymentMethod' );
+		$this->set_callback( 'create' );
+
+		$this->request_data = [
+			'customerId'         => $order->customer_id,
+			'paymentMethodNonce' => $order->payment->nonce,
+			'options'            => $this->get_ach_direct_debit_options(),
+		];
+
+		$this->add_device_data();
+	}
 }

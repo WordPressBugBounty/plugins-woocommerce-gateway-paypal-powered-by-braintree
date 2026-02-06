@@ -26,6 +26,7 @@ namespace WC_Braintree;
 
 use SkyVerge\WooCommerce\PluginFramework\v5_15_10 as Framework;
 use WC_Braintree\WC_Payment_Token_Braintree_PayPal;
+use WC_Braintree\WC_Payment_Token_Braintree_Venmo;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -44,6 +45,12 @@ class WC_Braintree_Payment_Method extends Framework\SV_WC_Payment_Gateway_Paymen
 
 	/** Paypal payment method type */
 	const PAYPAL_TYPE = 'paypal';
+
+	/** ACH Direct Debit payment method type */
+	const ACH_TYPE = 'ach';
+
+	/** Venmo payment method type */
+	const VENMO_TYPE = 'venmo';
 
 
 	/**
@@ -67,12 +74,39 @@ class WC_Braintree_Payment_Method extends Framework\SV_WC_Payment_Gateway_Paymen
 	 */
 	public function is_paypal_account() {
 
-		return self::PAYPAL_TYPE === $this->data['type'];
+		return self::PAYPAL_TYPE === ( $this->data['type'] ?? null );
 	}
 
 
 	/**
-	 * Overrides the standard type full method to change the type text to the email address associated with the PayPal account.
+	 * Determines if the payment method is for a Venmo account.
+	 *
+	 * @since 3.6.0
+	 *
+	 * @return bool
+	 */
+	public function is_venmo_account() {
+
+		return self::VENMO_TYPE === ( $this->data['type'] ?? null );
+	}
+
+
+	/**
+	 * Determines if the payment method is for an ACH Direct Debit account.
+	 *
+	 * @since 3.7.0
+	 *
+	 * @return bool
+	 */
+	public function is_ach_account() {
+
+		return self::ACH_TYPE === ( $this->data['type'] ?? null );
+	}
+
+
+	/**
+	 * Overrides the standard type full method to change the type text to the email address associated with the PayPal account,
+	 * the username associated with the Venmo account, or "ACH Direct Debit" for ACH accounts.
 	 *
 	 * @since 3.0.0
 	 *
@@ -80,7 +114,19 @@ class WC_Braintree_Payment_Method extends Framework\SV_WC_Payment_Gateway_Paymen
 	 */
 	public function get_type_full() {
 
-		return $this->is_paypal_account() ? $this->get_payer_email() : parent::get_type_full();
+		if ( $this->is_paypal_account() ) {
+			return $this->get_payer_email();
+		}
+
+		if ( $this->is_venmo_account() ) {
+			return $this->get_venmo_username();
+		}
+
+		if ( $this->is_ach_account() ) {
+			return __( 'ACH Direct Debit', 'woocommerce-gateway-paypal-powered-by-braintree' );
+		}
+
+		return parent::get_type_full();
 	}
 
 
@@ -111,6 +157,77 @@ class WC_Braintree_Payment_Method extends Framework\SV_WC_Payment_Gateway_Paymen
 
 
 	/**
+	 * Gets the username associated with the Venmo account.
+	 *
+	 * @since 3.6.0
+	 *
+	 * @return string|null
+	 */
+	public function get_venmo_username() {
+
+		return ! empty( $this->data['username'] ) ? $this->data['username'] : null;
+	}
+
+
+	/**
+	 * Gets the user ID associated with the Venmo account.
+	 *
+	 * @since 3.6.0
+	 *
+	 * @return string|null
+	 */
+	public function get_venmo_user_id() {
+
+		return $this->data['user_id'] ?? null;
+	}
+
+
+	/**
+	 * Gets the display name (nickname) for the payment method.
+	 *
+	 * For ACH tokens, delegates to the WooCommerce core token's get_nickname() method
+	 * which returns a formatted string with bank name and last four digits.
+	 *
+	 * @since 3.7.0
+	 *
+	 * @return string
+	 */
+	public function get_nickname() {
+
+		$wc_token = $this->get_woocommerce_payment_token();
+
+		// For ACH tokens, use the WooCommerce core token's get_nickname() which includes bank name + last four.
+		if ( $wc_token instanceof WC_Payment_Token_Braintree_ACH && method_exists( $wc_token, 'get_nickname' ) ) {
+			return $wc_token->get_nickname();
+		}
+
+		return parent::get_nickname();
+	}
+
+
+	/**
+	 * Gets the last four digits of the payment method.
+	 *
+	 * For ACH accounts, returns empty since the last four is already displayed
+	 * in the nickname/title column along with the bank name.
+	 *
+	 * @since 3.7.0
+	 *
+	 * @return string
+	 */
+	public function get_last_four() {
+
+		// For ACH accounts, don't display last four in the details column
+		// since it's already shown in the title/nickname.
+		if ( $this->is_ach_account() ) {
+			return '';
+		}
+
+		return parent::get_last_four();
+	}
+
+
+	/**
 	 * Gets the framework token type based on the type of the associated WooCommerce core token.
 	 *
 	 * @since 2.5.0
@@ -123,6 +240,14 @@ class WC_Braintree_Payment_Method extends Framework\SV_WC_Payment_Gateway_Paymen
 
 		if ( $token instanceof WC_Payment_Token_Braintree_PayPal ) {
 			return self::PAYPAL_TYPE;
+		}
+
+		if ( $token instanceof WC_Payment_Token_Braintree_ACH ) {
+			return self::ACH_TYPE;
+		}
+
+		if ( $token instanceof WC_Payment_Token_Braintree_Venmo ) {
+			return self::VENMO_TYPE;
 		}
 
 		return parent::get_type_from_woocommerce_payment_token( $token );
@@ -140,6 +265,14 @@ class WC_Braintree_Payment_Method extends Framework\SV_WC_Payment_Gateway_Paymen
 
 		if ( $this->is_paypal_account() ) {
 			return new WC_Payment_Token_Braintree_PayPal();
+		}
+
+		if ( $this->is_ach_account() ) {
+			return new WC_Payment_Token_Braintree_ACH();
+		}
+
+		if ( $this->is_venmo_account() ) {
+			return new WC_Payment_Token_Braintree_Venmo();
 		}
 
 		return parent::make_new_woocommerce_payment_token();

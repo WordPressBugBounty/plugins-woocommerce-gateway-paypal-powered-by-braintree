@@ -9,4 +9,4 @@ import { registerPaymentMethod } from '@woocommerce/blocks-registry';
 import braintreeCreditCardPaymentMethod from './credit-card/index';
 
 // Register Braintree Credit Card payment method.
-registerPaymentMethod(braintreeCreditCardPaymentMethod);
+registerPaymentMethod( braintreeCreditCardPaymentMethod );

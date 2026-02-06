@@ -18,29 +18,29 @@ const { fieldsErrorMessages, cscRequired } = getBraintreeCreditCardServerData();
  *
  * @param {Object} props Incoming props
  */
-export const BraintreeCreditCardFields = (props) => {
+export const BraintreeCreditCardFields = ( props ) => {
 	const {
 		components: { LoadingMask },
 		isLoaded,
 		hostedFieldsInstance,
 		token = null,
 	} = props;
-	const [error, setError] = useState({
+	const [ error, setError ] = useState( {
 		number: '',
 		expirationDate: '',
 		cvv: '',
-	});
+	} );
 
-	useEffect(() => {
-		if (hostedFieldsInstance) {
-			hostedFieldsInstance.on('validityChange', function (event) {
-				const field = event.fields[event.emittedBy];
-				if (!field.isValid && !field.isPotentiallyValid) {
-					setError((prevState) => ({
+	useEffect( () => {
+		if ( hostedFieldsInstance ) {
+			hostedFieldsInstance.on( 'validityChange', function ( event ) {
+				const field = event.fields[ event.emittedBy ];
+				if ( ! field.isValid && ! field.isPotentiallyValid ) {
+					setError( ( prevState ) => ( {
 						...prevState,
-						[event.emittedBy]:
+						[ event.emittedBy ]:
 							fieldsErrorMessages[
-								`card_${event.emittedBy}_invalid`
+								`card_${ event.emittedBy }_invalid`
 							] ||
 							sprintf(
 								/** translators: Placeholders: %s - invalid field name */
@@ -50,80 +50,82 @@ export const BraintreeCreditCardFields = (props) => {
 								),
 								event.emittedBy
 							),
-					}));
-					field.container.classList.add('has-error');
+					} ) );
+					field.container.classList.add( 'has-error' );
 				} else {
-					setError((prevState) => ({
+					setError( ( prevState ) => ( {
 						...prevState,
-						[event.emittedBy]: '',
-					}));
-					field.container.classList.remove('has-error');
+						[ event.emittedBy ]: '',
+					} ) );
+					field.container.classList.remove( 'has-error' );
 				}
-			});
+			} );
 		}
-	}, [hostedFieldsInstance]);
+	}, [ hostedFieldsInstance ] );
 
 	return (
-		<LoadingMask isLoading={!isLoaded} showSpinner={true}>
+		<LoadingMask isLoading={ ! isLoaded } showSpinner={ true }>
 			<div className="wc-block-card-elements payment_method_braintree_credit_card">
-				{!token && (
+				{ ! token && (
 					<>
 						<div className="wc-block-gateway-container wc-card-number-element">
 							<div
-								id={`wc-${PAYMENT_METHOD_NAME}-account-number-hosted`}
+								id={ `wc-${ PAYMENT_METHOD_NAME }-account-number-hosted` }
 								className="wc-block-gateway-input empty wc-braintree-hosted-field-card-number"
 							/>
 							<label
-								htmlFor={`wc-${PAYMENT_METHOD_NAME}-account-number-hosted`}
+								htmlFor={ `wc-${ PAYMENT_METHOD_NAME }-account-number-hosted` }
 							>
-								{__(
+								{ __(
 									'Card Number',
 									'woocommerce-gateway-paypal-powered-by-braintree'
-								)}
+								) }
 							</label>
-							<ValidationInputError errorMessage={error.number} />
+							<ValidationInputError
+								errorMessage={ error.number }
+							/>
 						</div>
 
 						<div className="wc-block-gateway-container wc-card-expiry-element">
 							<div
-								id={`wc-${PAYMENT_METHOD_NAME}-expiry-hosted`}
+								id={ `wc-${ PAYMENT_METHOD_NAME }-expiry-hosted` }
 								className="wc-block-gateway-input empty wc-braintree-hosted-field-expiry"
 							/>
 							<label
-								htmlFor={`wc-${PAYMENT_METHOD_NAME}-expiry-hosted`}
+								htmlFor={ `wc-${ PAYMENT_METHOD_NAME }-expiry-hosted` }
 							>
-								{__(
+								{ __(
 									'Expiry date',
 									'woocommerce-gateway-paypal-powered-by-braintree'
-								)}
+								) }
 							</label>
 							<ValidationInputError
-								errorMessage={error.expirationDate}
+								errorMessage={ error.expirationDate }
 							/>
 						</div>
 					</>
-				)}
-				{cscRequired && (
+				) }
+				{ cscRequired && (
 					<div className="wc-block-gateway-container wc-card-cvc-element">
 						<div
-							id={`wc-${PAYMENT_METHOD_NAME}-csc-hosted${
+							id={ `wc-${ PAYMENT_METHOD_NAME }-csc-hosted${
 								token ? '-token' : ''
-							}`}
+							}` }
 							className="wc-block-gateway-input empty wc-braintree-hosted-field-csc"
 						/>
 						<label
-							htmlFor={`wc-${PAYMENT_METHOD_NAME}-csc-hosted${
+							htmlFor={ `wc-${ PAYMENT_METHOD_NAME }-csc-hosted${
 								token ? '-token' : ''
-							}`}
+							}` }
 						>
-							{__(
+							{ __(
 								'Security Code',
 								'woocommerce-gateway-paypal-powered-by-braintree'
-							)}
+							) }
 						</label>
-						<ValidationInputError errorMessage={error.cvv} />
+						<ValidationInputError errorMessage={ error.cvv } />
 					</div>
-				)}
+				) }
 			</div>
 		</LoadingMask>
 	);

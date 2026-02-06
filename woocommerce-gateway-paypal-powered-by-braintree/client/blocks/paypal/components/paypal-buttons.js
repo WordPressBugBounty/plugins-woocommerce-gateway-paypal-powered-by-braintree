@@ -21,50 +21,50 @@ const { buttonWidth, integrationErrorMessage } = getBraintreePayPalServerData();
  *
  * @return {JSX.Element} The PayPal button
  */
-export const PayPalButtons = ({
+export const PayPalButtons = ( {
 	loadPayPalSDK,
 	onError,
 	buttonLoaded,
 	isCheckoutConfirmation = false,
-}) => {
-	const mounted = useRef(false);
+} ) => {
+	const mounted = useRef( false );
 	const containerId = 'wc-braintree-paypal-button-container';
 
-	useEffect(() => {
+	useEffect( () => {
 		mounted.current = true;
 		let checkoutInstance, collectorInstance;
 		async function setupIntegration() {
 			try {
 				const { dataCollectorInstance, paypalCheckoutInstance } =
-					await loadPayPalSDK(containerId, mounted);
-				if (mounted.current) {
-					buttonLoaded(true);
+					await loadPayPalSDK( containerId, mounted );
+				if ( mounted.current ) {
+					buttonLoaded( true );
 				}
 				checkoutInstance = paypalCheckoutInstance;
 				collectorInstance = dataCollectorInstance;
-			} catch (error) {
-				logData(`Integration Error: ${error.message}`, error);
-				onError(integrationErrorMessage);
+			} catch ( error ) {
+				logData( `Integration Error: ${ error.message }`, error );
+				onError( integrationErrorMessage );
 			}
 		}
 		setupIntegration();
 
 		return () => {
 			mounted.current = false;
-			buttonLoaded(false);
-			if (checkoutInstance) {
+			buttonLoaded( false );
+			if ( checkoutInstance ) {
 				checkoutInstance.teardown();
 			}
-			if (collectorInstance) {
+			if ( collectorInstance ) {
 				collectorInstance.teardown();
 			}
 		};
-	}, [loadPayPalSDK, onError, buttonLoaded]);
+	}, [ loadPayPalSDK, onError, buttonLoaded ] );
 
-	if (isCheckoutConfirmation) {
+	if ( isCheckoutConfirmation ) {
 		return null;
 	}
 
-	const style = buttonWidth ? { width: `${buttonWidth}px` } : {};
-	return <div id={containerId} style={style}></div>;
+	const style = buttonWidth ? { width: `${ buttonWidth }px` } : {};
+	return <div id={ containerId } style={ style }></div>;
 };

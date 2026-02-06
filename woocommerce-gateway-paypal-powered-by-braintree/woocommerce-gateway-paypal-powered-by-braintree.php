@@ -7,14 +7,14 @@
  * Description: Receive credit card or PayPal payments using Braintree for WooCommerce.  A server with cURL, SSL support, and a valid SSL certificate is required (for security reasons) for this gateway to function. Requires PHP 7.4+
  * Author: WooCommerce
  * Author URI: http://woocommerce.com/
- * Version: 3.4.1
+ * Version: 3.7.0
  * Text Domain: woocommerce-gateway-paypal-powered-by-braintree
  * Domain Path: /i18n/languages/
  *
  * Requires at least: 6.7
- * Tested up to: 6.8
- * WC requires at least: 10.0
- * WC tested up to: 10.2
+ * Tested up to: 6.9
+ * WC requires at least: 10.3
+ * WC tested up to: 10.5
  * Requires PHP: 7.4
  * PHP tested up to: 8.3
  *
@@ -61,7 +61,7 @@ class WC_PayPal_Braintree_Loader {
 	const MINIMUM_WP_VERSION = '6.7';
 
 	/** minimum WooCommerce version required by this plugin */
-	const MINIMUM_WC_VERSION = '10.0';
+	const MINIMUM_WC_VERSION = '10.3';
 
 	/** SkyVerge plugin framework version used by this plugin */
 	const FRAMEWORK_VERSION = '5.15.10';
@@ -104,11 +104,11 @@ class WC_PayPal_Braintree_Loader {
 		// Declare compatibility with Woocommerce features.
 		add_action( 'before_woocommerce_init', array( $this, 'declare_woocommerce_feature_compatibility' ) );
 
-		// Add support for WooCommerce Blocks.
-		add_action( 'woocommerce_blocks_loaded', array( $this, 'woocommerce_block_support' ) );
-
 		// Filter credit card settings to ensure validity of card_types.
 		add_filter( 'option_woocommerce_braintree_credit_card_settings', array( $this, 'ensure_card_types_is_an_array' ) );
+
+		// Add 'Enable early access payment methods' option to the WooCommerce > Advanced > Features page.
+		add_filter( 'woocommerce_settings_features', array( $this, 'add_enable_early_access_to_woocommerce_feature_setting' ) );
 	}
 
 	/**
@@ -189,6 +189,10 @@ class WC_PayPal_Braintree_Loader {
 
 			return;
 		}
+
+		// Add support for WooCommerce Blocks.
+		// Note that this is not in the constructor to prevent timing issues with the autoloader.
+		add_action( 'woocommerce_blocks_loaded', array( $this, 'woocommerce_block_support' ) );
 
 		// fire it up!
 		add_action( 'woocommerce_init', '\WC_Braintree\wc_braintree' );
@@ -578,6 +582,7 @@ class WC_PayPal_Braintree_Loader {
 				function( Automattic\WooCommerce\Blocks\Payments\PaymentMethodRegistry $payment_method_registry ) {
 					$payment_method_registry->register( new WC_Braintree\WC_Gateway_Braintree_PayPal_Blocks_Support() );
 					$payment_method_registry->register( new WC_Braintree\WC_Gateway_Braintree_Credit_Card_Blocks_Support() );
+					$payment_method_registry->register( new WC_Braintree\WC_Gateway_Braintree_Venmo_Blocks_Support() );
 				}
 			);
 
@@ -603,6 +608,30 @@ class WC_PayPal_Braintree_Loader {
 				);
 			}
 		}
+	}
+
+	/**
+	 * Filter callback to add a custom feature setting to the WooCommerce Features page.
+	 *
+	 * Adds an "Enable early access Braintree payment methods" option to the WooCommerce
+	 * Features settings page.
+	 *
+	 * @since 3.5.0
+	 *
+	 * @param array $settings The WooCommerce Features page settings array.
+	 * @return array
+	 */
+	public function add_enable_early_access_to_woocommerce_feature_setting( $settings ) {
+		$settings[] = [
+			'title'    => __( 'Braintree Payment Gateway', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+			'desc'     => __( 'Enable early access Braintree payment methods', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+			'id'       => \WC_Braintree\WC_Braintree_Feature_Flags::EARLY_ACCESS_OPTION_NAME,
+			'default'  => 'no',
+			'type'     => 'checkbox',
+			'desc_tip' => __( 'Enable this option to make new Braintree payment methods available while they are in early release.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+		];
+
+		return $settings;
 	}
 }
 

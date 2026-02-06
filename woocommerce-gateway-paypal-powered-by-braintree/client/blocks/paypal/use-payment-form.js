@@ -49,30 +49,32 @@ const {
  *
  * @return {Object} An object with properties that interact with the Payment Form.
  */
-export const usePaymentForm = ({
+export const usePaymentForm = ( {
 	billing: { cartTotal, currency },
 	onSubmit,
 	shouldSavePayment,
 	token = null,
 	isExpress = false,
 	needsShipping = false,
-}) => {
-	const [shouldSubmit, setShouldSubmit] = useState( false );
-	const [paymentNonce, setPaymentNonce] = useState(cartPaymentNonce || '');
+} ) => {
+	const [ shouldSubmit, setShouldSubmit ] = useState( false );
+	const [ paymentNonce, setPaymentNonce ] = useState(
+		cartPaymentNonce || ''
+	);
 	const paymentNonceRef = useRef( paymentNonce );
 
-	const [deviceData, setDeviceData] = useState('');
-	const [testAmount, setTestAmount] = useState('');
+	const [ deviceData, setDeviceData ] = useState( '' );
+	const [ testAmount, setTestAmount ] = useState( '' );
 
 	const currencyCode = currency.code;
-	const amount = (cartTotal.value / 10 ** currency.minorUnit).toFixed(2);
+	const amount = ( cartTotal.value / 10 ** currency.minorUnit ).toFixed( 2 );
 
-	const isSingleUse = useMemo(() => {
-		return !shouldSavePayment && !tokenizationForced;
-	}, [shouldSavePayment]);
+	const isSingleUse = useMemo( () => {
+		return ! shouldSavePayment && ! tokenizationForced;
+	}, [ shouldSavePayment ] );
 
 	// If we're in express checkout, use the 'checkout' label.
-	if (isExpress) {
+	if ( isExpress ) {
 		buttonStyles.label = 'checkout';
 	}
 
@@ -85,28 +87,28 @@ export const usePaymentForm = ({
 	}, [ paymentNonce, onSubmit, shouldSubmit ] );
 
 	const renderPayPalButtons = useCallback(
-		(paypalCheckoutInstance, containerId) => {
+		( paypalCheckoutInstance, containerId ) => {
 			const options = {
 				env: isTestEnvironment ? 'sandbox' : 'production',
 				commit: isExpress ? false : true,
 				style: buttonStyles,
 				// eslint-disable-next-line no-unused-vars
-				onApprove(data, actions) {
+				onApprove( data, actions ) {
 					return paypalCheckoutInstance
-						.tokenizePayment(data)
-						.then(function (payload) {
-							logData('Payment tokenized.', payload);
+						.tokenizePayment( data )
+						.then( function ( payload ) {
+							logData( 'Payment tokenized.', payload );
 							// If we're in express checkout, send the nonce to the server.
-							if (isExpress) {
+							if ( isExpress ) {
 								// Send the nonce to the server.
-								if (payload) {
+								if ( payload ) {
 									payload.wp_nonce = setPaymentMethodNonce;
 									return setPaymentNonceSession(
 										cartHandlerUrl,
 										payload
 									)
-										.then((res) => {
-											if (res && res.redirect_url) {
+										.then( ( res ) => {
+											if ( res && res.redirect_url ) {
 												window.location =
 													res.redirect_url;
 												return;
@@ -114,54 +116,54 @@ export const usePaymentForm = ({
 											throw new Error(
 												paymentErrorMessage
 											);
-										})
-										.catch((error) => {
-											setPaymentNonce('');
+										} )
+										.catch( ( error ) => {
+											setPaymentNonce( '' );
 											logData(
-												`Payment Error: ${error.message}`,
+												`Payment Error: ${ error.message }`,
 												error
 											);
-										});
+										} );
 								}
 							}
-							setPaymentNonce(payload.nonce);
+							setPaymentNonce( payload.nonce );
 
 							// Set the submit state to true to trigger the onSubmit callback.
 							setShouldSubmit( true );
-						});
+						} );
 				},
-				onError(error) {
-					setPaymentNonce('');
-					logData(`Payment Error: ${error.message}`, error);
+				onError( error ) {
+					setPaymentNonce( '' );
+					logData( `Payment Error: ${ error.message }`, error );
 				},
 			};
 
 			const createOrder = () => {
-				return paypalCheckoutInstance.createPayment({
+				return paypalCheckoutInstance.createPayment( {
 					flow: isSingleUse ? 'checkout' : 'vault',
 					intent: isSingleUse ? payPalIntent : 'tokenize',
 					amount,
 					currency: currencyCode,
 					locale: paypalLocale,
 					enableShippingAddress: needsShipping,
-				});
+				} );
 			};
 
-			if (isSingleUse) {
+			if ( isSingleUse ) {
 				options.createOrder = createOrder;
 			} else {
 				options.createBillingAgreement = createOrder;
 			}
 
 			// Restore the button container to its initial state.
-			const container = document.getElementById(containerId);
-			if (container) {
+			const container = document.getElementById( containerId );
+			if ( container ) {
 				container.innerHTML = '';
 			}
 
 			// Render the PayPal button.
-			if (document.getElementById(containerId)) {
-				return paypal.Buttons(options).render(`#${containerId}`);
+			if ( document.getElementById( containerId ) ) {
+				return paypal.Buttons( options ).render( `#${ containerId }` );
 			}
 		},
 		[ amount, currencyCode, isExpress, isSingleUse, needsShipping ]
@@ -170,19 +172,19 @@ export const usePaymentForm = ({
 	/**
 	 * PayPal SDK options.
 	 */
-	const sdkOptions = useMemo(() => {
-		const [enabledFunding, disabledFunding] = [
+	const sdkOptions = useMemo( () => {
+		const [ enabledFunding, disabledFunding ] = [
 			[],
 			payPalDisabledFundingOptions,
 		];
-		if (!isPayPalCardEnabled) {
-			disabledFunding.push('card');
+		if ( ! isPayPalCardEnabled ) {
+			disabledFunding.push( 'card' );
 		}
 
-		if (isPayPalPayLaterEnabled) {
-			enabledFunding.push('paylater');
+		if ( isPayPalPayLaterEnabled ) {
+			enabledFunding.push( 'paylater' );
 		} else {
-			disabledFunding.push('paylater');
+			disabledFunding.push( 'paylater' );
 		}
 
 		const options = {
@@ -195,22 +197,22 @@ export const usePaymentForm = ({
 			commit: isExpress ? false : true,
 		};
 
-		if (enabledFunding.length) {
-			options['enable-funding'] = enabledFunding.join(',');
+		if ( enabledFunding.length ) {
+			options[ 'enable-funding' ] = enabledFunding.join( ',' );
 		}
 
-		if (disabledFunding.length) {
-			options['disable-funding'] = disabledFunding.join(',');
+		if ( disabledFunding.length ) {
+			options[ 'disable-funding' ] = disabledFunding.join( ',' );
 		}
 
-		if (forceBuyerCountry) {
-			options['buyer-country'] = forceBuyerCountry;
+		if ( forceBuyerCountry ) {
+			options[ 'buyer-country' ] = forceBuyerCountry;
 		}
 		return options;
-	}, [currencyCode, isSingleUse, isExpress]);
+	}, [ currencyCode, isSingleUse, isExpress ] );
 
 	const loadPayPalSDK = useCallback(
-		async (containerId = '', mounted = {}) => {
+		async ( containerId = '', mounted = {} ) => {
 			const { braintree } = window;
 			const responseObj = {};
 			// Get client token.
@@ -220,70 +222,76 @@ export const usePaymentForm = ({
 				clientTokenNonce
 			);
 
-			logData('Creating client');
+			logData( 'Creating client' );
 			// Setup Braintree client.
-			const clientInstance = await braintree.client.create({
+			const clientInstance = await braintree.client.create( {
 				authorization: clientToken,
-			});
-			logData('Client ready');
+			} );
+			logData( 'Client ready' );
 
 			// Setup Braintree data collector.
 			try {
 				const dataCollectorInstance =
-					await braintree.dataCollector.create({
+					await braintree.dataCollector.create( {
 						client: clientInstance,
-					});
-				if (dataCollectorInstance && dataCollectorInstance.deviceData) {
-					if (mounted.current) {
-						setDeviceData(dataCollectorInstance.deviceData);
+					} );
+				if (
+					dataCollectorInstance &&
+					dataCollectorInstance.deviceData
+				) {
+					if ( mounted.current ) {
+						setDeviceData( dataCollectorInstance.deviceData );
 					}
 					responseObj.dataCollectorInstance = dataCollectorInstance;
 				}
-			} catch (error) {
-				logData(error);
+			} catch ( error ) {
+				logData( error );
 			}
 
 			// Load PayPal SDK and Render the PayPal button.
-			if (containerId) {
-				logData('Creating integration');
+			if ( containerId ) {
+				logData( 'Creating integration' );
 				// Setup Braintree PayPal Checkout.
 				const paypalCheckoutInstance =
-					await braintree.paypalCheckout.create({
+					await braintree.paypalCheckout.create( {
 						client: clientInstance,
-					});
+					} );
 
 				// Render the PayPal button.
-				await paypalCheckoutInstance.loadPayPalSDK(sdkOptions);
-				await renderPayPalButtons(paypalCheckoutInstance, containerId);
+				await paypalCheckoutInstance.loadPayPalSDK( sdkOptions );
+				await renderPayPalButtons(
+					paypalCheckoutInstance,
+					containerId
+				);
 				responseObj.paypalCheckoutInstance = paypalCheckoutInstance;
-				logData('Integration ready');
+				logData( 'Integration ready' );
 			}
 
 			return responseObj;
 		},
-		[renderPayPalButtons, sdkOptions]
+		[ renderPayPalButtons, sdkOptions ]
 	);
 
-	const getPaymentMethodData = useCallback(() => {
+	const getPaymentMethodData = useCallback( () => {
 		const paymentMethodData = {
 			wc_braintree_paypal_payment_nonce: paymentNonceRef.current,
 			wc_braintree_device_data: deviceData,
 		};
-		if (!isSingleUse) {
+		if ( ! isSingleUse ) {
 			paymentMethodData[
-				`wc-${PAYMENT_METHOD_NAME}-tokenize-payment-method`
+				`wc-${ PAYMENT_METHOD_NAME }-tokenize-payment-method`
 			] = true;
 		}
 
-		if (token) {
-			paymentMethodData[`wc-${PAYMENT_METHOD_NAME}-payment-token`] =
+		if ( token ) {
+			paymentMethodData[ `wc-${ PAYMENT_METHOD_NAME }-payment-token` ] =
 				token;
 			paymentMethodData.token = token;
 			paymentMethodData.isSavedToken = true;
 		}
 
-		if (testAmount) {
-			paymentMethodData[`wc-${PAYMENT_METHOD_NAME}-test-amount`] =
+		if ( testAmount ) {
+			paymentMethodData[ `wc-${ PAYMENT_METHOD_NAME }-test-amount` ] =
 				testAmount;
 		}
 

@@ -7,6 +7,8 @@
 
 namespace WC_Braintree;
 
+defined( 'ABSPATH' ) or exit;
+
 /**
  * Braintree PayPal payment method Blocks integration
  *

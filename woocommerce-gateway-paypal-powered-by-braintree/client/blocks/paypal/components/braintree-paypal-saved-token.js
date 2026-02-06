@@ -17,34 +17,37 @@ import { CheckoutHandler } from '../checkout-handler';
  *
  * @return {JSX.Element} The Braintree PayPal saved token component.
  */
-export const BraintreePayPalSavedToken = (props) => {
+export const BraintreePayPalSavedToken = ( props ) => {
 	const { eventRegistration, emitResponse } = props;
-	const paymentForm = usePaymentForm(props);
+	const paymentForm = usePaymentForm( props );
 	const { loadPayPalSDK } = paymentForm;
-	const mounted = useRef(false);
+	const mounted = useRef( false );
 
-	useEffect(() => {
+	useEffect( () => {
 		mounted.current = true;
 		let collectorInstance;
 		async function loadDeviceData() {
-			const { dataCollectorInstance } = await loadPayPalSDK('', mounted);
+			const { dataCollectorInstance } = await loadPayPalSDK(
+				'',
+				mounted
+			);
 			collectorInstance = dataCollectorInstance;
 		}
 		loadDeviceData();
 
 		return () => {
 			mounted.current = false;
-			if (collectorInstance && collectorInstance.teardown) {
+			if ( collectorInstance && collectorInstance.teardown ) {
 				collectorInstance.teardown();
 			}
 		};
-	}, [loadPayPalSDK]);
+	}, [ loadPayPalSDK ] );
 
 	return (
 		<CheckoutHandler
-			checkoutFormHandler={paymentForm}
-			eventRegistration={eventRegistration}
-			emitResponse={emitResponse}
+			checkoutFormHandler={ paymentForm }
+			eventRegistration={ eventRegistration }
+			emitResponse={ emitResponse }
 		/>
 	);
 };

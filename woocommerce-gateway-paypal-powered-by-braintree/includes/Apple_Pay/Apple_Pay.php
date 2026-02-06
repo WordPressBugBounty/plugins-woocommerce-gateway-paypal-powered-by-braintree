@@ -27,6 +27,7 @@ namespace WC_Braintree\Apple_Pay;
 use SkyVerge\WooCommerce\PluginFramework\v5_15_10 as Framework;
 use WC_Braintree\Apple_Pay\Frontend;
 use WC_Braintree\Apple_Pay\API\Payment_Response;
+use WC_Braintree\Integrations\AvaTax;
 use WC_Braintree\WC_Braintree_Express_Checkout;
 
 defined( 'ABSPATH' ) || exit;
@@ -50,6 +51,10 @@ class Apple_Pay extends Framework\SV_WC_Payment_Gateway_Apple_Pay {
 		$this->frontend = new Frontend( $this->get_plugin(), $this );
 		// Runs at priority 11 to ensure that the button is moved after the framework's init fires.
 		add_action( 'wp', array( $this, 'post_init' ), 11 );
+
+		// Initialize session data for Blocks checkout when recalculating totals.
+		add_action( 'wp_ajax_wc_' . $this->get_processing_gateway()->get_id() . '_apple_pay_recalculate_totals', array( $this, 'maybe_init_blocks_session' ), 5 );
+		add_action( 'wp_ajax_nopriv_wc_' . $this->get_processing_gateway()->get_id() . '_apple_pay_recalculate_totals', array( $this, 'maybe_init_blocks_session' ), 5 );
 	}
 
 	/**
@@ -69,6 +74,24 @@ class Apple_Pay extends Framework\SV_WC_Payment_Gateway_Apple_Pay {
 			$css_url = $this->get_plugin()->get_plugin_url() . '/assets/css/frontend/wc-apply-pay.min.css';
 
 			wp_enqueue_style( 'wc-braintree-apply-pay', $css_url, array(), $version );
+		}
+	}
+
+	/**
+	 * Initializes Apple Pay session data for Blocks checkout.
+	 *
+	 * When using WooCommerce Blocks checkout, the payment request data isn't initialized
+	 * in the session like it is for classic checkout via Skyverge. This method ensures
+	 * the session data is always fresh and matches the current cart state. This method
+	 * is hooked to run at a higher priority than the AJAX handler that recalculates
+	 * totals so that the data is available when needed.
+	 *
+	 * @since 3.5.0
+	 */
+	public function maybe_init_blocks_session() {
+		if ( WC()->cart && ! WC()->cart->is_empty() ) {
+			$payment_request = $this->get_cart_payment_request( WC()->cart );
+			$this->store_payment_request( $payment_request );
 		}
 	}
 
@@ -221,10 +244,14 @@ class Apple_Pay extends Framework\SV_WC_Payment_Gateway_Apple_Pay {
 
 			$order->add_order_note( __( 'Apple Pay payment authorized.', 'woocommerce-gateway-paypal-powered-by-braintree' ) );
 
-			$order->set_address( $payment_response->get_billing_address(), 'billing' );
-			$order->set_address( $payment_response->get_shipping_address(), 'shipping' );
+			$order->set_billing_address( $payment_response->get_billing_address() );
+			$order->set_shipping_address( $payment_response->get_shipping_address() );
 
 			$order->save();
+
+			// Integrate with AvaTax if enabled.
+			// Forcing tax calculation here to ensure taxes are calculated for Apple Pay orders originating from the product page.
+			AvaTax::calculate_order_tax( $order );
 
 			if ( class_exists( '\WC_Subscriptions_Checkout' ) ) {
 				\WC_Subscriptions_Checkout::process_checkout( $order->get_id() );

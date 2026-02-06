@@ -63,6 +63,17 @@ class WC_Gateway_Braintree_PayPal extends WC_Gateway_Braintree {
 	/** @var Buttons\Abstract_Button[] PayPal button handler instances  */
 	protected $button_handlers = [];
 
+	/**
+	 * Whether this gateway can store credentials.
+	 *
+	 * The PayPal gateway is permitted to store its own Braintree connection credentials.
+	 *
+	 * @since 3.7.0
+	 * @return bool
+	 */
+	protected function can_gateway_store_credentials(): bool {
+		return true;
+	}
 
 	/**
 	 * Initialize the gateway
@@ -216,10 +227,10 @@ class WC_Gateway_Braintree_PayPal extends WC_Gateway_Braintree {
 
 
 	/**
-	 * Tweak two frontend strings so they match PayPal lingo instead of "Bank". This is
-	 * the least hacky approach that doesn't require fairly significant refactoring
-	 * of the framework code responsible for these strings, or results in an approach
-	 * that won't work when the strings are translated
+	 * Tweak frontend strings so they match PayPal lingo instead of "Bank".
+	 *
+	 * Note: "Use a new bank account" is now handled by get_use_new_payment_method_input_html()
+	 * override in WC_Braintree_PayPal_Payment_Form to avoid affecting other gateways like ACH.
 	 *
 	 * @since 3.0.0
 	 * @param string $translated_text translated text.
@@ -231,11 +242,7 @@ class WC_Gateway_Braintree_PayPal extends WC_Gateway_Braintree {
 
 		if ( 'woocommerce-gateway-paypal-powered-by-braintree' === $text_domain ) {
 
-			if ( 'Use a new bank account' === $raw_text ) {
-
-				$translated_text = __( 'Use a new PayPal account', 'woocommerce-gateway-paypal-powered-by-braintree' );
-
-			} elseif ( 'Bank Accounts' === $raw_text ) {
+			if ( 'Bank Accounts' === $raw_text ) {
 
 				$translated_text = __( 'PayPal Accounts', 'woocommerce-gateway-paypal-powered-by-braintree' );
 			}
@@ -1161,9 +1168,14 @@ class WC_Gateway_Braintree_PayPal extends WC_Gateway_Braintree {
 	 */
 	protected function get_admin_params() {
 
-		return [
-			'button_sizes' => $this->get_button_sizes(),
-		];
+		$params = parent::get_admin_params();
+
+		return array_merge(
+			$params,
+			array(
+				'button_sizes' => $this->get_button_sizes(),
+			)
+		);
 	}
 
 

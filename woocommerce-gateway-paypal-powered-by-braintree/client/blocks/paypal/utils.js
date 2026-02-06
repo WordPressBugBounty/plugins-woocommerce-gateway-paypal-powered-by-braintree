@@ -14,13 +14,16 @@ let cachedPayPalServerData = null;
  * Braintree Paypal data comes from the server passed on a global object.
  */
 export const getBraintreePayPalServerData = () => {
-	if (cachedPayPalServerData !== null) {
+	if ( cachedPayPalServerData !== null ) {
 		return cachedPayPalServerData;
 	}
 
-	const braintreePayPalData = getSetting(`${PAYMENT_METHOD_ID}_data`, null);
+	const braintreePayPalData = getSetting(
+		`${ PAYMENT_METHOD_ID }_data`,
+		null
+	);
 
-	if (!braintreePayPalData) {
+	if ( ! braintreePayPalData ) {
 		throw new Error(
 			'Braintree Paypal initialization data is not available'
 		);
@@ -58,10 +61,12 @@ export const getBraintreePayPalServerData = () => {
 		payPalIntent: braintreePayPalData.paypal_intent || '',
 		paypalLocale: braintreePayPalData.paypal_locale || 'en_us',
 		showSavedCards:
-			(braintreePayPalData.show_saved_cards && !isCheckoutConfirmation) ||
+			( braintreePayPalData.show_saved_cards &&
+				! isCheckoutConfirmation ) ||
 			false,
 		showSaveOption:
-			(braintreePayPalData.show_save_option && !isCheckoutConfirmation) ||
+			( braintreePayPalData.show_save_option &&
+				! isCheckoutConfirmation ) ||
 			false,
 		supports: braintreePayPalData.supports || {},
 		title: braintreePayPalData.title || '',
@@ -85,12 +90,12 @@ export const getBraintreePayPalServerData = () => {
  * @param {Object} data    Data object to log
  * @return {void}
  */
-export const logData = (message, data = null) => {
-	if (getBraintreePayPalServerData().debug) {
+export const logData = ( message, data = null ) => {
+	if ( getBraintreePayPalServerData().debug ) {
 		/* eslint-disable no-console */
-		console.log(`Braintree (PayPal): ${message}`);
-		if (data) {
-			console.log(data);
+		console.log( `Braintree (PayPal): ${ message }` );
+		if ( data ) {
+			console.log( data );
 		}
 		/* eslint-enable no-console */
 	}

@@ -20,13 +20,13 @@ export const usePaymentProcessing = (
 	emitResponse,
 	getPaymentMethodData
 ) => {
-	useEffect(() => {
-		const unsubscribe = onPaymentProcessing(() => {
+	useEffect( () => {
+		const unsubscribe = onPaymentProcessing( () => {
 			const paymentMethodData = getPaymentMethodData();
 			if (
-				!paymentMethodData ||
-				(!paymentMethodData.token &&
-					!paymentMethodData.wc_braintree_paypal_payment_nonce)
+				! paymentMethodData ||
+				( ! paymentMethodData.token &&
+					! paymentMethodData.wc_braintree_paypal_payment_nonce )
 			) {
 				return {
 					type: emitResponse.responseTypes.ERROR,
@@ -40,7 +40,7 @@ export const usePaymentProcessing = (
 					paymentMethodData,
 				},
 			};
-		});
+		} );
 		return unsubscribe;
 	}, [
 		emitResponse.responseTypes.SUCCESS,
@@ -48,5 +48,5 @@ export const usePaymentProcessing = (
 		getPaymentMethodData,
 		emitResponse.responseTypes.ERROR,
 		emitResponse.noticeContexts.PAYMENTS,
-	]);
+	] );
 };

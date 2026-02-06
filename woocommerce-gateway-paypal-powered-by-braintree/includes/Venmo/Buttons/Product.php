@@ -1,0 +1,377 @@
+<?php
+/**
+ * WooCommerce Braintree Gateway
+ *
+ * This source file is subject to the GNU General Public License v3.0
+ * that is bundled with this package in the file license.txt.
+ * It is also available through the world-wide-web at this URL:
+ * http://www.gnu.org/licenses/gpl-3.0.html
+ * If you did not receive a copy of the license and are unable to
+ * obtain it through the world-wide-web, please send an email
+ * to license@woocommerce.com so we can send you a copy immediately.
+ *
+ * DISCLAIMER
+ *
+ * Do not edit or add to this file if you wish to upgrade WooCommerce Braintree Gateway to newer
+ * versions in the future. If you wish to customize WooCommerce Braintree Gateway for your
+ * needs please refer to http://docs.woocommerce.com/document/braintree/
+ *
+ * @package   WC-Braintree/Buttons
+ * @author    WooCommerce
+ * @copyright Copyright (c) 2016-2025, Automattic, Inc.
+ * @license   http://www.gnu.org/licenses/gpl-3.0.html GNU General Public License v3.0
+ */
+
+namespace WC_Braintree\Venmo\Buttons;
+
+use SkyVerge\WooCommerce\PluginFramework\v5_15_10 as Framework;
+use WC_Braintree\WC_Gateway_Braintree_Venmo;
+
+defined( 'ABSPATH' ) || exit;
+
+/**
+ * Product page button class.
+ *
+ * @since 3.5.0
+ */
+class Product extends Abstract_Button {
+
+
+	/**
+	 * The product object if on a product page or false if not on a product page.
+	 *
+	 * @var \WC_Product|null|false
+	 */
+	protected $product;
+
+
+	/**
+	 * Gets the JS handler class name.
+	 *
+	 * @since 3.5.0
+	 *
+	 * @return string
+	 */
+	protected function get_js_handler_class_name() {
+
+		return 'WC_Braintree_Venmo_Product_Button_Handler';
+	}
+
+
+	/**
+	 * Checks if this button should be enabled or not.
+	 *
+	 * @since 3.5.0
+	 *
+	 * @return bool
+	 */
+	protected function is_enabled() {
+
+		return (bool) $this->get_gateway()->product_page_buy_now_enabled();
+	}
+
+
+	/**
+	 * Adds necessary actions and filters for this button.
+	 *
+	 * @since 3.5.0
+	 */
+	protected function add_button_hooks() {
+
+		parent::add_button_hooks();
+
+		add_action(
+			'wp',
+			function () {
+				$this->init_product();
+			}
+		);
+
+		add_action( 'woocommerce_api_' . stripslashes( strtolower( get_class( $this->get_gateway() ) ) ) . '_product_button_checkout', [ $this, 'handle_wc_api' ] );
+
+		if ( $this->should_validate_product_data() ) {
+			add_action( 'woocommerce_api_' . stripslashes( strtolower( get_class( $this->get_gateway() ) ) ) . '_validate_product_data', [ $this, 'validate_product_data' ] );
+		}
+
+		// enqueue product button scripts.
+		add_action( 'wp_enqueue_scripts', [ $this, 'enqueue_product_scripts' ] );
+	}
+
+
+	/**
+	 * Initializes the product page buy now button.
+	 *
+	 * @internal
+	 *
+	 * @since 3.5.0
+	 */
+	public function init_product() {
+
+		if ( ! is_product() || ! $this->get_product() ) {
+			return;
+		}
+
+		// Render Venmo button after other express checkout buttons (priority 20).
+		add_action( 'woocommerce_after_add_to_cart_button', [ $this, 'render' ], 20 );
+	}
+
+
+	/**
+	 * Enqueues product button scripts.
+	 *
+	 * @since 3.5.0
+	 */
+	public function enqueue_product_scripts() {
+
+		if ( ! is_product() || ! $this->get_product() ) {
+			return;
+		}
+
+		$this->enqueue_scripts();
+
+		// Enqueue custom product button handler.
+		wp_enqueue_script(
+			'wc-braintree-venmo-product',
+			$this->get_gateway()->get_plugin()->get_plugin_url() . '/assets/js/frontend/wc-braintree-venmo-product.min.js',
+			array( 'jquery', 'braintree-js-client', 'braintree-js-venmo', 'braintree-js-data-collector' ),
+			\WC_Braintree\WC_Braintree::VERSION,
+			true
+		);
+	}
+
+
+	/**
+	 * Validates a WC API request.
+	 *
+	 * @since 3.5.0
+	 *
+	 * @return bool
+	 */
+	protected function is_wc_api_request_valid() {
+
+		return (bool) wp_verify_nonce( Framework\SV_WC_Helper::get_posted_value( 'wp_nonce' ), 'wc_' . $this->get_gateway()->get_id() . '_product_button_checkout' );
+	}
+
+
+	/**
+	 * Processes a WC API request that contains data from the button JS response.
+	 *
+	 * @since 3.5.0
+	 */
+	protected function process_wc_api_request() {
+
+		$product_id = (int) Framework\SV_WC_Helper::get_posted_value( 'product_id' );
+		$product    = wc_get_product( $product_id );
+
+		if ( ! $product instanceof \WC_Product ) {
+			wp_send_json_error( __( 'Invalid Product Data', 'woocommerce-gateway-paypal-powered-by-braintree' ) );
+		}
+
+		$serialized = Framework\SV_WC_Helper::get_posted_value( 'cart_form' );
+		$cart_data  = [];
+
+		if ( ! empty( $serialized ) ) {
+			parse_str( $serialized, $cart_data );
+		}
+
+		$quantity     = isset( $cart_data['quantity'] ) ? (int) $cart_data['quantity'] : 1;
+		$variation_id = isset( $cart_data['variation_id'] ) ? (int) $cart_data['variation_id'] : 0;
+
+		/**
+		 * Fires before adding a product to cart via the product button.
+		 *
+		 * @since 3.5.0
+		 *
+		 * @param int   $product_id   Product ID.
+		 * @param int   $quantity     Quantity to add.
+		 * @param int   $variation_id Variation ID if applicable.
+		 * @param array $cart_data    Cart form data.
+		 */
+		do_action( 'wc_' . $this->get_gateway()->get_id() . '_before_product_button_add_to_cart', $product_id, $quantity, $variation_id, $cart_data );
+
+		try {
+
+			WC()->cart->empty_cart();
+			WC()->cart->add_to_cart( $product->get_id(), max( $quantity, 1 ), $variation_id );
+
+			parent::process_wc_api_request();
+
+			// generic Exception to catch any exceptions that may be thrown by third-party code during add_to_cart().
+		} catch ( \Exception $e ) {
+
+			$this->get_gateway()->get_plugin()->log( 'Error while processing button callback: ' . $e->getMessage() );
+
+			wp_send_json_error( __( 'An error occurred while processing the Venmo button callback.', 'woocommerce-gateway-paypal-powered-by-braintree' ) );
+		}
+	}
+
+
+	/**
+	 * Determines if product data should be validated before displaying a buy button.
+	 *
+	 * @since 3.5.0
+	 *
+	 * @return bool
+	 */
+	public function should_validate_product_data() {
+
+		/**
+		 * Filters whether the product data should be validated for this product button to be shown.
+		 *
+		 * @since 3.5.0
+		 *
+		 * @param bool $should_validate
+		 * @param Product $product product button instance
+		 */
+		return (bool) apply_filters( 'wc_' . $this->get_gateway()->get_id() . '_product_button_should_validate_product_data', true, $this );
+	}
+
+
+	/**
+	 * Validates product add-ons via AJAX to show/hide the Venmo button appropriately.
+	 *
+	 * @since 3.5.0
+	 */
+	public function validate_product_data() {
+
+		if ( ! wp_verify_nonce( Framework\SV_WC_Helper::get_posted_value( 'wp_nonce' ), 'wc_' . $this->get_gateway()->get_id() . '_validate_product_data' ) ) {
+			return;
+		}
+
+		/**
+		 * Validates the product data for displaying the product button.
+		 *
+		 * @since 3.5.0
+		 *
+		 * @param bool $is_valid
+		 * @param Product $product product button instance
+		 */
+		$is_valid = (bool) apply_filters( 'wc_' . $this->get_gateway()->get_id() . '_product_button_validate_product_data', true, $this );
+
+		wp_send_json_success(
+			[
+				'order_amount' => $this->get_order_amount_from_form( Framework\SV_WC_Helper::get_posted_value( 'cart_form', '' ) ),
+				'is_valid'     => $is_valid,
+			]
+		);
+	}
+
+
+	/**
+	 * Gets the order amount for the product and quantity specified in the given form data.
+	 *
+	 * @since 3.5.0
+	 *
+	 * @param string|array $form The form data.
+	 * @return float
+	 */
+	protected function get_order_amount_from_form( $form ) {
+
+		$form = wp_parse_args(
+			$form,
+			[
+				'variation_id' => null,
+				'quantity'     => 1,
+			]
+		);
+
+		$variation = wc_get_product( (int) $form['variation_id'] );
+		if ( $variation && $variation instanceof \WC_Product ) {
+			return (float) $variation->get_price() * (int) $form['quantity'];
+		}
+
+		$product = wc_get_product( (int) Framework\SV_WC_Helper::get_posted_value( 'product_id' ) );
+		if ( $product && $product instanceof \WC_Product ) {
+			return (float) $product->get_price() * (int) $form['quantity'];
+		}
+
+		return 0.0;
+	}
+
+
+	/**
+	 * Gets any additional JS handler params needed for this button.
+	 *
+	 * @since 3.5.0
+	 *
+	 * @return array
+	 */
+	protected function get_additional_js_handler_params() {
+
+		$payment_usage = $this->get_gateway()->product_is_subscription() ? WC_Gateway_Braintree_Venmo::PAYMENT_METHOD_USAGE_MULTI : WC_Gateway_Braintree_Venmo::PAYMENT_METHOD_USAGE_SINGLE;
+
+		return [
+			'is_product_page'              => is_product(),
+			'product_checkout_url'         => add_query_arg( 'wc-api', strtolower( get_class( $this->get_gateway() ) . '_product_button_checkout' ), home_url() ),
+			'product_checkout_nonce'       => wp_create_nonce( 'wc_' . $this->get_gateway()->get_id() . '_product_button_checkout' ),
+			'validate_product_url'         => add_query_arg( 'wc-api', strtolower( get_class( $this->get_gateway() ) . '_validate_product_data' ), home_url() ),
+			'validate_product_nonce'       => wp_create_nonce( 'wc_' . $this->get_gateway()->get_id() . '_validate_product_data' ),
+			'should_validate_product_data' => $this->should_validate_product_data(),
+			'payment_usage'                => $payment_usage,
+		];
+	}
+
+
+	/**
+	 * Gets additional button markup params.
+	 *
+	 * @since 3.5.0
+	 *
+	 * @return array
+	 */
+	protected function get_additional_button_params() {
+
+		$params = [];
+
+		if ( $this->get_product() ) {
+			$params['product_id'] = $this->get_product()->get_id();
+		}
+
+		return $params;
+	}
+
+
+	/**
+	 * Gets the product total.
+	 *
+	 * @since 3.5.0
+	 *
+	 * @return float
+	 */
+	protected function get_button_total() {
+
+		return $this->get_product() ? $this->get_product()->get_price() : 0.0;
+	}
+
+
+	/**
+	 * Gets the product page product object, or false if not on a product page.
+	 *
+	 * @since 3.5.0
+	 *
+	 * @return \WC_Product|false
+	 */
+	protected function get_product() {
+
+		if ( null === $this->product ) {
+
+			$product       = wc_get_product( get_the_ID() );
+			$this->product = $product instanceof \WC_Product ? $product : false;
+		}
+
+		return $this->product;
+	}
+
+
+	/**
+	 * Gets the ID of this script handler.
+	 *
+	 * @since 3.5.0
+	 *
+	 * @return string
+	 */
+	public function get_id() {
+
+		return $this->get_gateway()->get_id() . '_product_button';
+	}
+}

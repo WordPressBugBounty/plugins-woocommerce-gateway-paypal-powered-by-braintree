@@ -50,5 +50,10 @@ class WC_Braintree_API_Client_Token_Request extends WC_Braintree_API_Request {
 		$this->set_callback( 'generate' );
 
 		$this->request_data = array( 'merchantAccountId' => $args['merchantAccountId'] );
+
+		// Add domains parameter if provided (for Fastlane support).
+		if ( ! empty( $args['domains'] ) ) {
+			$this->request_data['domains'] = $args['domains'];
+		}
 	}
 }

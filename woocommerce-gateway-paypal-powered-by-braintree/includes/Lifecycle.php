@@ -180,6 +180,12 @@ class Lifecycle extends Framework\Plugin\Lifecycle {
 
 			$this->upgrade_to_2_5_0();
 		}
+
+		// upgrade to v3.7.0.
+		if ( version_compare( $installed_version, '3.7.0', '<' ) ) {
+
+			$this->upgrade_to_3_7_0();
+		}
 	}
 
 
@@ -334,5 +340,62 @@ class Lifecycle extends Framework\Plugin\Lifecycle {
 		}
 
 		update_option( 'woocommerce_braintree_paypal_settings', $paypal_settings );
+	}
+
+
+	/**
+	 * Updates to version 3.7.0.
+	 *
+	 * Migrates the old `inherit_settings` boolean to the new `inherit_settings_source` setting.
+	 * This ensures existing credential sharing configurations continue to work after upgrade.
+	 *
+	 * @since 3.7.0
+	 */
+	protected function upgrade_to_3_7_0() {
+
+		Logger::info( 'Starting upgrade to 3.7.0' );
+
+		// Migrate from inherit_settings to inherit_settings_source.
+		$gateway_ids = [
+			WC_Braintree::CREDIT_CARD_GATEWAY_ID,
+			WC_Braintree::PAYPAL_GATEWAY_ID,
+		];
+
+		foreach ( $gateway_ids as $gateway_id ) {
+			$settings = get_option( "woocommerce_{$gateway_id}_settings", [] );
+
+			// Skip if no settings exist for this gateway.
+			if ( empty( $settings ) ) {
+				continue;
+			}
+
+			// Check if the old inherit_settings field exists.
+			if ( isset( $settings['inherit_settings'] ) ) {
+
+				if ( 'yes' === $settings['inherit_settings'] ) {
+
+					// Gateway was inheriting from another gateway.
+					// Since we only have 2 gateways, inherit from the other one.
+					$other_gateway_id = WC_Braintree::CREDIT_CARD_GATEWAY_ID === $gateway_id
+						? WC_Braintree::PAYPAL_GATEWAY_ID
+						: WC_Braintree::CREDIT_CARD_GATEWAY_ID;
+
+					$settings['inherit_settings_source'] = $other_gateway_id;
+					Logger::info( sprintf( 'Migrated %s to inherit from %s', $gateway_id, $other_gateway_id ) );
+
+				} else {
+					// Was set to 'no', migrate to 'manual'.
+					$settings['inherit_settings_source'] = 'manual';
+					Logger::info( sprintf( 'Migrated %s to manual credentials', $gateway_id ) );
+				}
+
+				// We intentionally don't remove the old setting; in case the store rollbacks to a previous version.
+
+				// Save updated settings.
+				update_option( "woocommerce_{$gateway_id}_settings", $settings );
+			}
+		}
+
+		Logger::info( 'Completed upgrade for 3.7.0' );
 	}
 }

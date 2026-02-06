@@ -179,7 +179,13 @@ class WC_Braintree_My_Payment_Methods extends Framework\SV_WC_Payment_Gateway_My
 	 * @return Framework\SV_WC_Payment_Gateway_Payment_Token
 	 */
 	protected function save_token_data( Framework\SV_WC_Payment_Gateway_Payment_Token $token, array $data ) {
-		$token    = parent::save_token_data( $token, $data );
+		$token = parent::save_token_data( $token, $data );
+
+		// Only process expiration date for credit card tokens.
+		if ( ! $token->is_credit_card() ) {
+			return $token;
+		}
+
 		$exp_date = $this->prepare_expiration_date( isset( $data['expires'] ) ? $data['expires'] : '' );
 
 		if ( ! $exp_date ) {

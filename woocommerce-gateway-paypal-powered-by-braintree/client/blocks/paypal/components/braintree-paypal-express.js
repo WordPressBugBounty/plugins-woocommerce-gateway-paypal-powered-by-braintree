@@ -12,7 +12,9 @@ import { PayPalPayLaterMessaging } from './pay-later-messaging';
 import { usePaymentForm } from '../use-payment-form';
 
 const isBlockTheme = getSetting( 'isBlockTheme' );
-const errorNoticeClass = isBlockTheme ? 'wc-block-components-notice-banner is-error' : 'woocommerce-error';
+const errorNoticeClass = isBlockTheme
+	? 'wc-block-components-notice-banner is-error'
+	: 'woocommerce-error';
 
 /**
  * Renders the Braintree PayPal Button and PayLater Messaging.
@@ -21,9 +23,9 @@ const errorNoticeClass = isBlockTheme ? 'wc-block-components-notice-banner is-er
  *
  * @return {JSX.Element} The Braintree PayPal saved token component.
  */
-export const BraintreePayPalExpress = (props) => {
-	const [errorMessage, setErrorMessage] = useState(null);
-	const [isLoaded, setIsLoaded] = useState(false);
+export const BraintreePayPalExpress = ( props ) => {
+	const [ errorMessage, setErrorMessage ] = useState( null );
+	const [ isLoaded, setIsLoaded ] = useState( false );
 
 	const {
 		components: { LoadingMask },
@@ -34,31 +36,33 @@ export const BraintreePayPalExpress = (props) => {
 		shippingData,
 	} = props;
 
-	const paymentForm = usePaymentForm({
+	const paymentForm = usePaymentForm( {
 		billing,
 		onSubmit,
 		shouldSavePayment,
 		token,
 		isExpress: true,
 		needsShipping: shippingData.needsShipping,
-	});
+	} );
 	const { loadPayPalSDK, amount } = paymentForm;
 
 	return (
 		<>
-			{errorMessage && (
-				<div className={ errorNoticeClass }>{errorMessage}</div>
-			)}
-			{!errorMessage && (
-				<LoadingMask isLoading={!isLoaded}>
-					{isLoaded && <PayPalPayLaterMessaging amount={amount} />}
+			{ errorMessage && (
+				<div className={ errorNoticeClass }>{ errorMessage }</div>
+			) }
+			{ ! errorMessage && (
+				<LoadingMask isLoading={ ! isLoaded }>
+					{ isLoaded && (
+						<PayPalPayLaterMessaging amount={ amount } />
+					) }
 					<PayPalButtons
-						loadPayPalSDK={loadPayPalSDK}
-						onError={setErrorMessage}
-						buttonLoaded={setIsLoaded}
+						loadPayPalSDK={ loadPayPalSDK }
+						onError={ setErrorMessage }
+						buttonLoaded={ setIsLoaded }
 					/>
 				</LoadingMask>
-			)}
+			) }
 		</>
 	);
 };

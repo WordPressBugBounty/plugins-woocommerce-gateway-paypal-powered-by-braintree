@@ -62,19 +62,57 @@ class Frontend extends Framework\SV_WC_Payment_Gateway_Apple_Pay_Frontend {
 
 		parent::enqueue_scripts();
 
-		// braintree.js library.
-		wp_register_script( 'braintree-js-client', 'https://js.braintreegateway.com/web/' . \WC_Braintree\WC_Braintree::BRAINTREE_JS_SDK_VERSION . '/js/client.min.js', array(), \WC_Braintree\WC_Braintree::VERSION, true );
-
-		wp_register_script( 'braintree-js-apple-pay', 'https://js.braintreegateway.com/web/' . \WC_Braintree\WC_Braintree::BRAINTREE_JS_SDK_VERSION . '/js/apple-pay.min.js', array( 'braintree-js-client' ), \WC_Braintree\WC_Braintree::VERSION, true );
-
+		// Register legacy Apple Pay script.
 		wp_register_script( 'wc-braintree-apple-pay-js', $this->get_plugin()->get_plugin_url() . '/assets/js/frontend/wc-braintree-apple-pay.min.js', array( 'jquery', 'braintree-js-apple-pay' ), $this->get_plugin()->get_version(), true );
 
-		if ( ! parent::should_enqueue_scripts() ) {
-			return;
+		// Register blocks Apple Pay script.
+		$asset_path   = $this->get_plugin()->get_plugin_path() . '/assets/js/blocks/apple-pay.asset.php';
+		$version      = $this->get_plugin()->get_version();
+		$dependencies = array( 'braintree-js-apple-pay' );
+
+		if ( file_exists( $asset_path ) ) {
+			$asset        = require $asset_path;
+			$version      = isset( $asset['version'] ) ? $asset['version'] : $version;
+			$dependencies = array_merge( $dependencies, isset( $asset['dependencies'] ) ? $asset['dependencies'] : array() );
 		}
 
-		// Enqueue the JS handler.
-		wp_enqueue_script( 'wc-braintree-apple-pay-js' );
+		wp_register_script(
+			'wc-braintree-blocks-apple-pay',
+			$this->get_plugin()->get_plugin_url() . '/assets/js/blocks/apple-pay.min.js',
+			$dependencies,
+			$version,
+			true
+		);
+
+		// braintree.js library.
+		wp_enqueue_script( 'braintree-js-client', 'https://js.braintreegateway.com/web/' . \WC_Braintree\WC_Braintree::BRAINTREE_JS_SDK_VERSION . '/js/client.min.js', array(), \WC_Braintree\WC_Braintree::VERSION, true );
+
+		wp_enqueue_script( 'braintree-js-apple-pay', 'https://js.braintreegateway.com/web/' . \WC_Braintree\WC_Braintree::BRAINTREE_JS_SDK_VERSION . '/js/apple-pay.min.js', array( 'braintree-js-client' ), \WC_Braintree\WC_Braintree::VERSION, true );
+
+		// Enqueue SkyVerge framework Apple Pay CSS.
+		$framework_version = $this->get_plugin()->get_assets_version( 'braintree_credit_card' );
+		wp_enqueue_style(
+			'sv-wc-apple-pay-v5_15_10',
+			$this->get_plugin()->get_payment_gateway_framework_assets_url() . '/css/frontend/sv-wc-payment-gateway-apple-pay.css',
+			array(),
+			$framework_version
+		);
+
+		// Enqueue plugin-specific Apple Pay CSS.
+		$css_path = $this->get_plugin()->get_plugin_path() . '/assets/css/frontend/wc-apply-pay.min.css';
+
+		if ( is_readable( $css_path ) ) {
+			$css_url = $this->get_plugin()->get_plugin_url() . '/assets/css/frontend/wc-apply-pay.min.css';
+			wp_enqueue_style( 'wc-braintree-apply-pay', $css_url, array(), $this->get_plugin()->get_version() );
+		}
+
+		// Enqueue the appropriate Apple Pay script based on the page type.
+		if ( \WC_Braintree\WC_Braintree::is_blocks_page() ) {
+			wp_enqueue_script( 'wc-braintree-blocks-apple-pay' );
+		} elseif ( parent::should_enqueue_scripts() ) {
+			// Only enqueue legacy script if framework says we should (classic pages).
+			wp_enqueue_script( 'wc-braintree-apple-pay-js' );
+		}
 	}
 
 
@@ -91,7 +129,7 @@ class Frontend extends Framework\SV_WC_Payment_Gateway_Apple_Pay_Frontend {
 
 		$params = parent::get_js_handler_args();
 
-		$params['store_name']         = mb_substr( get_bloginfo( 'name' ), 0, 64 );
+		$params['store_name']         = mb_substr( \WC_Braintree\WC_Braintree::get_braintree_store_name(), 0, 64 );
 		$params['client_token_nonce'] = wp_create_nonce( 'wc_' . $this->get_gateway()->get_id() . '_get_client_token' );
 		$params['force_tokenization'] = $this->is_tokenization_forced();
 

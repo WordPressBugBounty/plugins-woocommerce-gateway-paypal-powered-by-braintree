@@ -25,7 +25,6 @@
 namespace WC_Braintree;
 
 use SkyVerge\WooCommerce\PluginFramework\v5_15_10 as Framework;
-use SkyVerge\WooCommerce\PluginFramework\v5_15_10\SV_WC_Payment_Gateway_Helper;
 use WC_Braintree\Payment_Forms\WC_Braintree_Hosted_Fields_Payment_Form;
 use WC_Order;
 
@@ -53,7 +52,6 @@ class WC_Gateway_Braintree_Credit_Card extends WC_Gateway_Braintree {
 	 * @var string
 	 */
 	const THREED_SECURE_MODE_STRICT = 'strict';
-
 
 	/**
 	 * Require CSC field.
@@ -104,6 +102,27 @@ class WC_Gateway_Braintree_Credit_Card extends WC_Gateway_Braintree {
 	 */
 	protected $threed_secure_available;
 
+	/**
+	 * Whether this gateway can store credentials.
+	 *
+	 * The Credit Card gateway is permitted to store its own Braintree connection credentials.
+	 *
+	 * @since 3.7.0
+	 * @return bool
+	 */
+	protected function can_gateway_store_credentials(): bool {
+		return true;
+	}
+
+	/**
+	 * Whether Fastlane is enabled.
+	 *
+	 * @since 3.7.0
+	 *
+	 * @var bool
+	 */
+	protected $enable_fastlane;
+
 
 	/**
 	 * Initialize the gateway
@@ -128,11 +147,8 @@ class WC_Gateway_Braintree_Credit_Card extends WC_Gateway_Braintree {
 			self::FEATURE_ADD_PAYMENT_METHOD,
 			self::FEATURE_TOKEN_EDITOR,
 			self::FEATURE_APPLE_PAY,
+			self::FEATURE_GOOGLE_PAY,
 		];
-
-		if ( WC_Braintree_Feature_Flags::is_google_pay_enabled() ) {
-			$supports[] = self::FEATURE_GOOGLE_PAY;
-		}
 
 		parent::__construct(
 			WC_Braintree::CREDIT_CARD_GATEWAY_ID,
@@ -165,6 +181,9 @@ class WC_Gateway_Braintree_Credit_Card extends WC_Gateway_Braintree {
 
 		// Disable fail on duplicate payment method for test environment.
 		add_filter( 'wc_braintree_api_vault_request_credit_card_options', array( $this, 'disable_fail_on_duplicate_payment_method' ) );
+
+		// Add Fastlane dashboard link after settings are loaded.
+		add_filter( 'woocommerce_settings_api_form_fields_' . $this->get_id(), array( $this, 'add_fastlane_dashboard_link' ) );
 	}
 
 
@@ -186,6 +205,39 @@ class WC_Gateway_Braintree_Credit_Card extends WC_Gateway_Braintree {
 
 			if ( $this->is_3d_secure_enabled() ) {
 				wp_enqueue_script( 'braintree-js-3d-secure', 'https://js.braintreegateway.com/web/' . WC_Braintree::BRAINTREE_JS_SDK_VERSION . '/js/three-d-secure.min.js', array(), WC_Braintree::VERSION, true );
+			}
+
+			// Load Fastlane SDK and handler script if enabled.
+			if ( $this->is_fastlane_enabled() ) {
+				wp_enqueue_script( 'braintree-js-fastlane', 'https://js.braintreegateway.com/web/' . WC_Braintree::BRAINTREE_JS_SDK_VERSION . '/js/fastlane.min.js', array( 'braintree-js-client' ), WC_Braintree::VERSION, true );
+
+				// Load asset file for Fastlane script dependencies.
+				$asset_path   = $this->get_plugin()->get_plugin_path() . '/assets/js/frontend/wc-braintree-fastlane.asset.php';
+				$version      = WC_Braintree::VERSION;
+				$dependencies = array( 'jquery', 'braintree-js-fastlane', 'wc-braintree' );
+
+				if ( file_exists( $asset_path ) ) {
+					$asset        = require $asset_path;
+					$version      = isset( $asset['version'] ) ? $asset['version'] : $version;
+					$dependencies = array_merge( $dependencies, isset( $asset['dependencies'] ) ? $asset['dependencies'] : array() );
+				}
+
+				// Enqueue our Fastlane handler script.
+				wp_enqueue_script(
+					'wc-braintree-fastlane',
+					$this->get_plugin()->get_plugin_url() . '/assets/js/frontend/wc-braintree-fastlane.min.js',
+					$dependencies,
+					$version,
+					true
+				);
+
+				// Enqueue Fastlane styles.
+				wp_enqueue_style(
+					'wc-braintree-fastlane',
+					$this->get_plugin()->get_plugin_url() . '/assets/css/frontend/wc-braintree-fastlane.min.css',
+					array(),
+					WC_Braintree::VERSION
+				);
 			}
 
 			// Advanced/kount fraud tool.
@@ -219,6 +271,18 @@ class WC_Gateway_Braintree_Credit_Card extends WC_Gateway_Braintree {
 
 		$params['first_name_unsupported_characters'] = esc_html__( 'First name contains unsupported characters', 'woocommerce-gateway-paypal-powered-by-braintree' );
 		$params['last_name_unsupported_characters']  = esc_html__( 'Last name contains unsupported characters', 'woocommerce-gateway-paypal-powered-by-braintree' );
+
+		// Add card brand icon URLs for Fastlane.
+		$params['card_icons'] = array(
+			'visa'       => $this->get_payment_method_image_url( 'visa' ),
+			'mastercard' => $this->get_payment_method_image_url( 'mastercard' ),
+			'amex'       => $this->get_payment_method_image_url( 'amex' ),
+			'discover'   => $this->get_payment_method_image_url( 'discover' ),
+			'jcb'        => $this->get_payment_method_image_url( 'jcb' ),
+			'maestro'    => $this->get_payment_method_image_url( 'maestro' ),
+			'dinersclub' => $this->get_payment_method_image_url( 'dinersclub' ),
+			'default'    => $this->get_payment_method_image_url( 'card' ),
+		);
 
 		return $params;
 	}
@@ -283,6 +347,22 @@ class WC_Gateway_Braintree_Credit_Card extends WC_Gateway_Braintree {
 		);
 
 		$fields = array_merge( $fields, $this->get_3d_secure_fields() );
+
+		// Add Fastlane settings if feature flag is enabled.
+		if ( WC_Braintree_Feature_Flags::is_fastlane_enabled() ) {
+			$fields['fastlane_settings_title'] = [
+				'title' => esc_html__( 'PayPal Fastlane - [Early Access]', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+				'type'  => 'title',
+			];
+
+			$fields['enable_fastlane'] = [
+				'title'       => esc_html__( 'Enable Fastlane', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+				'type'        => 'checkbox',
+				'label'       => esc_html__( 'Enable Fastlane when available', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+				'description' => esc_html__( 'Fastlane must be activated in your PayPal Fastlane Dashboard. This setting only controls whether Fastlane is used on your site once it is enabled in PayPal.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+				'default'     => 'no',
+			];
+		}
 
 		return array_merge( parent::get_method_form_fields(), $fields );
 	}
@@ -1083,5 +1163,73 @@ class WC_Gateway_Braintree_Credit_Card extends WC_Gateway_Braintree {
 			$options['failOnDuplicatePaymentMethod'] = false;
 		}
 		return $options;
+	}
+
+	/**
+	 * Adds the Fastlane dashboard link to the enable_fastlane field description.
+	 *
+	 * This filter runs after settings are loaded, so we can access merchant ID.
+	 *
+	 * @since 3.7.0
+	 *
+	 * @param array $form_fields The form fields array.
+	 * @return array
+	 */
+	public function add_fastlane_dashboard_link( $form_fields ) {
+		if ( ! isset( $form_fields['enable_fastlane'] ) ) {
+			return $form_fields;
+		}
+
+		$dashboard_url = $this->get_fastlane_dashboard_url();
+
+		if ( $dashboard_url ) {
+			$form_fields['enable_fastlane']['description'] .= ' <a href="' . esc_url( $dashboard_url ) . '" target="_blank" rel="noopener noreferrer">' . esc_html__( 'Manage Fastlane in PayPal Dashboard', 'woocommerce-gateway-paypal-powered-by-braintree' ) . '</a>.';
+		}
+
+		return $form_fields;
+	}
+
+	/**
+	 * Gets the Fastlane Dashboard URL.
+	 *
+	 * @since 3.7.0
+	 *
+	 * @return string|null The dashboard URL or null if merchant ID is not available.
+	 */
+	protected function get_fastlane_dashboard_url() {
+		$merchant_id = $this->get_merchant_id();
+
+		if ( empty( $merchant_id ) ) {
+			return null;
+		}
+
+		$environment = $this->get_environment();
+
+		if ( 'sandbox' === $environment ) {
+			return sprintf( 'https://sandbox.braintreegateway.com/merchants/%s/customer-checkout', $merchant_id );
+		}
+
+		return sprintf( 'https://braintreegateway.com/merchants/%s/customer-checkout', $merchant_id );
+	}
+
+	/**
+	 * Determines whether PayPal Fastlane is enabled.
+	 *
+	 * Fastlane is only available for guest shoppers. Logged-in users will see
+	 * the regular hosted credit card fields to prevent the store user identity
+	 * from conflicting with the Fastlane identity.
+	 *
+	 * @since 3.7.0
+	 *
+	 * @return bool
+	 */
+	public function is_fastlane_enabled() {
+
+		// Fastlane is only available to guest shoppers.
+		if ( is_user_logged_in() ) {
+			return false;
+		}
+
+		return WC_Braintree_Feature_Flags::is_fastlane_enabled() && 'yes' === $this->enable_fastlane;
 	}
 }

@@ -24,6 +24,7 @@
 
 namespace WC_Braintree\API;
 
+use Braintree\Result\Error;
 use SkyVerge\WooCommerce\PluginFramework\v5_15_10 as Framework;
 use WC_Braintree\API\Responses\WC_Braintree_API_Merchant_Configuration_Response;
 use WC_Braintree\API\Requests\WC_Braintree_API_Client_Token_Request;
@@ -32,6 +33,9 @@ use WC_Braintree\API\Requests\WC_Braintree_API_Customer_Request;
 use WC_Braintree\API\Requests\WC_Braintree_API_Payment_Method_Request;
 use WC_Braintree\API\Requests\WC_Braintree_API_Payment_Method_Nonce_Request;
 use WC_Braintree\WC_Braintree_Payment_Method;
+use WC_Braintree\WC_Gateway_Braintree;
+use WC_Braintree\WC_Gateway_Braintree_PayPal;
+use WC_Braintree\WC_Gateway_Braintree_Venmo;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -350,6 +354,68 @@ class WC_Braintree_API extends Framework\SV_WC_API_Base implements Framework\SV_
 	}
 
 
+	/**
+	 * Verify the ACH Direct debit nonce for a transaction.
+	 * This must be done prior to processing the actual transaction.
+	 *
+	 * @since 3.7.0
+	 *
+	 * @param \WC_Order $order order.
+	 * @throws Framework\SV_WC_Plugin_Exception If the verification fails.
+	 */
+	public function verify_ach_direct_debit_account( \WC_Order $order ) {
+
+		if ( ! $order->customer_id ) {
+			// A customer is required to validate an ACH nonce.
+			$request = $this->get_new_request(
+				[
+					'type'  => 'customer',
+					'order' => $order,
+				]
+			);
+			$request->create_blank_customer( $order );
+
+			$response = $this->perform_request( $request );
+
+			if ( $response->transaction_approved() ) {
+				$order->customer_id = $response->get_customer_id();
+			}
+		}
+
+		$request = $this->get_new_request(
+			[
+				'type'  => 'payment-method',
+				'order' => $order,
+			]
+		);
+		$request->verify_ach_direct_debit_account( $order );
+
+		return $this->perform_request( $request );
+	}
+
+
+	/**
+	 * Create a new ACH Direct Debit charge transaction.
+	 *
+	 * @since 3.7.0
+	 *
+	 * @param \WC_Order $order The order object.
+	 * @return \WC_Braintree_API_Payment_Method_Response
+	 */
+	public function ach_charge( \WC_Order $order ) {
+
+		$request = $this->get_new_request(
+			array(
+				'type'  => 'transaction',
+				'order' => $order,
+			)
+		);
+
+		$request->create_ach_charge();
+
+		return $this->perform_request( $request );
+	}
+
 	/** API Tokenization methods **********************************************/
 
 
@@ -582,6 +648,51 @@ class WC_Braintree_API extends Framework\SV_WC_API_Base implements Framework\SV_
 
 			$response = call_user_func_array( array( $sdk_gateway->$resource(), $callback ), $callback_params );
 
+			// When there is a problem with the Level 3 data, Braintree returns a 2046 error code.
+			// This is the generic decline code, Braintree does not provide a specific error code for Level3 data errors.
+			//
+			// @see https://developer.paypal.com/braintree/articles/control-panel/transactions/declines#code-2046
+			// @see https://developer.paypal.com/braintree/docs/reference/general/level-2-and-3-processing/required-fields/php/#validation-errors
+			//
+			// We retry the request again without Level 2/3 data and set a transient so that future requests do not send Level 2/3 data.
+			if (
+				$response instanceof Error &&
+				! $response->success &&
+				isset( $response->transaction, $response->transaction->processorResponseCode ) &&
+				'2046' === $response->transaction->processorResponseCode
+			) {
+				$environment = $this->get_gateway()->get_environment();
+
+				// We only retry the request if the Level 3 data is not already disabled; as the 2046 error might be for another reason.
+				if ( $this->is_level3_data_allowed( $environment ) ) {
+					// Visa and MasterCard have implemented new fees to maintain network health by curbing excessive retries across
+					// each decline code category. These recent mandates affect every Payment Service Provider (PSP), including Braintree.
+					//
+					// @see https://developer.paypal.com/braintree/articles/control-panel/transactions/declines#retrying-declined-transactions.
+					//
+					// For this reason, we disable Level 3 data for 3 months after a 2046 error is returned.
+
+					// Update the option to disable Level 3 data for the current environment.
+					$environment = sanitize_key( $environment );
+					update_option( 'wc_braintree_level3_not_allowed_' . $environment, time() );
+
+					// Remove Level 2 data.
+					unset( $callback_params[0]['taxAmount'] );
+					unset( $callback_params[0]['purchaseOrderNumber'] );
+					// Remove Level 3 data.
+					unset( $callback_params[0]['shippingAmount'] );
+					unset( $callback_params[0]['shippingTaxAmount'] );
+					unset( $callback_params[0]['discountAmount'] );
+					unset( $callback_params[0]['shipsFromPostalCode'] );
+					unset( $callback_params[0]['lineItems'] );
+
+					$this->get_plugin()->log( 'Level3 request data error. Reason: ' . $response->transaction->additionalProcessorResponse );
+					$this->get_plugin()->log( 'Disabling Level 2 and Level 3 transaction data for 3 months' );
+
+					// Make the request again without Level 2/3 data.
+					$response = call_user_func_array( array( $sdk_gateway->$resource(), $callback ), $callback_params );
+				}
+			}
 		} catch ( \Exception $e ) {
 
 			$response = $e;
@@ -608,8 +719,11 @@ class WC_Braintree_API extends Framework\SV_WC_API_Base implements Framework\SV_
 
 		$handler_class = $this->get_response_handler();
 
+		// determine response type based on payment type.
+		$response_type = $this->get_gateway()->get_payment_type();
+
 		// parse the response body and tie it to the request.
-		$this->response = new $handler_class( $response, $this->get_gateway()->is_credit_card_gateway() ? 'credit-card' : 'paypal' );
+		$this->response = new $handler_class( $response, $response_type );
 
 		// broadcast request.
 		$this->broadcast_request();
@@ -731,12 +845,29 @@ class WC_Braintree_API extends Framework\SV_WC_API_Base implements Framework\SV_
 			case 'client-token':
 				$this->set_response_handler( 'WC_Braintree\\API\\Responses\\WC_Braintree_API_Client_Token_Response' );
 				return new WC_Braintree_API_Client_Token_Request();
-			break;
 
 			case 'transaction':
 				$channel = ( $this->is_braintree_auth() ) ? self::BT_AUTH_CHANNEL : self::API_CHANNEL;
 
-				$this->set_response_handler( $this->get_gateway()->is_credit_card_gateway() ? 'WC_Braintree\\API\\Responses\\WC_Braintree_API_Credit_Card_Transaction_Response' : 'WC_Braintree\\API\\Responses\\WC_Braintree_API_PayPal_Transaction_Response' );
+				// Determine the appropriate response handler based on payment type.
+				$payment_type = $this->get_gateway()->get_payment_type();
+				switch ( $payment_type ) {
+					case 'credit-card':
+						$response_handler = 'WC_Braintree\\API\\Responses\\WC_Braintree_API_Credit_Card_Transaction_Response';
+						break;
+					case 'ach':
+						$response_handler = 'WC_Braintree\\API\\Responses\\WC_Braintree_API_ACH_Transaction_Response';
+						break;
+					case 'venmo':
+						$response_handler = 'WC_Braintree\\API\\Responses\\WC_Braintree_API_Venmo_Transaction_Response';
+						break;
+					case 'paypal':
+					default:
+						$response_handler = 'WC_Braintree\\API\\Responses\\WC_Braintree_API_PayPal_Transaction_Response';
+						break;
+				}
+
+				$this->set_response_handler( $response_handler );
 				return new WC_Braintree_API_Transaction_Request( $this->order, $channel );
 
 			case 'customer':
@@ -756,6 +887,8 @@ class WC_Braintree_API extends Framework\SV_WC_API_Base implements Framework\SV_
 				$payment_method = $args['payment_method'] ?? null;
 				if ( WC_Braintree_Payment_Method::PAYPAL_TYPE === $payment_method ) {
 					$this->set_response_handler( 'WC_Braintree\\API\\Responses\\WC_Braintree_API_PayPal_Transaction_Find_Response' );
+				} elseif ( WC_Braintree_Payment_Method::ACH_TYPE === $payment_method ) {
+					$this->set_response_handler( 'WC_Braintree\\API\\Responses\\WC_Braintree_API_ACH_Transaction_Find_Response' );
 				} else {
 					$this->set_response_handler( 'WC_Braintree\\API\\Responses\\WC_Braintree_API_Credit_Card_Transaction_Find_Response' );
 				}
@@ -830,5 +963,21 @@ class WC_Braintree_API extends Framework\SV_WC_API_Base implements Framework\SV_
 	public function get_gateway() {
 
 		return $this->gateway;
+	}
+
+
+	/**
+	 * Check if Level 3 data is allowed for the environment.
+	 *
+	 * @param string $environment The environment of the gateway.
+	 * @return bool True if Level 3 data is allowed, false otherwise.
+	 */
+	public static function is_level3_data_allowed( $environment ) {
+		$environment = sanitize_key( $environment );
+
+		// Check the timestamp option for Level 3 data not allowed,
+		// if it's set and is a valid timestamp, and it's not older than the 3 months mark, we return false (level 3 data disabled).
+		$timestamp = get_option( 'wc_braintree_level3_not_allowed_' . $environment, false );
+		return ! ( is_numeric( $timestamp ) && $timestamp > ( time() - 3 * MONTH_IN_SECONDS ) );
 	}
 }

@@ -26,6 +26,7 @@ namespace WC_Braintree\Google_Pay;
 
 use Exception;
 use SkyVerge\WooCommerce\PluginFramework\v5_15_10 as Framework;
+use WC_Braintree\Integrations\AvaTax;
 use WC_Braintree\WC_Braintree_Express_Checkout;
 use WC_Cart;
 use WC_Pre_Orders_Cart;
@@ -54,7 +55,6 @@ class Google_Pay extends Framework\Payment_Gateway\External_Checkout\Google_Pay\
 		// Runs at priority 11 to ensure that the button is moved after the framework's init fires.
 		add_action( 'wp', array( $this, 'post_init' ), 11 );
 	}
-
 
 	/**
 	 * Enqueues assets for the Google Pay button CSS.
@@ -203,6 +203,10 @@ class Google_Pay extends Framework\Payment_Gateway\External_Checkout\Google_Pay\
 			}
 
 			$order->save();
+
+			// Integrate with AvaTax if enabled.
+			// Forcing tax calculation here to ensure taxes are calculated for Google Pay orders originating from the product page.
+			AvaTax::calculate_order_tax( $order );
 
 			if ( class_exists( '\WC_Subscriptions_Checkout' ) ) {
 				WC_Subscriptions_Checkout::process_checkout( $order->get_id() );

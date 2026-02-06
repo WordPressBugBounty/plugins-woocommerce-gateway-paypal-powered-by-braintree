@@ -12,11 +12,11 @@ import { useAfterProcessingCheckout } from './use-after-processing-checkout';
  * @param {Object} props.eventRegistration   Event registration functions.
  * @param {Object} props.emitResponse        Helpers for observer response objects.
  */
-export const CheckoutHandler = ({
+export const CheckoutHandler = ( {
 	checkoutFormHandler,
 	eventRegistration,
 	emitResponse,
-}) => {
+} ) => {
 	const {
 		onPaymentProcessing,
 		onCheckoutAfterProcessingWithError,

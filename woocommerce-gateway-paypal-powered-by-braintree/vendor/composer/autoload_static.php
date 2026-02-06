@@ -4,33 +4,33 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInit3ac72ae9f5da1bf8c2d70a238ff18d13
+class ComposerStaticInitd67bd6e41eb41a97ca813ba9167c98d4
 {
     public static $prefixLengthsPsr4 = array (
-        'W' => 
+        'W' =>
         array (
             'WC_Braintree\\' => 13,
         ),
-        'S' => 
+        'S' =>
         array (
             'SkyVerge\\WooCommerce\\PluginFramework\\v5_15_10\\' => 46,
         ),
-        'B' => 
+        'B' =>
         array (
             'Braintree\\' => 10,
         ),
     );
 
     public static $prefixDirsPsr4 = array (
-        'WC_Braintree\\' => 
+        'WC_Braintree\\' =>
         array (
             0 => __DIR__ . '/../..' . '/includes',
         ),
-        'SkyVerge\\WooCommerce\\PluginFramework\\v5_15_10\\' => 
+        'SkyVerge\\WooCommerce\\PluginFramework\\v5_15_10\\' =>
         array (
             0 => __DIR__ . '/..' . '/skyverge/wc-plugin-framework/woocommerce',
         ),
-        'Braintree\\' => 
+        'Braintree\\' =>
         array (
             0 => __DIR__ . '/..' . '/braintree/braintree_php/lib/Braintree',
         ),
@@ -125,9 +125,9 @@ class ComposerStaticInit3ac72ae9f5da1bf8c2d70a238ff18d13
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInit3ac72ae9f5da1bf8c2d70a238ff18d13::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInit3ac72ae9f5da1bf8c2d70a238ff18d13::$prefixDirsPsr4;
-            $loader->classMap = ComposerStaticInit3ac72ae9f5da1bf8c2d70a238ff18d13::$classMap;
+            $loader->prefixLengthsPsr4 = ComposerStaticInitd67bd6e41eb41a97ca813ba9167c98d4::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerStaticInitd67bd6e41eb41a97ca813ba9167c98d4::$prefixDirsPsr4;
+            $loader->classMap = ComposerStaticInitd67bd6e41eb41a97ca813ba9167c98d4::$classMap;
 
         }, null, ClassLoader::class);
     }

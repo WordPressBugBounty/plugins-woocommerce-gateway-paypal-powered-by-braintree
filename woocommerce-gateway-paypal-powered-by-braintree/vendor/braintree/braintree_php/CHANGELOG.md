@@ -1,5 +1,39 @@
 # Changelog
 
+## 6.28.0
+* Add `upcomingRetryDate` to Transaction
+* Add `remainingFileEvidenceStorage` to `Dispute`
+* Add `transaction_retried` webhook
+* Add `transfer type` to Transaction
+
+## 6.27.0
+* Add Session Id to Customer Recommendations Payload
+
+## 6.26.0
+* Add `accountInformationInquiry` to:
+  * `CreditCard.create` and `CreditCard.update`
+  * `PaymentMethod.create` and `PaymentMethod.update`
+  * `CreditCardVerification.create`
+* Enhancements to PayPal customer recommendations
+  * Create a session and get recommendations in one call
+  * Hash customer email and phone number
+* Add `business`, `consumer`, `corporate`, and `purchase` from the bin data to credit card responses
+
+## 6.25.0 
+* Remove marketplace features
+* Add support for capturing payment facilitator and sub-merchant details with transactions 
+
+## 6.24.0
+* Add support for `PayPalPaymentResource` requests
+* Add prepaid_reloadable from bin data in credit card responses
+
+## 6.23.0
+* Add support for creating and updating PayPal customer session
+* Add support for getting PayPal customer recommendations
+
+## 6.22.0
+* Add recipient/contact info: `recipient_email`and `recipient_phone` to `Transaction` 
+
 ## 6.21.0
 * Add `fail_on_duplicate_payment_method_for_customer` option to 
   * `ClientToken`

@@ -36,7 +36,7 @@ export const usePaymentProcessing = (
 	hostedFieldsInstance,
 	token = null
 ) => {
-	useEffect(() => {
+	useEffect( () => {
 		const errorResponse = {
 			type: emitResponse.responseTypes.ERROR,
 			messageContext: emitResponse.noticeContexts.PAYMENTS,
@@ -46,11 +46,11 @@ export const usePaymentProcessing = (
 			threeds.enabled &&
 			window.braintree &&
 			window.braintree.threeDSecure;
-		const shouldTokenize = !(token && !cscRequired);
+		const shouldTokenize = ! ( token && ! cscRequired );
 		let shouldVerify3DSecure = false;
 
-		const unsubscribe = onPaymentProcessing(async () => {
-			if (shouldTokenize && !hostedFieldsInstance) {
+		const unsubscribe = onPaymentProcessing( async () => {
+			if ( shouldTokenize && ! hostedFieldsInstance ) {
 				return {
 					...errorResponse,
 					message: integrationErrorMessage,
@@ -60,10 +60,10 @@ export const usePaymentProcessing = (
 			try {
 				const paymentData = getPaymentMethodData();
 				let nonce, bin, cardType, type;
-				if (shouldTokenize) {
+				if ( shouldTokenize ) {
 					// Tokenize hosted fields.
 					const res = await hostedFieldsInstance.tokenize();
-					[nonce, bin, cardType, type] = [
+					[ nonce, bin, cardType, type ] = [
 						res.nonce,
 						res.details.bin,
 						res.details.cardType,
@@ -71,7 +71,7 @@ export const usePaymentProcessing = (
 					];
 
 					// Return error if nonce is not present.
-					if (!nonce) {
+					if ( ! nonce ) {
 						return {
 							...errorResponse,
 							message: res.message,
@@ -81,18 +81,19 @@ export const usePaymentProcessing = (
 				}
 
 				// Get Token data for saved card.
-				if (token) {
+				if ( token ) {
 					try {
-						const tokenData = await getTokenData(token);
-						if (tokenData && tokenData.nonce) {
+						const tokenData = await getTokenData( token );
+						if ( tokenData && tokenData.nonce ) {
 							nonce = tokenData.nonce;
 							bin = tokenData.bin;
 							shouldVerify3DSecure = true;
 						}
 						paymentData.token = tokenData.token;
-						paymentData[`wc-${PAYMENT_METHOD_NAME}-payment-token`] =
-							tokenData.token;
-					} catch (error) {
+						paymentData[
+							`wc-${ PAYMENT_METHOD_NAME }-payment-token`
+						] = tokenData.token;
+					} catch ( error ) {
 						return {
 							...errorResponse,
 							message: error.message || paymentErrorMessage,
@@ -108,17 +109,17 @@ export const usePaymentProcessing = (
 				 */
 				if (
 					is3DSecureEnabled &&
-					((token && shouldVerify3DSecure) ||
-						(type === 'CreditCard' &&
-							threeds.card_types.includes(cardType)))
+					( ( token && shouldVerify3DSecure ) ||
+						( type === 'CreditCard' &&
+							threeds.card_types.includes( cardType ) ) )
 				) {
-					const response = await verify3DSecure(nonce, bin);
-					logData('3D Secure Response received', response);
+					const response = await verify3DSecure( nonce, bin );
+					logData( '3D Secure Response received', response );
 
 					// Decline if a liability shift is required for all eligible transactions and liability was _not_ shifted
 					if (
 						threeds.liability_shift_always_required &&
-						!response.liabilityShifted
+						! response.liabilityShifted
 					) {
 						return {
 							...errorResponse,
@@ -127,13 +128,13 @@ export const usePaymentProcessing = (
 					}
 
 					// Load 3DS related payment data.
-					paymentData[`wc-${PAYMENT_METHOD_NAME}-card-type`] = token
-						? ''
-						: cardType.replace(' ', '').toLowerCase();
-					paymentData[`wc-${PAYMENT_METHOD_NAME}-3d-secure-enabled`] =
-						'1';
+					paymentData[ `wc-${ PAYMENT_METHOD_NAME }-card-type` ] =
+						token ? '' : cardType.replace( ' ', '' ).toLowerCase();
 					paymentData[
-						`wc-${PAYMENT_METHOD_NAME}-3d-secure-verified`
+						`wc-${ PAYMENT_METHOD_NAME }-3d-secure-enabled`
+					] = '1';
+					paymentData[
+						`wc-${ PAYMENT_METHOD_NAME }-3d-secure-verified`
 					] = '1';
 					paymentData.wc_braintree_credit_card_payment_nonce =
 						response.nonce;
@@ -146,15 +147,16 @@ export const usePaymentProcessing = (
 						paymentMethodData: paymentData,
 					},
 				};
-			} catch (error) {
-				logData(`Payment Error: ${error.message}`, error);
-				const message = getErrorMessage(error, token) || error.message;
+			} catch ( error ) {
+				logData( `Payment Error: ${ error.message }`, error );
+				const message =
+					getErrorMessage( error, token ) || error.message;
 				return {
 					...errorResponse,
-					message: decodeEntities(message),
+					message: decodeEntities( message ),
 				};
 			}
-		});
+		} );
 		return unsubscribe;
 	}, [
 		emitResponse.responseTypes.SUCCESS,
@@ -165,5 +167,5 @@ export const usePaymentProcessing = (
 		hostedFieldsInstance,
 		verify3DSecure,
 		token,
-	]);
+	] );
 };

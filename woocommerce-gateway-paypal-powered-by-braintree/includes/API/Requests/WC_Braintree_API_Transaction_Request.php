@@ -25,6 +25,8 @@
 namespace WC_Braintree\API\Requests;
 
 use SkyVerge\WooCommerce\PluginFramework\v5_15_10 as Framework;
+use WC_Braintree\API\WC_Braintree_API;
+use WC_Braintree\WC_Braintree;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -102,6 +104,51 @@ class WC_Braintree_API_Transaction_Request extends WC_Braintree_API_Request {
 	public function create_credit_card_charge() {
 
 		$this->create_transaction( self::AUTHORIZE_AND_CAPTURE );
+	}
+
+
+	/**
+	 * Creates an ACH Direct Debit charge request using a payment method token.
+	 *
+	 * @link https://developers.braintreepayments.com/reference/request/transaction/sale/php
+	 *
+	 * @since 3.7.0
+	 */
+	public function create_ach_charge() {
+
+		$this->set_resource( 'transaction' );
+		$this->set_callback( 'sale' );
+
+		$order = $this->get_order();
+
+		$this->request_data = [
+			'amount'             => $order->payment_total,
+			'paymentMethodToken' => $order->payment->token,
+			'orderId'            => $order->get_order_number(),
+			'merchantAccountId'  => $order->payment->merchant_account_id ?? null,
+			'options'            => [
+				'submitForSettlement' => true,
+			],
+			'channel'            => $this->get_channel(),
+			'deviceData'         => $order->payment->device_data ?? null,
+		];
+
+		// Set customer data if available.
+		if ( $order->customer_id ) {
+			$this->request_data['customerId'] = $order->customer_id;
+		}
+
+		// Set billing data.
+		$this->set_billing();
+
+		/**
+		 * Filters the request data for ACH transactions.
+		 *
+		 * @since 3.7.0
+		 * @param array $data The transaction/sale data.
+		 * @param \WC_Braintree_API_Transaction_Request $request the request object.
+		 */
+		$this->request_data = apply_filters( 'wc_braintree_ach_transaction_data', $this->request_data, $this );
 	}
 
 
@@ -190,18 +237,43 @@ class WC_Braintree_API_Transaction_Request extends WC_Braintree_API_Request {
 			'taxExempt'         => $this->get_order()->get_user_id() > 0 && is_callable( array( WC()->customer, 'is_vat_exempt' ) ) ? WC()->customer->is_vat_exempt() : false,
 		);
 
-		// Add Level 2 data
-		// Note: purchaseOrderNumber is not available in WC core, can be added via `wc_braintree_transaction_data` filter.
-		$this->request_data['taxAmount'] = Framework\SV_WC_Helper::number_format( $this->get_order()->get_total_tax() );
+		// If there is no payment_method, the get_gateway will return the default gateway (which is the one that is being used for the transaction).
+		$gateway     = WC_Braintree::instance()->get_gateway( $this->get_order()->data['payment_method'] );
+		$environment = $gateway->get_environment();
 
-		// Add Level 3 data.
-		$this->request_data['shippingAmount']      = Framework\SV_WC_Helper::number_format( $this->get_order()->get_shipping_total() );
-		$this->request_data['shippingTaxAmount']   = Framework\SV_WC_Helper::number_format( $this->get_order()->get_shipping_tax() );
-		$this->request_data['discountAmount']      = Framework\SV_WC_Helper::number_format( $this->get_order()->get_discount_total() );
-		$this->request_data['shipsFromPostalCode'] = WC()->countries->get_base_postcode();
+		// Check if Level 3 data is allowed, and it should be added to the transaction request data.
+		$is_level3_data_allowed = WC_Braintree_API::is_level3_data_allowed( $environment );
 
-		// Add line items for Level 3 data.
-		$this->set_line_items();
+		/**
+		 * Filters whether Level 3 data is allowed for the transaction.
+		 *
+		 * @since 3.6.0
+		 *
+		 * @param bool $is_level3_data_allowed Whether Level 3 data is allowed.
+		 * @param string $environment          The environment of the gateway.
+		 * @param \WC_Order $order             The order object.
+		 */
+		$is_level3_data_allowed = apply_filters(
+			'wc_braintree_is_level3_data_allowed',
+			$is_level3_data_allowed,
+			$environment,
+			$this->get_order()
+		);
+
+		if ( $is_level3_data_allowed ) {
+			// Add Level 2 data
+			// Note: purchaseOrderNumber is not available in WC core, can be added via `wc_braintree_transaction_data` filter.
+			$this->request_data['taxAmount'] = Framework\SV_WC_Helper::number_format( $this->get_order()->get_total_tax() );
+
+			// Add Level 3 data.
+			$this->request_data['shippingAmount']      = Framework\SV_WC_Helper::number_format( $this->get_order()->get_shipping_total() );
+			$this->request_data['shippingTaxAmount']   = Framework\SV_WC_Helper::number_format( $this->get_order()->get_shipping_tax() );
+			$this->request_data['discountAmount']      = Framework\SV_WC_Helper::number_format( $this->get_order()->get_discount_total() );
+			$this->request_data['shipsFromPostalCode'] = WC()->countries->get_base_postcode();
+
+			// Add line items for Level 3 data.
+			$this->set_line_items();
+		}
 
 		// set customer data.
 		$this->set_customer();
@@ -439,13 +511,17 @@ class WC_Braintree_API_Transaction_Request extends WC_Braintree_API_Request {
 				continue;
 			}
 
+			// PayPal expects the discounted per-unit price in the unitAmount field (although they don't explicitly mention this in docs).
+			// They also only seem to validate when store currency is set to EUR.
+			$quantity              = $item->get_quantity();
+			$discounted_unit_price = $quantity > 0 ? $item_total_amount / $quantity : 0;
+
 			// Note: L3 fields, commodityCode and unitOfMeasure are not available in WC core, can be added via `wc_braintree_transaction_data` filter.
 			$line_item = array(
 				'name'           => Framework\SV_WC_Helper::str_truncate( $item->get_name(), 35, '' ),
 				'kind'           => 'debit',
-				'quantity'       => (string) $item->get_quantity(),
-				'unitAmount'     => Framework\SV_WC_Helper::number_format( $this->get_order()->get_item_subtotal( $item, false ) ),
-				'unitTaxAmount'  => Framework\SV_WC_Helper::number_format( $this->get_order()->get_item_tax( $item ) / $item->get_quantity() ),
+				'quantity'       => (string) $quantity,
+				'unitAmount'     => Framework\SV_WC_Helper::number_format( $discounted_unit_price ),
 				'totalAmount'    => Framework\SV_WC_Helper::number_format( $item_total_amount ),
 				'taxAmount'      => Framework\SV_WC_Helper::number_format( $this->get_order()->get_line_tax( $item ) ),
 				'discountAmount' => Framework\SV_WC_Helper::number_format( $item->get_subtotal() - $item->get_total() ),

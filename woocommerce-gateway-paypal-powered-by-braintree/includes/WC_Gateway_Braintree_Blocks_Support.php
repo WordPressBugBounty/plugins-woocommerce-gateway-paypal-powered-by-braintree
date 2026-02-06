@@ -50,7 +50,13 @@ abstract class WC_Gateway_Braintree_Blocks_Support extends AbstractPaymentMethod
 	 */
 	public function is_active() {
 		$payment_gateways = WC()->payment_gateways->payment_gateways();
-		return $payment_gateways[ $this->name ]->is_available();
+		$gateway          = $payment_gateways[ $this->name ] ?? null;
+
+		if ( ! $gateway ) {
+			return false;
+		}
+
+		return $gateway->is_available();
 	}
 
 	/**
@@ -59,10 +65,18 @@ abstract class WC_Gateway_Braintree_Blocks_Support extends AbstractPaymentMethod
 	 * @return array
 	 */
 	public function get_payment_method_script_handles() {
+		wp_enqueue_script(
+			'braintree-js-client',
+			'https://js.braintreegateway.com/web/' . WC_Braintree::BRAINTREE_JS_SDK_VERSION . '/js/client.min.js',
+			[],
+			WC_Braintree::VERSION,
+			true
+		);
+
 		$asset_path   = $this->asset_path;
 		$version      = WC_Braintree::VERSION;
 		$script_name  = 'wc-' . $this->name . '-blocks-integration';
-		$dependencies = array();
+		$dependencies = [ 'braintree-js-client' ];
 		if ( file_exists( $asset_path ) ) {
 			$asset        = require $asset_path;
 			$version      = is_array( $asset ) && isset( $asset['version'] )
@@ -110,7 +124,13 @@ abstract class WC_Gateway_Braintree_Blocks_Support extends AbstractPaymentMethod
 	 */
 	public function get_supported_features() {
 		$payment_gateways = WC()->payment_gateways->payment_gateways();
-		return $payment_gateways[ $this->name ]->supports;
+		$gateway          = $payment_gateways[ $this->name ] ?? null;
+
+		if ( ! $gateway ) {
+			return array();
+		}
+
+		return $gateway->supports;
 	}
 
 	/**
@@ -150,10 +170,17 @@ abstract class WC_Gateway_Braintree_Blocks_Support extends AbstractPaymentMethod
 
 	/**
 	 * Returns the payment form instance.
+	 *
+	 * @return WC_Braintree_Payment_Form|null
 	 */
 	protected function get_payment_form_instance() {
 		$payment_gateways = WC()->payment_gateways->payment_gateways();
-		$gateway          = $payment_gateways[ $this->name ];
+		$gateway          = $payment_gateways[ $this->name ] ?? null;
+
+		if ( ! $gateway ) {
+			return null;
+		}
+
 		return $gateway->get_payment_form_instance();
 	}
 }

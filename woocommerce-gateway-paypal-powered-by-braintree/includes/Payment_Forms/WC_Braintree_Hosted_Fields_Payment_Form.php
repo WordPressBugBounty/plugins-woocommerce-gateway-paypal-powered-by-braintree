@@ -48,6 +48,11 @@ class WC_Braintree_Hosted_Fields_Payment_Form extends WC_Braintree_Payment_Form 
 	 */
 	protected function get_js_handler_class_name() {
 
+		// Use Fastlane handler if enabled, otherwise use standard Credit Card handler.
+		if ( $this->get_gateway()->is_fastlane_enabled() ) {
+			return 'WC_Braintree_Fastlane_Payment_Form_Handler';
+		}
+
 		return 'WC_Braintree_Credit_Card_Payment_Form_Handler';
 	}
 

@@ -38,10 +38,10 @@ class WC_Braintree extends Framework\SV_WC_Payment_Gateway_Plugin {
 
 
 	/** plugin version number */
-	const VERSION = '3.0.5'; // WRCS: DEFINED_VERSION.
+	const VERSION = '3.7.0'; // WRCS: DEFINED_VERSION.
 
 	/** Braintree JS SDK version  */
-	const BRAINTREE_JS_SDK_VERSION = '3.94.0';
+	const BRAINTREE_JS_SDK_VERSION = '3.129.1';
 
 	/** @var WC_Braintree single instance of this plugin */
 	protected static $instance;
@@ -61,6 +61,30 @@ class WC_Braintree extends Framework\SV_WC_Payment_Gateway_Plugin {
 	/** PayPal gateway ID */
 	const PAYPAL_GATEWAY_ID = 'braintree_paypal';
 
+	/** Venmo gateway class name */
+	const VENMO_GATEWAY_CLASS_NAME = 'WC_Braintree\\WC_Gateway_Braintree_Venmo';
+
+	/** Venmo gateway ID */
+	const VENMO_GATEWAY_ID = 'braintree_venmo';
+
+	/** ACH gateway class name */
+	const ACH_GATEWAY_CLASS_NAME = 'WC_Braintree\\WC_Gateway_Braintree_ACH';
+
+	/** ACH gateway ID */
+	const ACH_GATEWAY_ID = 'braintree_ach';
+
+	/** SEPA gateway class name */
+	const SEPA_GATEWAY_CLASS_NAME = 'WC_Braintree\\WC_Gateway_Braintree_SEPA';
+
+	/** SEPA gateway ID */
+	const SEPA_GATEWAY_ID = 'braintree_sepa';
+
+	/** Local Payments gateway class name */
+	const LOCAL_PAYMENTS_GATEWAY_CLASS_NAME = 'WC_Braintree\\WC_Gateway_Braintree_Local_Payments';
+
+	/** Local Payments gateway ID */
+	const LOCAL_PAYMENTS_GATEWAY_ID = 'braintree_local_payments';
+
 	/**
 	 * Initializes the plugin
 	 *
@@ -68,15 +92,33 @@ class WC_Braintree extends Framework\SV_WC_Payment_Gateway_Plugin {
 	 */
 	public function __construct() {
 
+		$gateways = array(
+			self::CREDIT_CARD_GATEWAY_ID => self::CREDIT_CARD_GATEWAY_CLASS_NAME,
+			self::PAYPAL_GATEWAY_ID      => self::PAYPAL_GATEWAY_CLASS_NAME,
+			self::VENMO_GATEWAY_ID       => self::VENMO_GATEWAY_CLASS_NAME,
+		);
+
+		// Add ACH gateway if feature flag is enabled.
+		if ( WC_Braintree_Feature_Flags::is_ach_enabled() ) {
+			$gateways[ self::ACH_GATEWAY_ID ] = self::ACH_GATEWAY_CLASS_NAME;
+		}
+
+		// Add SEPA gateway if feature flag is enabled.
+		if ( WC_Braintree_Feature_Flags::is_sepa_enabled() ) {
+			$gateways[ self::SEPA_GATEWAY_ID ] = self::SEPA_GATEWAY_CLASS_NAME;
+		}
+
+		// Add Local Payments gateway if feature flag is enabled.
+		if ( WC_Braintree_Feature_Flags::are_local_payments_enabled() ) {
+			$gateways[ self::LOCAL_PAYMENTS_GATEWAY_ID ] = self::LOCAL_PAYMENTS_GATEWAY_CLASS_NAME;
+		}
+
 		parent::__construct(
 			self::PLUGIN_ID,
 			self::VERSION,
 			array(
 				'text_domain'        => 'woocommerce-gateway-paypal-powered-by-braintree',
-				'gateways'           => array(
-					self::CREDIT_CARD_GATEWAY_ID => self::CREDIT_CARD_GATEWAY_CLASS_NAME,
-					self::PAYPAL_GATEWAY_ID      => self::PAYPAL_GATEWAY_CLASS_NAME,
-				),
+				'gateways'           => $gateways,
 				'require_ssl'        => false,
 				'supports'           => array(
 					self::FEATURE_CAPTURE_CHARGE,
@@ -110,8 +152,7 @@ class WC_Braintree extends Framework\SV_WC_Payment_Gateway_Plugin {
 	}
 
 	/**
-	 * Adds the `WC_Braintree` namespace when the class
-	 * WC_Payment_Token_Braintree_PayPal is used.
+	 * Adds the `WC_Braintree` namespace when the token id from the Braintree gateway and other than Credit Card.
 	 *
 	 * @param string $class_name Payment token class.
 	 * @param string $type       Token type.
@@ -119,11 +160,17 @@ class WC_Braintree extends Framework\SV_WC_Payment_Gateway_Plugin {
 	 * @return string
 	 */
 	public function filter_payment_token_classname( $class_name, $type ) {
-		if ( 'Braintree_PayPal' !== $type ) {
-			return $class_name;
+		$braintree_token_types = [
+			WC_Payment_Token_Braintree_PayPal::TOKEN_TYPE,
+			WC_Payment_Token_Braintree_Venmo::TOKEN_TYPE,
+			WC_Payment_Token_Braintree_ACH::TOKEN_TYPE,
+		];
+
+		if ( in_array( $type, $braintree_token_types, true ) ) {
+			return 'WC_Braintree\\' . $class_name;
 		}
 
-		return 'WC_Braintree\\' . $class_name;
+		return $class_name;
 	}
 
 	/**
@@ -165,17 +212,56 @@ class WC_Braintree extends Framework\SV_WC_Payment_Gateway_Plugin {
 	 * @return string The subscription payment method
 	 */
 	public function maybe_filter_my_subscriptions_payment_method( $payment_method_to_display, $subscription ) {
-		if ( $subscription->get_payment_method( 'edit' ) !== self::PAYPAL_GATEWAY_ID ) {
+		$payment_method = $subscription->get_payment_method( 'edit' );
+
+		$supported_gateway_ids = [
+			self::PAYPAL_GATEWAY_ID,
+			self::VENMO_GATEWAY_ID,
+			self::ACH_GATEWAY_ID,
+		];
+
+		if ( ! in_array( $payment_method, $supported_gateway_ids, true ) ) {
 			return $payment_method_to_display;
 		}
 
-		$token = $this->get_gateway( self::PAYPAL_GATEWAY_ID )->get_payment_tokens_handler()->get_token( $subscription->get_user_id(), $this->get_gateway( self::PAYPAL_GATEWAY_ID )->get_order_meta( $subscription, 'payment_token' ) );
+		$gateway_id = $payment_method;
 
-		if ( $token instanceof SV_WC_Payment_Gateway_Payment_Token ) {
-			$payment_method_to_display = sprintf(
+		$gateway = $this->get_gateway( $gateway_id );
+		$token   = $gateway->get_payment_tokens_handler()->get_token(
+			$subscription->get_user_id(),
+			$gateway->get_order_meta( $subscription, 'payment_token' )
+		);
+
+		if ( ! $token instanceof SV_WC_Payment_Gateway_Payment_Token ) {
+			return $payment_method_to_display;
+		}
+
+		if ( self::PAYPAL_GATEWAY_ID === $gateway_id ) {
+			return sprintf(
 				/* translators: %s - PayPal email address */
 				esc_html__( 'Via PayPal - %s', 'woocommerce-gateway-paypal-powered-by-braintree' ),
 				esc_html( $token->get_payer_email() )
+			);
+		}
+
+		if ( self::VENMO_GATEWAY_ID === $gateway_id ) {
+			$venmo_username = $token->get_venmo_username();
+			if ( empty( $venmo_username ) ) {
+				return esc_html__( 'Via Venmo', 'woocommerce-gateway-paypal-powered-by-braintree' );
+			}
+
+			return sprintf(
+				/* translators: %s - Venmo username */
+				esc_html__( 'Via Venmo - %s', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+				esc_html( $venmo_username )
+			);
+		}
+
+		if ( self::ACH_GATEWAY_ID === $gateway_id ) {
+			return sprintf(
+				/* translators: %s - ACH account details (bank name and last four digits) */
+				esc_html__( 'Via ACH Direct Debit - %s', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+				esc_html( $token->get_nickname() )
 			);
 		}
 
@@ -194,10 +280,47 @@ class WC_Braintree extends Framework\SV_WC_Payment_Gateway_Plugin {
 			new \WC_Braintree\Integrations\Product_Addons();
 		}
 
+		new \WC_Braintree\Integrations\AvaTax();
+
 		// admin includes.
 		if ( is_admin() ) {
 			new \WC_Braintree\Admin\Order();
+
+			// Hide Apple Pay and Google Pay tabs when viewing non-Credit Card gateway settings.
+			// SkyVerge adds these tabs at priority 99, so we need to run after that.
+			add_filter( 'woocommerce_get_sections_checkout', array( $this, 'filter_checkout_sections' ), 100 );
 		}
+	}
+
+	/**
+	 * Filters the checkout sections to hide Apple Pay and Google Pay tabs when viewing non-Credit Card gateway settings.
+	 *
+	 * Apple Pay and Google Pay are features of the Credit Card gateway only, so their settings tabs
+	 * should only be visible when viewing the Credit Card gateway settings.
+	 *
+	 * @since 3.6.0
+	 *
+	 * @param array $sections The checkout sections.
+	 * @return array Filtered checkout sections.
+	 */
+	public function filter_checkout_sections( $sections ) {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- This is a read-only filter for display purposes.
+		$current_section = isset( $_GET['section'] ) ? sanitize_text_field( wp_unslash( $_GET['section'] ) ) : '';
+
+		// Sections where Apple Pay and Google Pay tabs should be visible.
+		$allowed_sections = array(
+			self::CREDIT_CARD_GATEWAY_ID,
+			'apple-pay',
+			'google-pay',
+		);
+
+		// Hide Apple Pay and Google Pay tabs on all other gateway settings pages.
+		if ( $current_section && ! in_array( $current_section, $allowed_sections, true ) ) {
+			unset( $sections['apple-pay'] );
+			unset( $sections['google-pay'] );
+		}
+
+		return $sections;
 	}
 
 	/**
@@ -521,8 +644,140 @@ class WC_Braintree extends Framework\SV_WC_Payment_Gateway_Plugin {
 				}
 			}
 		}
+
+		// Currency check for gateways with restricted currencies.
+		$store_currency = get_woocommerce_currency();
+
+		foreach ( $this->get_gateways() as $gateway ) {
+			$gateway_settings = $this->get_gateway_settings( $gateway->get_id() );
+
+			// Only check enabled gateways.
+			if ( ! isset( $gateway_settings['enabled'] ) || 'yes' !== $gateway_settings['enabled'] ) {
+				continue;
+			}
+
+			if ( $gateway->currency_is_accepted( $store_currency ) ) {
+				continue;
+			}
+
+			$notice_id           = $gateway->get_id() . '-currency-notice';
+			$accepted_currencies = $gateway->get_accepted_currencies();
+
+			$this->get_admin_notice_handler()->add_admin_notice(
+				sprintf(
+					/* translators: Placeholders: %1$s - gateway title, %2$s - accepted currency/currencies, %3$s - current currency code, %4$s - <a> tag, %5$s - </a> tag */
+					_n(
+						'%1$s gateway only accepts payments in %2$s, but your store currency is currently set to %3$s. %4$sChange the store currency%5$s to enable this gateway at checkout.',
+						'%1$s gateway only accepts payments in one of the following currencies: %2$s, but your store currency is currently set to %3$s. %4$sChange the store currency%5$s to enable this gateway at checkout.',
+						count( $accepted_currencies ),
+						'woocommerce-gateway-paypal-powered-by-braintree'
+					),
+					'<strong>' . esc_html( $gateway->get_method_title() ) . '</strong>',
+					'<strong>' . esc_html( implode( ', ', $accepted_currencies ) ) . '</strong>',
+					'<strong>' . esc_html( $store_currency ) . '</strong>',
+					'<a href="' . esc_url( admin_url( 'admin.php?page=wc-settings&tab=general' ) ) . '">',
+					'</a>'
+				),
+				$notice_id,
+				array(
+					'dismissible'  => false,
+					'notice_class' => 'notice-warning',
+				)
+			);
+		}
+
+		// Merchant account availability check for gateways.
+		$this->add_merchant_account_availability_notice();
 	}
 
+	/**
+	 * Adds a notice if the merchant account is not available for the payment gateway of the current page.
+	 *
+	 * @since 3.7.0
+	 * @return void
+	 */
+	private function add_merchant_account_availability_notice() {
+		// We only show this notice on the plugin settings page.
+		if ( ! $this->is_plugin_settings() ) {
+			return;
+		}
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$current_section = isset( $_GET['section'] ) ? sanitize_text_field( wp_unslash( $_GET['section'] ) ) : '';
+
+		if ( empty( $current_section ) ) {
+			return;
+		}
+
+		$current_gateway = $this->get_gateway( $current_section );
+
+		if ( ! $current_gateway ) {
+			return;
+		}
+
+		$credentials_source_gateway_id = $current_gateway->get_credentials_source();
+		$credentials_source_gateway    = $this->get_gateway( $credentials_source_gateway_id );
+
+		if ( ! $credentials_source_gateway ) {
+			return;
+		}
+
+		$should_suggest_other_gateway = false;
+
+		try {
+			$remote_configuration                        = WC_Braintree_Remote_Configuration::get_remote_configuration( $credentials_source_gateway_id );
+			$merchant_accounts_with_source_configuration = $remote_configuration->get_merchant_accounts_by_payment_gateway( $current_gateway->get_id() );
+
+			// Bail if the source gateway has any merchant accounts that support the current gateway.
+			if ( count( $merchant_accounts_with_source_configuration ) > 0 ) {
+				return;
+			}
+
+			// Get the other gateway details. If the source gateway is credit card, the other gateway will be PayPal and vice versa.
+			$other_gateway_ids                   = array_diff( WC_Braintree_Remote_Configuration::SUPPORTED_GATEWAYS, [ $credentials_source_gateway_id ] );
+			$other_credentials_source_gateway_id = reset( $other_gateway_ids );
+			$other_credentials_source_gateway    = $this->get_gateway( $other_credentials_source_gateway_id );
+
+			// Check if the other gateway is not using the same credentials source as the current gateway.
+			// If so, suggest the other gateway.
+			if ( $other_credentials_source_gateway && $other_credentials_source_gateway->get_credentials_source() !== $credentials_source_gateway_id ) {
+				$should_suggest_other_gateway = true;
+			}
+		} catch ( \Exception $e ) {
+			// If there is an error, bail without showing a notice.
+			return;
+		}
+
+		$message = sprintf(
+			/* translators: Placeholders: %1$s - credential source gateway title, %2$s - current payment method title. Both have a format like "Braintree (PayPal)" or "Braintree (Credit Card)". */
+			esc_html__( '%1$s cannot process transactions, as none of the Braintree merchant accounts for the credentials from %2$s support this payment method.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+			'<strong>' . esc_html( $current_gateway->get_method_title() ) . '</strong>',
+			'<strong>' . esc_html( $credentials_source_gateway->get_method_title() ) . '</strong>',
+		);
+
+		if ( $should_suggest_other_gateway ) {
+			// Extract just the payment method name.
+			$current_method_name = preg_match( '/\(([^)]+)\)/', $current_gateway->get_method_title(), $matches )
+			? trim( preg_replace( '/\s*-.*$/', '', $matches[1] ) )
+			: $current_gateway->get_method_title();
+
+			$message .= ' ' . sprintf(
+				/* translators: Placeholders: %1$s - other gateway title, %2$s - the current gateway title. Both have the format "Braintree (PayPal)" or "Braintree (Venmo)". */
+				esc_html__( 'Try using the credentials for %1$s to see if that account supports %2$s.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+				'<strong>' . esc_html( $other_credentials_source_gateway->get_method_title() ) . '</strong>',
+				'<strong>' . esc_html( $current_method_name ) . '</strong>',
+			);
+		}
+
+		$this->get_admin_notice_handler()->add_admin_notice(
+			$message,
+			$current_section . '-merchant-account-notice',
+			array(
+				'dismissible'  => false,
+				'notice_class' => 'notice-error',
+			)
+		);
+	}
 
 	/**
 	 * Adds delayed admin notices for invalid Dynamic Descriptor Name values.
@@ -644,6 +899,25 @@ class WC_Braintree extends Framework\SV_WC_Payment_Gateway_Plugin {
 
 
 	/**
+	 * Returns the plugin action links.
+	 *
+	 * Overrides the parent method to filter out empty action links.
+	 *
+	 * @since 3.6.0
+	 * @see SV_WC_Payment_Gateway_Plugin::plugin_action_links()
+	 * @param string[] $actions associative array of action names to anchor tags.
+	 * @return string[] plugin action links
+	 */
+	public function plugin_action_links( $actions ) {
+
+		$actions = parent::plugin_action_links( $actions );
+
+		// Filter out empty action links (e.g., for non-CC/PayPal gateways).
+		return array_filter( $actions );
+	}
+
+
+	/**
 	 * Returns the "Configure Credit Card" or "Configure PayPal" plugin action
 	 * links that go directly to the gateway settings page
 	 *
@@ -654,7 +928,13 @@ class WC_Braintree extends Framework\SV_WC_Payment_Gateway_Plugin {
 	 */
 	public function get_settings_link( $gateway_id = null ) {
 
-		return sprintf( '<a href="%s">%s</a>',
+		// Only show action links for Credit Card and PayPal gateways.
+		if ( ! in_array( $gateway_id, array( self::CREDIT_CARD_GATEWAY_ID, self::PAYPAL_GATEWAY_ID ), true ) ) {
+			return '';
+		}
+
+		return sprintf(
+			'<a href="%s">%s</a>',
 			$this->get_settings_url( $gateway_id ),
 			self::CREDIT_CARD_GATEWAY_ID === $gateway_id ? esc_html__( 'Configure Credit Card', 'woocommerce-gateway-paypal-powered-by-braintree' ) : esc_html__( 'Configure PayPal', 'woocommerce-gateway-paypal-powered-by-braintree' )
 		);
@@ -690,7 +970,52 @@ class WC_Braintree extends Framework\SV_WC_Payment_Gateway_Plugin {
 		return ( class_exists( 'WCS_Staging', false ) && method_exists( 'WCS_Staging', 'is_duplicate_site' ) && \WCS_Staging::is_duplicate_site() );
 	}
 
+	/**
+	 * Determines if we're on a page with WooCommerce Blocks.
+	 *
+	 * @since 3.5.0
+	 *
+	 * @return bool
+	 */
+	public static function is_blocks_page() {
+		return has_block( 'woocommerce/cart' ) || has_block( 'woocommerce/checkout' );
+	}
 
+	/**
+	 * Gets the store name for Braintree.
+	 *
+	 * @since 3.7.0
+	 *
+	 * @return string The store name.
+	 */
+	public static function get_braintree_store_name() {
+		$store_name = get_bloginfo( 'name' );
+
+		/**
+		 * Filters the Braintree store name.
+		 *
+		 * @since 3.7.0
+		 *
+		 * @param string $store_name The store name, which defaults to the blog name.
+		 */
+		return apply_filters( 'wc_braintree_store_name', $store_name );
+	}
+
+	/**
+	 * Overrides the SkyVerge default logging method.
+	 *
+	 * @deprecated since 3.5.0. Use the Logger class helpers instead (ex: Logger::notice()).
+	 *
+	 * @param string $message error or message to save to log.
+	 * @param string $log_id optional log id to segment the files by, defaults to plugin id.
+	 */
+	public function log( $message, $log_id = null ) {
+		if ( is_null( $log_id ) ) {
+			$log_id = $this->get_id();
+		}
+
+		Logger::notice( $message, [ 'gateway' => $log_id ] );
+	}
 } // end \WC_Braintree
 
 

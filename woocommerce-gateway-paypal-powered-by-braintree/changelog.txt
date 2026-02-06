@@ -1,5 +1,87 @@
 *** Changelog ***
 
+= 3.7.0 - 2026-02-02 =
+* Add - Make Venmo gateway generally available.
+* Add - PayPal Fastlane integration for accelerated checkout on shortcode checkout pages.
+* Add - Introduce a checkbox to enable Fastlane Early Access Payment method.
+* Add - Email confirmation modal for Fastlane checkout when email is pre-filled.
+* Add - Remove Fastlane feature flag.
+* Add - ACH Direct Debit support for subscriptions.
+* Add - Support for fetching account configuration data from Braintree.
+* Add - Show a notice on the gateway settings page if gateway is not enabled in any available merchant account.
+* Add - Merchant account ID dropdown to select a merchant account ID for the gateway based on the selected account configuration and currency.
+* Add - Full mandate details for ACH.
+* Add - ACH/SEPA webhook events handler for payment status updates.
+* Update - Restrict manual connection settings to Credit Card and PayPal.
+* Fix - Subscription renewals when using Fastlane.
+* Fix - Improve compatibility with the Avatax plugin when using express checkouts.
+* Fix - Prevent manual credential input on child gateways when no parent gateway credentials are configured.
+* Fix - Shipping fields when using Fastlane with a product that doesn't require shipping.
+* Fix - Limit Fastlane availability to only the guest shoppers.
+* Fix - Billing name not being prefilled when authenticating as a Fastlane member.
+* Fix - Preserve Fastlane address field edit mode across WooCommerce checkout updates.
+* Fix - Show a better description for subscriptions being paid using ACH.
+* Fix - Add some missing PHP direct access checks.
+* Dev - Bump WooCommerce "tested up to" version 10.5.
+* Dev - Bump WooCommerce minimum supported version to 10.3.
+* Dev - Upgrade woocommerce/plugin-check-action to v1.1.5.
+* Dev - Automatic formatting on pre-commit.
+* Dev - Format codebase with wp-scipts.
+
+= 3.6.0 - 2025-12-10 =
+* Add - Venmo payment method support to the block checkout page.
+* Add - Venmo payment method support to the block cart page
+* Add - Subscription support for Venmo.
+* Add - Admin notices for enabled gateways that don't support the current store currency.
+* Add - Dynamic descriptor name support for Venmo gateway.
+* Add - Adds filter `wc_braintree_is_level3_data_allowed` to disable adding Level3 in transaction the request.
+* Update - Make Google Pay generally available.
+* Fix - Venmo payment method label in the My Account subscriptions list.
+* Fix - Apple Pay vaulting consent checkbox is shown when Apple Pay is unavailable.
+* Fix - Prevent selecting unsupported shipping addresses in Apple Pay on shortcode checkout.
+* Fix - Resolve Level 2/3 line item validation error for PayPal transactions with discounts in EUR stores.
+* Fix - Hide Apple Pay and Google Pay tabs on non-Credit Card gateway settings.
+* Fix - Editing saved non-credit-card payment methods.
+* Fix - Early accesss gateway names in the Plugins page.
+* Tweak - Don't show an error when the shopper closes the Venmo QR modal.
+* Dev - Bump WordPress "tested up to" version 6.9.
+* Dev - Bump WooCommerce "tested up to" version 10.4.
+* Dev - Bump WooCommerce minimum supported version to 10.2.
+* Dev - Extract common/shared classic checkout form handling code to a common base class.
+* Dev - Fix ESLint configuration for plugin text domain and Braintree global.
+* Dev - Add JavaScript unit testing runner pipeline.
+* Dev - Enforce ESLint on new JS changes.
+
+= 3.5.1 - 2025-11-18 =
+* Fix - Fix missing assets in the 3.5.0 release package
+
+= 3.5.0 - 2025-11-17 =
+* Add - Apple Pay express payment support for WooCommerce Blocks Cart and Checkout pages.
+* Add - Add Early Access support for new payment methods (can be enabled on the WooCommerce Features page).
+* Add - Early access support for Google Pay.
+* Add - Early access support for Venmo.
+* Add - Google Pay express payment support on product pages.
+* Add - Google Pay express payment support for WooCommerce Cart and Checkout block pages.
+* Add - Allow Google Pay to be used for Subscriptions.
+* Add - Automatic customer account creation for subscription purchases through Google Pay when the user is not logged in.
+* Add - Show Webhook URL configuration information.
+* Fix - Allow changing shipping method in the Apple Pay modal.
+* Fix - Issue with empty `_billing_address_index` in `wp_postmeta` table when using Apple Pay.
+* Fix - Fatal error when trying to register Blocks before the class is available.
+* Tweak - Add support for using different logging severities and additional structured data.
+* Tweak - Update Google Pay button height to match Apple Pay button.
+* Dev - Bump WooCommerce "tested up to" version 10.3.
+* Dev - Bump WooCommerce minimum supported version to 10.1.
+* Dev - Update Braintree PHP SDK from 6.21.0 to 6.28.0.
+* Dev - Update Braintree JS SDK from 3.94.0 to 3.129.1.
+* Dev - Prevent duplicate pages/products when setting up the test environment.
+* Dev - Updates to our QIT GitHub Action workflow.
+* Dev - Add new deploy workflow.
+
+= 3.4.2 - 2025-10-08 =
+* Add - Retry Braintree API call without Level3 request data after a processor 2046 error.
+* Fix - Remove field `unitTaxAmount` from Level 3 request data.
+
 = 3.4.1 - 2025-09-24 =
 * Fix - Error when placing orders with 3DS disabled on the Braintree account.
 * Fix - Credit Card payments fail with Zero-Amount line items.

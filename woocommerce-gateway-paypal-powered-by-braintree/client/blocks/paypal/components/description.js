@@ -22,33 +22,33 @@ const { description, isTestEnvironment } = getBraintreePayPalServerData();
  *
  * @return {JSX.Element} The payment method description.
  */
-export const PayPalDescription = ({ testAmount, setTestAmount }) => {
+export const PayPalDescription = ( { testAmount, setTestAmount } ) => {
 	return (
 		<>
-			{!!isTestEnvironment && (
+			{ !! isTestEnvironment && (
 				<span>
-					{__(
+					{ __(
 						'TEST MODE ENABLED',
 						'woocommerce-gateway-paypal-powered-by-braintree'
-					)}
+					) }
 				</span>
-			)}
-			<p>{decodeEntities(description || '')}</p>
-			{!!isTestEnvironment && (
+			) }
+			<p>{ decodeEntities( description || '' ) }</p>
+			{ !! isTestEnvironment && (
 				<>
 					<ValidatedTextInput
-						id={`wc-${PAYMENT_METHOD_NAME}-test-amount`}
+						id={ `wc-${ PAYMENT_METHOD_NAME }-test-amount` }
 						type="text"
-						label={__(
+						label={ __(
 							'Test Amount',
 							'woocommerce-gateway-paypal-powered-by-braintree'
-						)}
-						value={testAmount}
-						onChange={setTestAmount}
+						) }
+						value={ testAmount }
+						onChange={ setTestAmount }
 					/>
 					<p
-						style={{ fontSize: '10px' }}
-						dangerouslySetInnerHTML={{
+						style={ { fontSize: '10px' } }
+						dangerouslySetInnerHTML={ {
 							__html: sprintf(
 								/** translators: Placeholders: %1$s - <a> tag, %2$s - </a> tag */
 								__(
@@ -58,10 +58,10 @@ export const PayPalDescription = ({ testAmount, setTestAmount }) => {
 								'<a href="https://developers.braintreepayments.com/reference/general/testing/php#test-amounts">',
 								'</a>'
 							),
-						}}
+						} }
 					/>
 				</>
-			)}
+			) }
 		</>
 	);
 };

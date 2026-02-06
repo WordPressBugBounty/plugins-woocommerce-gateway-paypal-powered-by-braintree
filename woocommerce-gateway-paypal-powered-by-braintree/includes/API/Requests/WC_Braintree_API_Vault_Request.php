@@ -24,6 +24,8 @@
 
 namespace WC_Braintree\API\Requests;
 
+use Braintree\Result\UsBankAccountVerification;
+
 defined( 'ABSPATH' ) or exit;
 
 /**
@@ -89,6 +91,34 @@ abstract class WC_Braintree_API_Vault_Request extends WC_Braintree_API_Request {
 		 * @param WC_Order $order   The order object.
 		 */
 		return apply_filters( 'wc_braintree_api_vault_request_credit_card_options', $options, $this->get_order() );
+	}
+
+	/**
+	 * Return the options used for validating an ACH Direct Debit payment method.
+	 *
+	 * @since 3.7.0
+	 *
+	 * @return array
+	 */
+	protected function get_ach_direct_debit_options(): array {
+
+		$options = [
+			'usBankAccountVerificationMethod' => UsBankAccountVerification::INDEPENDENT_CHECK,
+		];
+
+		if ( ! empty( $this->get_order()->payment->merchant_account_id ) ) {
+			$options['verificationMerchantAccountId'] = $this->get_order()->payment->merchant_account_id;
+		}
+
+		/**
+		 * Filters the ACH Direct Debit options for the vault request.
+		 *
+		 * @since 3.7.0
+		 *
+		 * @param array    $options The ACH Direct Debit options.
+		 * @param WC_Order $order   The order object.
+		 */
+		return apply_filters( 'wc_braintree_api_vault_request_ach_options', $options, $this->get_order() );
 	}
 
 

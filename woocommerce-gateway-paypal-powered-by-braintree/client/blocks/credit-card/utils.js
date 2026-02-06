@@ -15,13 +15,13 @@ let cachedCreditCardServerData = null;
  * Braintree Credit Card data comes from the server passed on a global object.
  */
 export const getBraintreeCreditCardServerData = () => {
-	if (cachedCreditCardServerData !== null) {
+	if ( cachedCreditCardServerData !== null ) {
 		return cachedCreditCardServerData;
 	}
 
-	const creditCardData = getSetting(`${PAYMENT_METHOD_ID}_data`, null);
+	const creditCardData = getSetting( `${ PAYMENT_METHOD_ID }_data`, null );
 
-	if (!creditCardData) {
+	if ( ! creditCardData ) {
 		throw new Error(
 			'Braintree Credit Card initialization data is not available'
 		);
@@ -63,42 +63,42 @@ export const getBraintreeCreditCardServerData = () => {
  *
  * @param {Object} hostedFieldsInstance
  */
-export const attachEventsOnHostedFields = (hostedFieldsInstance) => {
-	function addClass(eventObj, className) {
-		const field = eventObj.fields[eventObj.emittedBy];
-		if (field) {
-			field.container.classList.add(className);
+export const attachEventsOnHostedFields = ( hostedFieldsInstance ) => {
+	function addClass( eventObj, className ) {
+		const field = eventObj.fields[ eventObj.emittedBy ];
+		if ( field ) {
+			field.container.classList.add( className );
 		}
 	}
 
-	function removeClass(eventObj, className) {
-		const field = eventObj.fields[eventObj.emittedBy];
-		if (field) {
-			field.container.classList.remove(className);
+	function removeClass( eventObj, className ) {
+		const field = eventObj.fields[ eventObj.emittedBy ];
+		if ( field ) {
+			field.container.classList.remove( className );
 		}
 	}
 
 	/**
 	 * Add/remove class of field on various events (focus, blur, etc...) to apply blocks CSS styles.
 	 */
-	hostedFieldsInstance.on('focus', (event) => {
-		addClass(event, 'focused');
-	});
+	hostedFieldsInstance.on( 'focus', ( event ) => {
+		addClass( event, 'focused' );
+	} );
 
-	hostedFieldsInstance.on('blur', (event) => {
-		const field = event.fields[event.emittedBy];
-		removeClass(event, 'focused');
-		if (field.isEmpty) {
-			addClass(event, 'empty');
+	hostedFieldsInstance.on( 'blur', ( event ) => {
+		const field = event.fields[ event.emittedBy ];
+		removeClass( event, 'focused' );
+		if ( field.isEmpty ) {
+			addClass( event, 'empty' );
 		}
-	});
-	hostedFieldsInstance.on('empty', (event) => {
-		addClass(event, 'empty');
-	});
+	} );
+	hostedFieldsInstance.on( 'empty', ( event ) => {
+		addClass( event, 'empty' );
+	} );
 
-	hostedFieldsInstance.on('notEmpty', function (event) {
-		removeClass(event, 'empty');
-	});
+	hostedFieldsInstance.on( 'notEmpty', function ( event ) {
+		removeClass( event, 'empty' );
+	} );
 
 	/**
 	 * Fires when the Hosted Fields integration detects a card type change.
@@ -106,8 +106,8 @@ export const attachEventsOnHostedFields = (hostedFieldsInstance) => {
 	 * This is used to update the card type icon if a specific type is found
 	 * or indicate an invalid type when necessary.
 	 */
-	hostedFieldsInstance.on('cardTypeChange', function (event) {
-		if (!event.cards) {
+	hostedFieldsInstance.on( 'cardTypeChange', function ( event ) {
+		if ( ! event.cards ) {
 			return;
 		}
 
@@ -116,27 +116,27 @@ export const attachEventsOnHostedFields = (hostedFieldsInstance) => {
 		);
 
 		// Clear any existing card type class
-		cardField.classList.forEach((className) => {
-			if (className.startsWith('card-type-')) {
-				cardField.classList.remove(className);
+		cardField.classList.forEach( ( className ) => {
+			if ( className.startsWith( 'card-type-' ) ) {
+				cardField.classList.remove( className );
 			}
-		});
+		} );
 
-		if (!event.cards.length) {
-			return cardField.classList.add('card-type-invalid');
+		if ( ! event.cards.length ) {
+			return cardField.classList.add( 'card-type-invalid' );
 		}
 
-		if (event.cards.length === 1) {
-			const card = event.cards[0];
+		if ( event.cards.length === 1 ) {
+			const card = event.cards[ 0 ];
 			const { enabledCardTypes } = getBraintreeCreditCardServerData();
 
-			if (card.type && enabledCardTypes.includes(card.type)) {
-				cardField.classList.add(`card-type-${card.type}`);
+			if ( card.type && enabledCardTypes.includes( card.type ) ) {
+				cardField.classList.add( `card-type-${ card.type }` );
 			} else {
-				cardField.classList.add('card-type-invalid');
+				cardField.classList.add( 'card-type-invalid' );
 			}
 		}
-	});
+	} );
 };
 
 /**
@@ -144,7 +144,7 @@ export const attachEventsOnHostedFields = (hostedFieldsInstance) => {
  *
  * @param {boolean} usingToken - Whether or not the customer is using a saved payment method.
  */
-export const getHostedFieldsOptions = (usingToken = false) => {
+export const getHostedFieldsOptions = ( usingToken = false ) => {
 	const { cscRequired, hostedFieldsStyles } =
 		getBraintreeCreditCardServerData();
 	const hostedFieldsOptions = {
@@ -167,7 +167,7 @@ export const getHostedFieldsOptions = (usingToken = false) => {
 		fields: {},
 	};
 
-	if (!usingToken) {
+	if ( ! usingToken ) {
 		hostedFieldsOptions.fields = {
 			number: {
 				selector: '#wc-braintree-credit-card-account-number-hosted',
@@ -183,7 +183,7 @@ export const getHostedFieldsOptions = (usingToken = false) => {
 		};
 	}
 
-	if (cscRequired) {
+	if ( cscRequired ) {
 		const selector = usingToken
 			? '#wc-braintree-credit-card-csc-hosted-token'
 			: '#wc-braintree-credit-card-csc-hosted';
@@ -206,64 +206,67 @@ export const getHostedFieldsOptions = (usingToken = false) => {
  * @param {boolean} usingToken - Whether or not the customer is using a saved payment method.
  * @return {string} The error message.
  */
-export const getErrorMessage = (error, usingToken = false) => {
+export const getErrorMessage = ( error, usingToken = false ) => {
 	const messages = [];
 	const { fieldsErrorMessages, cscRequired } =
 		getBraintreeCreditCardServerData();
 
-	if (!error || !error.type) {
+	if ( ! error || ! error.type ) {
 		return error.message || '';
 	}
 
-	if (error.type === 'CUSTOMER') {
-		switch (error.code) {
+	if ( error.type === 'CUSTOMER' ) {
+		switch ( error.code ) {
 			case 'HOSTED_FIELDS_FIELDS_EMPTY':
-				if (!usingToken) {
-					messages.push(fieldsErrorMessages.card_number_required);
+				if ( ! usingToken ) {
+					messages.push( fieldsErrorMessages.card_number_required );
 					messages.push(
 						fieldsErrorMessages.card_expirationDate_required
 					);
 				}
-				if (cscRequired) {
-					messages.push(fieldsErrorMessages.card_cvv_required);
+				if ( cscRequired ) {
+					messages.push( fieldsErrorMessages.card_cvv_required );
 				}
 				break;
 
 			case 'HOSTED_FIELDS_FIELDS_INVALID':
-				if (error.details && error.details.invalidFieldKeys) {
-					for (const field of error.details.invalidFieldKeys) {
+				if ( error.details && error.details.invalidFieldKeys ) {
+					for ( const field of error.details.invalidFieldKeys ) {
 						messages.push(
-							fieldsErrorMessages[`card_${field}_invalid`] || ''
+							fieldsErrorMessages[ `card_${ field }_invalid` ] ||
+								''
 						);
 					}
 				}
 				break;
 
 			default:
-				messages.push(error.message || '');
-				messages.push((error.error && error.error.message) || '');
+				messages.push( error.message || '' );
+				messages.push( ( error.error && error.error.message ) || '' );
 
-				if (error.details && error.details.originalError) {
+				if ( error.details && error.details.originalError ) {
 					// Recursively add error messages from nested originalError objects.
-					const errors = getErrorMessage(error.details.originalError);
-					if (errors) {
-						messages.push(errors);
+					const errors = getErrorMessage(
+						error.details.originalError
+					);
+					if ( errors ) {
+						messages.push( errors );
 					}
 				}
 				break;
 		}
-	} else if (error.type === 'NETWORK') {
+	} else if ( error.type === 'NETWORK' ) {
 		if (
 			error.details &&
 			error.details.originalError &&
 			error.details.originalError.error
 		) {
-			messages.push(error.details.originalError.error.message || '');
+			messages.push( error.details.originalError.error.message || '' );
 		}
 	}
 
-	if (messages.length) {
-		return messages.filter((ele) => ele).join('. ');
+	if ( messages.length ) {
+		return messages.filter( ( ele ) => ele ).join( '. ' );
 	}
 	return '';
 };
@@ -274,30 +277,30 @@ export const getErrorMessage = (error, usingToken = false) => {
  * @param {string} token Saved Token ID.
  * @return {Object} return token and token 3ds nonce.
  */
-export const getTokenData = async (token) => {
+export const getTokenData = async ( token ) => {
 	const { ajaxUrl, tokenDataNonce, paymentErrorMessage } =
 		getBraintreeCreditCardServerData();
 	const formData = new FormData();
-	formData.append('action', `wc_${PAYMENT_METHOD_ID}_get_token_data`);
-	formData.append('token_id', token);
-	formData.append('nonce', tokenDataNonce);
+	formData.append( 'action', `wc_${ PAYMENT_METHOD_ID }_get_token_data` );
+	formData.append( 'token_id', token );
+	formData.append( 'nonce', tokenDataNonce );
 
-	const res = await fetch(ajaxUrl, {
+	const res = await fetch( ajaxUrl, {
 		method: 'POST',
 		body: formData,
-	});
+	} );
 	const response = await res.json();
-	if (response && !response.success) {
+	if ( response && ! response.success ) {
 		const message =
-			(response.data && response.data.message) || paymentErrorMessage;
-		throw new Error(message);
+			( response.data && response.data.message ) || paymentErrorMessage;
+		throw new Error( message );
 	}
 
-	if (response && response.success && response.data) {
+	if ( response && response.success && response.data ) {
 		return response.data;
 	}
 
-	throw new Error(paymentErrorMessage);
+	throw new Error( paymentErrorMessage );
 };
 
 /**
@@ -307,12 +310,12 @@ export const getTokenData = async (token) => {
  * @param {Object} data    Data object to log
  * @return {void}
  */
-export const logData = (message, data = null) => {
-	if (getBraintreeCreditCardServerData().debug) {
+export const logData = ( message, data = null ) => {
+	if ( getBraintreeCreditCardServerData().debug ) {
 		/* eslint-disable no-console */
-		console.log(`Braintree (Credit Card): ${message}`);
-		if (data) {
-			console.log(data);
+		console.log( `Braintree (Credit Card): ${ message }` );
+		if ( data ) {
+			console.log( data );
 		}
 		/* eslint-enable no-console */
 	}
@@ -325,11 +328,11 @@ export const logData = (message, data = null) => {
  */
 export const getCardIcons = () => {
 	const { icons = {} } = getBraintreeCreditCardServerData();
-	return Object.entries(icons).map(([id, { src, alt }]) => {
+	return Object.entries( icons ).map( ( [ id, { src, alt } ] ) => {
 		return {
 			id,
 			src,
 			alt,
 		};
-	});
+	} );
 };

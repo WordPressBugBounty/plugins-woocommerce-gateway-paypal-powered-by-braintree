@@ -78,7 +78,7 @@ class Util
                 throw new Exception\TooManyRequests();
             break;
             case 500:
-                throw new Exception\ServerError();
+                throw new Exception\ServerError($message);
             break;
             case 504:
                 throw new Exception\GatewayTimeout();
@@ -386,12 +386,15 @@ class Util
      *
      * @return string|false
      */
-    public static function attributesToString($attributes)
+    public static function attributesToString($attributes, $preserveIndexedArray = false)
     {
+        if ($preserveIndexedArray && self::isIndexedArray($attributes)) {
+            return '[' . implode(',', $attributes) . ']';
+        }
         $printableAttribs = [];
         foreach ($attributes as $key => $value) {
             if (is_array($value)) {
-                $pAttrib = self::attributesToString($value);
+                $pAttrib = self::attributesToString($value, $preserveIndexedArray);
             } elseif ($value instanceof DateTime) {
                 $pAttrib = $value->format(DateTime::RFC850);
             } else {
@@ -400,6 +403,11 @@ class Util
             $printableAttribs[$key] = sprintf('%s', $pAttrib);
         }
         return self::implodeAssociativeArray($printableAttribs);
+    }
+
+    private static function isIndexedArray($array)
+    {
+        return array_keys($array) == range(0, count($array) - 1);
     }
 
     /**

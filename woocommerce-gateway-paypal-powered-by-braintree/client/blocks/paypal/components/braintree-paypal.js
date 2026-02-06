@@ -20,18 +20,20 @@ const { isCheckoutConfirmation, payPalCustomerDetails } =
 	getBraintreePayPalServerData();
 
 const isBlockTheme = getSetting( 'isBlockTheme' );
-const errorNoticeClass = isBlockTheme ? 'wc-block-components-notice-banner is-error' : 'woocommerce-error';
+const errorNoticeClass = isBlockTheme
+	? 'wc-block-components-notice-banner is-error'
+	: 'woocommerce-error';
 
-const mergeAddress = (address, address2) => {
-	if (!address2) {
+const mergeAddress = ( address, address2 ) => {
+	if ( ! address2 ) {
 		return address;
 	}
 
-	Object.keys(address2).forEach((key) => {
-		if (address2[key] === '') {
-			delete address2[key];
+	Object.keys( address2 ).forEach( ( key ) => {
+		if ( address2[ key ] === '' ) {
+			delete address2[ key ];
 		}
-	});
+	} );
 
 	return {
 		...address,
@@ -46,9 +48,9 @@ const mergeAddress = (address, address2) => {
  *
  * @return {JSX.Element} The Braintree PayPal saved token component.
  */
-export const BraintreePayPal = (props) => {
-	const [errorMessage, setErrorMessage] = useState(null);
-	const [isLoaded, setIsLoaded] = useState(false);
+export const BraintreePayPal = ( props ) => {
+	const [ errorMessage, setErrorMessage ] = useState( null );
+	const [ isLoaded, setIsLoaded ] = useState( false );
 
 	const {
 		eventRegistration,
@@ -62,40 +64,40 @@ export const BraintreePayPal = (props) => {
 		shippingData,
 	} = props;
 
-	const paymentForm = usePaymentForm({
+	const paymentForm = usePaymentForm( {
 		billing,
 		onSubmit,
 		shouldSavePayment,
 		token,
 		isExpress: false,
 		needsShipping: shippingData.needsShipping,
-	});
+	} );
 	const { loadPayPalSDK, testAmount, setTestAmount, amount } = paymentForm;
 
 	// Disable the place order button when PayPal is active. TODO: find a better way to do this.
-	useEffect(() => {
-		if (isCheckoutConfirmation) {
+	useEffect( () => {
+		if ( isCheckoutConfirmation ) {
 			return;
 		}
 
 		const button = document.querySelector(
 			'button.wc-block-components-checkout-place-order-button'
 		);
-		if (button) {
-			if (activePaymentMethod === PAYMENT_METHOD_ID) {
-				button.setAttribute('disabled', 'disabled');
+		if ( button ) {
+			if ( activePaymentMethod === PAYMENT_METHOD_ID ) {
+				button.setAttribute( 'disabled', 'disabled' );
 			}
 			return () => {
-				button.removeAttribute('disabled');
+				button.removeAttribute( 'disabled' );
 			};
 		}
-	}, [activePaymentMethod]);
+	}, [ activePaymentMethod ] );
 
-	useEffect(() => {
+	useEffect( () => {
 		// Fill the form if in checkout confirmation
 		if (
-			!isCheckoutConfirmation ||
-			!payPalCustomerDetails ||
+			! isCheckoutConfirmation ||
+			! payPalCustomerDetails ||
 			window.wcBraintreePayPalAddressFilled
 		) {
 			return;
@@ -104,7 +106,7 @@ export const BraintreePayPal = (props) => {
 		try {
 			const { billing: billingAddress, shipping: shippingAddress } =
 				payPalCustomerDetails;
-			const wcAddresses = select('wc/store/cart').getCustomerData();
+			const wcAddresses = select( 'wc/store/cart' ).getCustomerData();
 			const addresses = {};
 			addresses.billing = mergeAddress(
 				wcAddresses.billingAddress,
@@ -115,51 +117,53 @@ export const BraintreePayPal = (props) => {
 				shippingAddress
 			);
 
-			if (addresses.billing) {
-				dispatch('wc/store/cart').setBillingAddress(addresses.billing);
+			if ( addresses.billing ) {
+				dispatch( 'wc/store/cart' ).setBillingAddress(
+					addresses.billing
+				);
 			}
-			if (shippingData.needsShipping && addresses.shipping) {
-				dispatch('wc/store/cart').setShippingAddress(
+			if ( shippingData.needsShipping && addresses.shipping ) {
+				dispatch( 'wc/store/cart' ).setShippingAddress(
 					addresses.shipping
 				);
 			}
-		} catch (err) {
+		} catch ( err ) {
 			// Sometimes the PayPal address is missing, skip in this case.
 			// eslint-disable-next-line no-console
-			console.error(err);
+			console.error( err );
 		}
 		// This useEffect should run only once, but adding this in case of some kind of full re-rendering
 		window.wcBraintreePayPalAddressFilled = true;
-	}, []);
+	}, [] );
 
 	return (
 		<>
-			{!isCheckoutConfirmation && (
+			{ ! isCheckoutConfirmation && (
 				<PayPalDescription
-					testAmount={testAmount}
-					setTestAmount={setTestAmount}
+					testAmount={ testAmount }
+					setTestAmount={ setTestAmount }
 				/>
-			)}
-			{errorMessage && (
+			) }
+			{ errorMessage && (
 				<div className={ errorNoticeClass }>{ errorMessage }</div>
-			)}
-			{!errorMessage && (
-				<LoadingMask isLoading={!isLoaded} showSpinner={true}>
-					{isLoaded && !isCheckoutConfirmation && (
-						<PayPalPayLaterMessaging amount={amount} />
-					)}
+			) }
+			{ ! errorMessage && (
+				<LoadingMask isLoading={ ! isLoaded } showSpinner={ true }>
+					{ isLoaded && ! isCheckoutConfirmation && (
+						<PayPalPayLaterMessaging amount={ amount } />
+					) }
 					<PayPalButtons
-						loadPayPalSDK={loadPayPalSDK}
-						onError={setErrorMessage}
-						buttonLoaded={setIsLoaded}
-						isCheckoutConfirmation={isCheckoutConfirmation}
+						loadPayPalSDK={ loadPayPalSDK }
+						onError={ setErrorMessage }
+						buttonLoaded={ setIsLoaded }
+						isCheckoutConfirmation={ isCheckoutConfirmation }
 					/>
 				</LoadingMask>
-			)}
+			) }
 			<CheckoutHandler
-				checkoutFormHandler={paymentForm}
-				eventRegistration={eventRegistration}
-				emitResponse={emitResponse}
+				checkoutFormHandler={ paymentForm }
+				eventRegistration={ eventRegistration }
+				emitResponse={ emitResponse }
 			/>
 		</>
 	);

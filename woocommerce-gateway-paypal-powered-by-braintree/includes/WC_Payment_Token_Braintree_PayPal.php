@@ -36,12 +36,15 @@ defined( 'ABSPATH' ) or exit;
 class WC_Payment_Token_Braintree_PayPal extends \WC_Payment_Token {
 
 
+	/** Token type identifier */
+	const TOKEN_TYPE = 'Braintree_PayPal';
+
 	/**
 	 * Payment Token Type.
 	 *
 	 * @var string
 	 */
-	protected $type = 'Braintree_PayPal';
+	protected $type = self::TOKEN_TYPE;
 
 	/**
 	 * PayPal payment token data.

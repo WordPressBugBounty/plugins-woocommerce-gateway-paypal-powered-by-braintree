@@ -18,23 +18,27 @@ const { supports } = getBraintreePayPalServerData();
  * @param {Object}                 props                   Incoming props for component (including props from Payments API)
  * @param {BraintreePayPalExpress} props.RenderedComponent Component to render
  */
-const BraintreePayPalComponent = ({ RenderedComponent, ...props }) => {
-	const isEditor = !!select('core/editor');
+const BraintreePayPalComponent = ( { RenderedComponent, ...props } ) => {
+	const isEditor = !! select( 'core/editor' );
 	// Don't render anything if we're in the editor.
-	if (isEditor) {
+	if ( isEditor ) {
 		return null;
 	}
-	return <RenderedComponent {...props} />;
+	return <RenderedComponent { ...props } />;
 };
 
 const braintreePayPalExpressPaymentMethod = {
 	name: PAYMENT_METHOD_ID + '_express',
 	canMakePayment: () => true,
 	content: (
-		<BraintreePayPalComponent RenderedComponent={BraintreePayPalExpress} />
+		<BraintreePayPalComponent
+			RenderedComponent={ BraintreePayPalExpress }
+		/>
 	),
 	edit: (
-		<BraintreePayPalComponent RenderedComponent={BraintreePayPalExpress} />
+		<BraintreePayPalComponent
+			RenderedComponent={ BraintreePayPalExpress }
+		/>
 	),
 	supports: {
 		features: supports || [],

@@ -22,46 +22,46 @@ const { description, isTestEnvironment } = getBraintreeCreditCardServerData();
  *
  * @return {JSX.Element} The payment method description.
  */
-export const BraintreeDescription = ({ testAmount, setTestAmount }) => {
+export const BraintreeDescription = ( { testAmount, setTestAmount } ) => {
 	return (
 		<>
-			{!!isTestEnvironment && (
+			{ !! isTestEnvironment && (
 				<span>
-					{__(
+					{ __(
 						'TEST MODE ENABLED',
 						'woocommerce-gateway-paypal-powered-by-braintree'
-					)}
+					) }
 				</span>
-			)}
+			) }
 			<p>
-				{decodeEntities(description || '')}
+				{ decodeEntities( description || '' ) }
 				<br />
-				{!!isTestEnvironment && (
+				{ !! isTestEnvironment && (
 					<span
-						dangerouslySetInnerHTML={{
+						dangerouslySetInnerHTML={ {
 							__html: __(
 								'Test credit card numbers: <code>378282246310005</code> or <code>4111111111111111</code>',
 								'woocommerce-gateway-paypal-powered-by-braintree'
 							),
-						}}
+						} }
 					/>
-				)}
+				) }
 			</p>
-			{!!isTestEnvironment && (
+			{ !! isTestEnvironment && (
 				<>
 					<ValidatedTextInput
-						id={`wc-${PAYMENT_METHOD_NAME}-test-amount`}
+						id={ `wc-${ PAYMENT_METHOD_NAME }-test-amount` }
 						type="text"
-						label={__(
+						label={ __(
 							'Test Amount',
 							'woocommerce-gateway-paypal-powered-by-braintree'
-						)}
-						value={testAmount}
-						onChange={setTestAmount}
+						) }
+						value={ testAmount }
+						onChange={ setTestAmount }
 					/>
 					<p
-						style={{ fontSize: '10px' }}
-						dangerouslySetInnerHTML={{
+						style={ { fontSize: '10px' } }
+						dangerouslySetInnerHTML={ {
 							__html: sprintf(
 								/** translators: Placeholders: %1$s - <a> tag, %2$s - </a> tag */
 								__(
@@ -71,10 +71,10 @@ export const BraintreeDescription = ({ testAmount, setTestAmount }) => {
 								'<a href="https://developers.braintreepayments.com/reference/general/testing/php#test-amounts">',
 								'</a>'
 							),
-						}}
+						} }
 					/>
 				</>
-			)}
+			) }
 		</>
 	);
 };

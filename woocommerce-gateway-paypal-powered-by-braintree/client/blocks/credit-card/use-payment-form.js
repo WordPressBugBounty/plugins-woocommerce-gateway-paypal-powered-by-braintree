@@ -38,29 +38,29 @@ const {
  *
  * @return {Object} An object with properties that interact with the Payment Form.
  */
-export const usePaymentForm = ({
+export const usePaymentForm = ( {
 	billing,
 	shippingData: { shippingAddress },
 	shouldSavePayment,
 	token = null,
-}) => {
+} ) => {
 	const { cartTotal, currency } = billing;
-	const amount = (cartTotal.value / 10 ** currency.minorUnit).toFixed(2);
+	const amount = ( cartTotal.value / 10 ** currency.minorUnit ).toFixed( 2 );
 
-	const [testAmount, setTestAmount] = useState('');
-	const [deviceData, setDeviceData] = useState('');
-	const [hostedFieldsInstance, setHostedFieldsInstance] = useState(null);
-	const [threeDSecureInstance, setThreeDSecureInstance] = useState(null);
+	const [ testAmount, setTestAmount ] = useState( '' );
+	const [ deviceData, setDeviceData ] = useState( '' );
+	const [ hostedFieldsInstance, setHostedFieldsInstance ] = useState( null );
+	const [ threeDSecureInstance, setThreeDSecureInstance ] = useState( null );
 
-	const isSingleUse = useMemo(() => {
-		return !shouldSavePayment && !tokenizationForced;
-	}, [shouldSavePayment]);
-	const usingToken = !!token;
+	const isSingleUse = useMemo( () => {
+		return ! shouldSavePayment && ! tokenizationForced;
+	}, [ shouldSavePayment ] );
+	const usingToken = !! token;
 
 	/**
 	 * Setup Braintree integration.
 	 */
-	const setupIntegration = useCallback(async () => {
+	const setupIntegration = useCallback( async () => {
 		const { braintree } = window;
 		let dataCollectorInstance, threedsInstance, braintreeHostedFields;
 		const is3DSecureEnabled =
@@ -72,48 +72,48 @@ export const usePaymentForm = ({
 			clientTokenNonce
 		);
 
-		logData('Creating client');
+		logData( 'Creating client' );
 		// Setup Braintree client.
-		const client = await braintree.client.create({
+		const client = await braintree.client.create( {
 			authorization: clientToken,
-		});
-		logData('Client Ready');
+		} );
+		logData( 'Client Ready' );
 
 		// Setup Braintree hosted fields.
-		if (!(usingToken && !cscRequired)) {
-			logData('Creating integration');
-			braintreeHostedFields = await braintree.hostedFields.create({
-				...getHostedFieldsOptions(usingToken),
+		if ( ! ( usingToken && ! cscRequired ) ) {
+			logData( 'Creating integration' );
+			braintreeHostedFields = await braintree.hostedFields.create( {
+				...getHostedFieldsOptions( usingToken ),
 				client,
-			});
-			setHostedFieldsInstance(braintreeHostedFields);
-			attachEventsOnHostedFields(braintreeHostedFields);
-			logData('Integration ready');
+			} );
+			setHostedFieldsInstance( braintreeHostedFields );
+			attachEventsOnHostedFields( braintreeHostedFields );
+			logData( 'Integration ready' );
 		}
 
 		// Setup Device Data
-		if (isAdvancedFraudTool && braintree && braintree.dataCollector) {
-			dataCollectorInstance = await braintree.dataCollector.create({
+		if ( isAdvancedFraudTool && braintree && braintree.dataCollector ) {
+			dataCollectorInstance = await braintree.dataCollector.create( {
 				client,
-			});
-			if (dataCollectorInstance && dataCollectorInstance.deviceData) {
-				setDeviceData(dataCollectorInstance.deviceData);
+			} );
+			if ( dataCollectorInstance && dataCollectorInstance.deviceData ) {
+				setDeviceData( dataCollectorInstance.deviceData );
 			}
 		}
 
 		// Setup Braintree 3DS.
-		if (is3DSecureEnabled) {
+		if ( is3DSecureEnabled ) {
 			// Determine this on an account level only if it's not specifically disabled
 			const isEnabled =
 				client.getConfiguration().gatewayConfiguration
 					.threeDSecureEnabled;
 
-			if (isEnabled) {
-				threedsInstance = await braintree.threeDSecure.create({
+			if ( isEnabled ) {
+				threedsInstance = await braintree.threeDSecure.create( {
 					version: 2,
 					client,
-				});
-				setThreeDSecureInstance(threedsInstance);
+				} );
+				setThreeDSecureInstance( threedsInstance );
 			}
 		}
 
@@ -122,9 +122,9 @@ export const usePaymentForm = ({
 			dataCollector: dataCollectorInstance,
 			threeDSecure: threedsInstance,
 		};
-	}, [usingToken]);
+	}, [ usingToken ] );
 
-	const verificationDetails = useMemo(() => {
+	const verificationDetails = useMemo( () => {
 		const verificationData = {
 			amount: amount.toString(),
 			email: billing.billingData.email || '',
@@ -169,12 +169,16 @@ export const usePaymentForm = ({
 
 		// If the order total is 0 (eg: trial), we need to set the recurring amount to the order total.
 		// TODO: Check further on this and make sure braintree not support 0 amount 3DS verification.
-		if (cartContainsSubscription && amount === '0.00' && orderTotal3DSecure) {
-			verificationData.amount = orderTotal3DSecure.toFixed(2);
+		if (
+			cartContainsSubscription &&
+			amount === '0.00' &&
+			orderTotal3DSecure
+		) {
+			verificationData.amount = orderTotal3DSecure.toFixed( 2 );
 		}
 
 		return verificationData;
-	}, [amount, billing.billingData, shippingAddress]);
+	}, [ amount, billing.billingData, shippingAddress ] );
 
 	/**
 	 * Verifies 3D Secure.
@@ -185,38 +189,38 @@ export const usePaymentForm = ({
 	 * @return {Promise} Promise that resolves with the verification result.
 	 */
 	const verify3DSecure = useCallback(
-		(nonce, bin) => {
-			logData('Verifying 3D Secure.', verificationDetails);
-			return threeDSecureInstance.verifyCard({
+		( nonce, bin ) => {
+			logData( 'Verifying 3D Secure.', verificationDetails );
+			return threeDSecureInstance.verifyCard( {
 				...verificationDetails,
 				nonce,
 				bin,
-				onLookupComplete: (data, next) => {
-					logData('3DS lookup complete', data);
+				onLookupComplete: ( data, next ) => {
+					logData( '3DS lookup complete', data );
 					next();
 				},
-			});
+			} );
 		},
-		[threeDSecureInstance, verificationDetails]
+		[ threeDSecureInstance, verificationDetails ]
 	);
 
-	const getPaymentMethodData = useCallback(() => {
+	const getPaymentMethodData = useCallback( () => {
 		const paymentMethodData = {
 			wc_braintree_device_data: deviceData,
 		};
-		if (!isSingleUse) {
+		if ( ! isSingleUse ) {
 			paymentMethodData[
-				`wc-${PAYMENT_METHOD_NAME}-tokenize-payment-method`
+				`wc-${ PAYMENT_METHOD_NAME }-tokenize-payment-method`
 			] = true;
 		}
 
-		if (testAmount) {
-			paymentMethodData[`wc-${PAYMENT_METHOD_NAME}-test-amount`] =
+		if ( testAmount ) {
+			paymentMethodData[ `wc-${ PAYMENT_METHOD_NAME }-test-amount` ] =
 				testAmount;
 		}
 
 		return paymentMethodData;
-	}, [deviceData, isSingleUse, testAmount]);
+	}, [ deviceData, isSingleUse, testAmount ] );
 
 	return {
 		testAmount,

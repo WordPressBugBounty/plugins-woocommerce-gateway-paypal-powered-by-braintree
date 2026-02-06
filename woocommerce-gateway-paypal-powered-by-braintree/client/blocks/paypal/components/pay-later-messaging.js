@@ -24,25 +24,25 @@ const {
  *
  * @return {JSX.Element} The PayPal Pay Later messaging
  */
-export const PayPalPayLaterMessaging = ({ amount }) => {
+export const PayPalPayLaterMessaging = ( { amount } ) => {
 	const containerId = 'wc-braintree-paypal-pay-later-messaging-container';
 
-	useEffect(() => {
-		if (!isPayPalPayLaterEnabled) {
+	useEffect( () => {
+		if ( ! isPayPalPayLaterEnabled ) {
 			return;
 		}
-		const container = document.getElementById(containerId);
+		const container = document.getElementById( containerId );
 
-		if (!container) {
+		if ( ! container ) {
 			return;
 		}
 
-		if (!paypal.Messages) {
-			return (container.style.display = 'none');
+		if ( ! paypal.Messages ) {
+			return ( container.style.display = 'none' );
 		}
 
 		paypal
-			.Messages({
+			.Messages( {
 				amount,
 				style: {
 					layout: 'text',
@@ -54,16 +54,16 @@ export const PayPalPayLaterMessaging = ({ amount }) => {
 						color: messageTextColor,
 					},
 				},
-			})
-			.render(`#${containerId}`)
-			.catch((error) => {
+			} )
+			.render( `#${ containerId }` )
+			.catch( ( error ) => {
 				logData(
-					`Could not render the PayPal Pay Later messeging: ${error.message}`,
+					`Could not render the PayPal Pay Later messeging: ${ error.message }`,
 					error
 				);
-			});
-	}, [amount]);
+			} );
+	}, [ amount ] );
 
-	const style = buttonWidth ? { width: `${buttonWidth}px` } : {};
-	return <div id={containerId} style={style} />;
+	const style = buttonWidth ? { width: `${ buttonWidth }px` } : {};
+	return <div id={ containerId } style={ style } />;
 };

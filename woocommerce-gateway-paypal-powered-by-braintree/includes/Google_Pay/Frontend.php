@@ -67,14 +67,35 @@ class Frontend extends Framework\Payment_Gateway\External_Checkout\Google_Pay\Fr
 		// Braintree-specific Google Pay scripts.
 		wp_register_script( 'braintree-js-google-pay', 'https://js.braintreegateway.com/web/' . WC_Braintree::BRAINTREE_JS_SDK_VERSION . '/js/google-payment.min.js', array( 'braintree-js-client' ), WC_Braintree::VERSION, true );
 
+		// Register classic/shortcode Google Pay script.
 		wp_register_script( 'wc-braintree-google-pay-js', $this->get_plugin()->get_plugin_url() . '/assets/js/frontend/wc-braintree-google-pay.min.js', array( 'jquery', 'braintree-js-google-pay' ), $this->get_plugin()->get_version(), true );
 
-		if ( ! parent::should_enqueue_scripts() ) {
-			return;
+		// Register blocks Google Pay script.
+		$asset_path   = $this->get_plugin()->get_plugin_path() . '/assets/js/blocks/google-pay.asset.php';
+		$version      = $this->get_plugin()->get_version();
+		$dependencies = array( 'google-pay-js', 'braintree-js-google-pay' );
+
+		if ( file_exists( $asset_path ) ) {
+			$asset        = require $asset_path;
+			$version      = isset( $asset['version'] ) ? $asset['version'] : $version;
+			$dependencies = array_merge( $dependencies, isset( $asset['dependencies'] ) ? $asset['dependencies'] : array() );
 		}
 
-		// Enqueue the JS handler.
-		wp_enqueue_script( 'wc-braintree-google-pay-js' );
+		wp_register_script(
+			'wc-braintree-blocks-google-pay',
+			$this->get_plugin()->get_plugin_url() . '/assets/js/blocks/google-pay.min.js',
+			$dependencies,
+			$version,
+			true
+		);
+
+		// Enqueue the appropriate Google Pay script based on the page type.
+		if ( WC_Braintree::is_blocks_page() ) {
+			wp_enqueue_script( 'wc-braintree-blocks-google-pay' );
+		} elseif ( parent::should_enqueue_scripts() ) {
+			// Only enqueue legacy script if framework says we should (for classic/shortcode pages).
+			wp_enqueue_script( 'wc-braintree-google-pay-js' );
+		}
 	}
 
 
@@ -91,7 +112,7 @@ class Frontend extends Framework\Payment_Gateway\External_Checkout\Google_Pay\Fr
 		$gateway = $this->get_plugin()->get_gateway( WC_Braintree::CREDIT_CARD_GATEWAY_ID );
 		$sdk     = $gateway->get_sdk();
 
-		$args['store_name']                     = get_bloginfo( 'name' );
+		$args['store_name']                     = \WC_Braintree\WC_Braintree::get_braintree_store_name();
 		$args['force_tokenization']             = $this->is_tokenization_forced();
 		$args['braintree_client_authorization'] = $sdk->clientToken()->generate();
 

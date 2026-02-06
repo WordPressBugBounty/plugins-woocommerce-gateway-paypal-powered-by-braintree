@@ -16,9 +16,9 @@ const cardIcons = getCardIcons();
 const { title, showSavedCards, showSaveOption, supports } =
 	getBraintreeCreditCardServerData();
 
-const BraintreeCreditCardLabel = (props) => {
+const BraintreeCreditCardLabel = ( props ) => {
 	const { PaymentMethodLabel } = props.components;
-	return <PaymentMethodLabel text={title} />;
+	return <PaymentMethodLabel text={ title } />;
 };
 
 /**
@@ -27,14 +27,14 @@ const BraintreeCreditCardLabel = (props) => {
  * @param {Object}              props                   Incoming props for component (including props from Payments API)
  * @param {BraintreeCreditCard} props.RenderedComponent Component to render
  */
-const BraintreeCreditCardComponent = ({ RenderedComponent, ...props }) => {
-	const isEditor = !!select('core/editor');
+const BraintreeCreditCardComponent = ( { RenderedComponent, ...props } ) => {
+	const isEditor = !! select( 'core/editor' );
 	// Don't render anything if we're in the editor.
-	if (isEditor) {
+	if ( isEditor ) {
 		return null;
 	}
 
-	return <RenderedComponent {...props} />;
+	return <RenderedComponent { ...props } />;
 };
 
 const braintreeCreditCardPaymentMethod = {
@@ -46,14 +46,18 @@ const braintreeCreditCardPaymentMethod = {
 	),
 	canMakePayment: () => true,
 	content: (
-		<BraintreeCreditCardComponent RenderedComponent={BraintreeCreditCard} />
+		<BraintreeCreditCardComponent
+			RenderedComponent={ BraintreeCreditCard }
+		/>
 	),
 	edit: (
-		<BraintreeCreditCardComponent RenderedComponent={BraintreeCreditCard} />
+		<BraintreeCreditCardComponent
+			RenderedComponent={ BraintreeCreditCard }
+		/>
 	),
 	savedTokenComponent: (
 		<BraintreeCreditCardComponent
-			RenderedComponent={BraintreeCreditCardSavedToken}
+			RenderedComponent={ BraintreeCreditCardSavedToken }
 		/>
 	),
 	icons: cardIcons,

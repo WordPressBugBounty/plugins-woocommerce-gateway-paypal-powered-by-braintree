@@ -9,6 +9,8 @@ namespace WC_Braintree;
 
 use SkyVerge\WooCommerce\PluginFramework\v5_15_10 as Framework;
 
+defined( 'ABSPATH' ) or exit;
+
 /**
  * Braintree CreditCard payment method Blocks integration
  *
@@ -42,19 +44,24 @@ final class WC_Gateway_Braintree_Credit_Card_Blocks_Support extends WC_Gateway_B
 			$params = $payment_form->get_payment_form_handler_js_params();
 		}
 
-		return array_merge(
+		// Get Apple Pay settings.
+		$apple_pay_enabled           = 'yes' === get_option( 'sv_wc_apple_pay_enabled', 'no' );
+		$apple_pay_button_style      = get_option( 'sv_wc_apple_pay_button_style', 'black' );
+		$apple_pay_display_locations = get_option( 'sv_wc_apple_pay_display_locations', array() );
+
+		$data = array_merge(
 			parent::get_payment_method_data(),
 			$params,
 			array(
-				'is_test_environment'        => $gateway->is_test_environment(),
-				'client_token_nonce'         => wp_create_nonce( 'wc_' . $this->name . '_get_client_token' ),
-				'token_data_nonce'           => wp_create_nonce( 'wc_' . $this->name . '_get_token_data' ),
-				'is_advanced_fraud_tool'     => $gateway->is_advanced_fraud_tool_enabled(),
-				'cart_contains_subscription' => $this->cart_contains_subscription(),
-				'order_total_for_3ds'        => ( $payment_form ) ? $payment_form->get_order_total_for_3d_secure() : 0,
-				'debug'                      => $gateway->debug_log(),
-				'icons'                      => $this->get_icons(),
-				'fields_error_messages'      => array(
+				'is_test_environment'                => $gateway->is_test_environment(),
+				'client_token_nonce'                 => wp_create_nonce( 'wc_' . $this->name . '_get_client_token' ),
+				'token_data_nonce'                   => wp_create_nonce( 'wc_' . $this->name . '_get_token_data' ),
+				'is_advanced_fraud_tool'             => $gateway->is_advanced_fraud_tool_enabled(),
+				'cart_contains_subscription'         => $this->cart_contains_subscription(),
+				'order_total_for_3ds'                => ( $payment_form ) ? $payment_form->get_order_total_for_3d_secure() : 0,
+				'debug'                              => $gateway->debug_log(),
+				'icons'                              => $this->get_icons(),
+				'fields_error_messages'              => array(
 					'card_number_required'         => esc_html__( 'Card number is required', 'woocommerce-gateway-paypal-powered-by-braintree' ),
 					'card_number_invalid'          => esc_html__( 'Card number is invalid', 'woocommerce-gateway-paypal-powered-by-braintree' ),
 					'card_cvv_required'            => esc_html__( 'Card security code is required', 'woocommerce-gateway-paypal-powered-by-braintree' ),
@@ -62,8 +69,40 @@ final class WC_Gateway_Braintree_Credit_Card_Blocks_Support extends WC_Gateway_B
 					'card_expirationDate_required' => esc_html__( 'Card expiration date is required', 'woocommerce-gateway-paypal-powered-by-braintree' ),
 					'card_expirationDate_invalid'  => esc_html__( 'Card expiration date is invalid', 'woocommerce-gateway-paypal-powered-by-braintree' ),
 				),
+				'store_name'                         => \WC_Braintree\WC_Braintree::get_braintree_store_name(),
+
+				// Apple Pay specific data.
+				'apple_pay_enabled'                  => $apple_pay_enabled,
+				'apple_pay_button_style'             => $apple_pay_button_style,
+				'apple_pay_display_locations'        => $apple_pay_display_locations,
+				'apple_pay_recalculate_totals_nonce' => wp_create_nonce( 'wc_' . $this->name . '_apple_pay_recalculate_totals' ),
 			),
 		);
+
+		// Get Google Pay settings.
+		$google_pay = WC_Braintree::instance()->get_google_pay_instance();
+
+		// Only add the Google Pay specific data if the Google Pay instance is available.
+		if ( $google_pay ) {
+			$data['google_pay'] = [
+				'merchant_id'              => $google_pay->get_merchant_id(),
+				'recalculate_totals_nonce' => wp_create_nonce( 'wc_' . $this->name . '_google_pay_recalculate_totals' ),
+				'process_payment_nonce'    => wp_create_nonce( 'wc_' . $this->name . '_google_pay_process_payment' ),
+				'button_style'             => $google_pay->get_button_style(),
+				'card_types'               => $google_pay->get_supported_networks(),
+				// This is needed because of a bug in the Google Pay Skyverge library.
+				// The method get_supported_networks() used above retrun [] if the processing gateway is not set; however there is no such check in get_available_countries().
+				'countries'                => $google_pay->get_processing_gateway() ? $google_pay->get_available_countries() : [],
+				'currencies'               => [ get_woocommerce_currency() ],
+				'flags'                    => [
+					'is_enabled'   => $google_pay->is_enabled(),
+					'is_available' => $google_pay->is_available(),
+					'is_test_mode' => $google_pay->is_test_mode(),
+				],
+			];
+		}
+
+		return $data;
 	}
 
 	/**

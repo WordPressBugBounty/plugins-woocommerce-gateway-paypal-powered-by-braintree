@@ -60,7 +60,7 @@ class WC_Braintree_Payment_Method_Handler extends Framework\SV_WC_Payment_Gatewa
 	 * Update payment tokens.
 	 *
 	 * When retrieving payment methods via the Braintree API, it returns both credit/debit card *and* PayPal methods from a single call.
-	 * Overriding the core framework update method ensures that PayPal accounts are not saved to the credit card token meta entry, and vice versa.
+	 * Overriding the core framework update method ensures that PayPal/Venmo accounts are not saved to the credit card token meta entry, and vice versa.
 	 *
 	 * @since 3.0.0
 	 *
@@ -72,12 +72,51 @@ class WC_Braintree_Payment_Method_Handler extends Framework\SV_WC_Payment_Gatewa
 	public function update_tokens( $user_id, $tokens, $environment_id = null ) {
 
 		foreach ( $tokens as $token_id => $token ) {
-			if ( ( $this->get_gateway()->is_credit_card_gateway() && ! $token->is_credit_card() ) || ( $this->get_gateway()->is_paypal_gateway() && ! $token->is_paypal_account() ) ) {
+			// Filter tokens based on gateway type.
+			$should_remove = false;
+
+			if ( $this->get_gateway()->is_credit_card_gateway() && ! $token->is_credit_card() ) {
+				$should_remove = true;
+			} elseif ( $this->get_gateway()->is_paypal_gateway() && ! $token->is_paypal_account() ) {
+				$should_remove = true;
+			} elseif ( $this->is_venmo_gateway() && ! $token->is_venmo_account() ) {
+				$should_remove = true;
+			} elseif ( $this->is_ach_gateway() && ! $token->is_ach_account() ) {
+				$should_remove = true;
+			}
+
+			if ( $should_remove ) {
 				unset( $tokens[ $token_id ] );
 			}
 		}
 
 		return parent::update_tokens( $user_id, $tokens, $environment_id );
+	}
+
+
+	/**
+	 * Checks if the gateway is a Venmo gateway.
+	 *
+	 * @since 3.6.0
+	 *
+	 * @return bool
+	 */
+	protected function is_venmo_gateway() {
+
+		return WC_Gateway_Braintree_Venmo::PAYMENT_TYPE_VENMO === $this->get_gateway()->get_payment_type();
+	}
+
+
+	/**
+	 * Checks if the gateway is an ACH gateway.
+	 *
+	 * @since 3.7.0
+	 *
+	 * @return bool
+	 */
+	protected function is_ach_gateway() {
+
+		return WC_Gateway_Braintree_ACH::PAYMENT_TYPE_ACH === $this->get_gateway()->get_payment_type();
 	}
 
 

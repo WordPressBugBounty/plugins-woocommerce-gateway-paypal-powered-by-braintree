@@ -13,12 +13,12 @@ import { useAfterProcessingCheckout } from './use-after-processing-checkout';
  * @param {Object} props.emitResponse        Helpers for observer response objects.
  * @param {string} props.token               Token for the saved payment method.
  */
-export const CheckoutHandler = ({
+export const CheckoutHandler = ( {
 	checkoutFormHandler,
 	eventRegistration,
 	emitResponse,
 	token = null,
-}) => {
+} ) => {
 	const {
 		onPaymentProcessing,
 		onCheckoutAfterProcessingWithError,

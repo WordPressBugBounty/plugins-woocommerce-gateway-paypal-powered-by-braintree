@@ -48,7 +48,15 @@ abstract class WC_Braintree_API_Vault_Response extends WC_Braintree_API_Response
 	 */
 	protected function get_payment_token_data( $payment_method ) {
 
-		if ( 'Braintree\CreditCard' === get_class( $payment_method ) || 'Braintree\ApplePayCard' === get_class( $payment_method ) || 'Braintree\GooglePayCard' === get_class( $payment_method ) ) {
+		$payment_method_class = get_class( $payment_method );
+
+		$card_types = array(
+			\Braintree\CreditCard::class,
+			\Braintree\ApplePayCard::class,
+			\Braintree\GooglePayCard::class,
+		);
+
+		if ( in_array( $payment_method_class, $card_types, true ) ) {
 
 			// credit card.
 			return array(
@@ -59,6 +67,25 @@ abstract class WC_Braintree_API_Vault_Response extends WC_Braintree_API_Response
 				'exp_month'          => $payment_method->expirationMonth,
 				'exp_year'           => $payment_method->expirationYear,
 				'billing_address_id' => ( isset( $payment_method->billingAddress ) && ! empty( $payment_method->billingAddress->id ) ) ? $payment_method->billingAddress->id : null,
+			);
+
+		} elseif ( \Braintree\UsBankAccount::class === $payment_method_class ) {
+
+			// ACH Direct Debit.
+			return [
+				'default'   => false,
+				'type'      => WC_Braintree_Payment_Method::ACH_TYPE,
+				'bank_name' => $payment_method->bankName,
+				'last_four' => $payment_method->last4,
+			];
+
+		} elseif ( \Braintree\VenmoAccount::class === $payment_method_class ) {
+
+			// Venmo account.
+			return array(
+				'default'  => false,
+				'type'     => WC_Braintree_Payment_Method::VENMO_TYPE,
+				'username' => $payment_method->username,
 			);
 
 		} else {
