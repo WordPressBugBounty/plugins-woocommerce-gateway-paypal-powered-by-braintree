@@ -49,7 +49,7 @@ class WC_Gateway_Braintree_ACH extends WC_Gateway_Braintree {
 			WC_Braintree::ACH_GATEWAY_ID,
 			wc_braintree(),
 			array(
-				'method_title'       => __( 'Braintree (ACH Direct Debit) - [Early Access]', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+				'method_title'       => __( 'Braintree (ACH Direct Debit)', 'woocommerce-gateway-paypal-powered-by-braintree' ),
 				'method_description' => __( 'Allow customers to securely pay using ACH Direct Debit via Braintree.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
 				'supports'           => array(
 					self::FEATURE_PRODUCTS,
@@ -73,7 +73,8 @@ class WC_Gateway_Braintree_ACH extends WC_Gateway_Braintree {
 		add_filter( 'woocommerce_settings_api_sanitized_fields_braintree_ach', [ $this, 'filter_admin_options' ] );
 
 		// Enable display of ACH payment methods in My Account.
-		add_filter( 'woocommerce_payment_methods_list_item', [ $this, 'set_brand_info_in_payment_method_list' ], 10, 2 );
+		// Priority 11 is to ensure we run after any default filters, especially those for Store API that can modify the "brand" value.
+		add_filter( 'woocommerce_payment_methods_list_item', [ $this, 'set_brand_info_in_payment_method_list' ], 11, 2 );
 
 		// Adjust the admin token editor to support ACH accounts.
 		add_filter( 'wc_payment_gateway_braintree_ach_token_editor_fields', [ $this, 'adjust_token_editor_fields' ] );
@@ -92,22 +93,51 @@ class WC_Gateway_Braintree_ACH extends WC_Gateway_Braintree {
 	 * @see SV_WC_Payment_Gateway::enqueue_gateway_assets()
 	 */
 	public function enqueue_gateway_assets() {
+		if ( ! $this->is_available() ) {
+			return;
+		}
 
-		if ( ! $this->is_available() || ! $this->is_payment_form_page() ) {
+		// Ensure we register for all pages, as some of the script dependencies may be loaded in additional contexts.
+		$this->register_gateway_assets();
+
+		if ( ! $this->is_payment_form_page() ) {
 			return;
 		}
 
 		parent::enqueue_gateway_assets();
 
 		// Enqueue Braintree ACH library.
-		wp_enqueue_script( 'braintree-js-client', 'https://js.braintreegateway.com/web/' . WC_Braintree::BRAINTREE_JS_SDK_VERSION . '/js/client.min.js', [], WC_Braintree::VERSION, true );
-		wp_enqueue_script( 'braintree-js-ach', 'https://js.braintreegateway.com/web/' . WC_Braintree::BRAINTREE_JS_SDK_VERSION . '/js/us-bank-account.min.js', [ 'braintree-js-client' ], WC_Braintree::VERSION, true );
-		wp_enqueue_script( 'braintree-js-data-collector', 'https://js.braintreegateway.com/web/' . WC_Braintree::BRAINTREE_JS_SDK_VERSION . '/js/data-collector.min.js', array( 'braintree-js-client' ), WC_Braintree::VERSION, true );
+		wp_enqueue_script( 'braintree-js-ach' );
+		wp_enqueue_script( 'braintree-js-data-collector' );
+
+		// Enqueue custom ACH Direct Debit payment form handler.
+		wp_enqueue_script( 'wc-braintree-ach-payment-form' );
+
+		// Enqueue ACH Direct Debit styles.
+		wp_enqueue_style( 'wc-braintree-ach' );
+	}
+
+	/**
+	 * Helper function to register the gateway assets without enqueuing them.
+	 *
+	 * @since 3.8.0
+	 * @return void
+	 */
+	public function register_gateway_assets() {
+		parent::register_gateway_assets();
+
+		wp_register_script( 'braintree-js-ach', 'https://js.braintreegateway.com/web/' . WC_Braintree::BRAINTREE_JS_SDK_VERSION . '/js/us-bank-account.min.js', [ 'braintree-js-client' ], WC_Braintree::VERSION, true );
 
 		// Load dependencies from webpack asset file.
 		$asset_path   = $this->get_plugin()->get_plugin_path() . '/assets/js/frontend/wc-braintree-ach.asset.php';
 		$version      = WC_Braintree::VERSION;
-		$dependencies = array( 'braintree-js-client', 'braintree-js-ach', 'braintree-js-data-collector' );
+		$dependencies = array(
+			'braintree-js-client', // Registered in WC_Gateway_Braintree::register_gateway_assets().
+			'braintree-js-latinise', // Registered in WC_Gateway_Braintree::register_gateway_assets().
+			'braintree-js-ach',
+			'braintree-js-data-collector', // Registered in WC_Gateway_Braintree::register_gateway_assets().
+			'wc-braintree-utils', // Registered in WC_Gateway_Braintree::register_gateway_assets().
+		);
 
 		if ( file_exists( $asset_path ) ) {
 			$asset        = require $asset_path;
@@ -115,8 +145,8 @@ class WC_Gateway_Braintree_ACH extends WC_Gateway_Braintree {
 			$dependencies = array_merge( $dependencies, $asset['dependencies'] ?? [] );
 		}
 
-		// Enqueue custom ACH Direct Debit payment form handler.
-		wp_enqueue_script(
+		// Register our scripts so they _can_ be picked up if other scripts depend on them.
+		wp_register_script(
 			'wc-braintree-ach-payment-form',
 			$this->get_plugin()->get_plugin_url() . '/assets/js/frontend/wc-braintree-ach.min.js',
 			$dependencies,
@@ -124,8 +154,7 @@ class WC_Gateway_Braintree_ACH extends WC_Gateway_Braintree {
 			true
 		);
 
-		// Enqueue ACH Direct Debit styles.
-		wp_enqueue_style(
+		wp_register_style(
 			'wc-braintree-ach',
 			$this->get_plugin()->get_plugin_url() . '/assets/css/frontend/wc-ach.min.css',
 			array(),
@@ -146,6 +175,15 @@ class WC_Gateway_Braintree_ACH extends WC_Gateway_Braintree {
 		return new Payment_Forms\WC_Braintree_ACH_Payment_Form( $this );
 	}
 
+	/**
+	 * Return the custom Braintree ACH payment tokens handler class.
+	 *
+	 * @since 3.8.0
+	 * @return \WC_Braintree\WC_Braintree_ACH_Payment_Method_Handler
+	 */
+	protected function build_payment_tokens_handler() {
+		return new \WC_Braintree\WC_Braintree_ACH_Payment_Method_Handler( $this );
+	}
 
 	/**
 	 * Gets the method form fields.
@@ -352,7 +390,16 @@ class WC_Gateway_Braintree_ACH extends WC_Gateway_Braintree {
 			esc_attr__( 'ACH Direct Debit', 'woocommerce-gateway-paypal-powered-by-braintree' )
 		);
 
-		$item['method']['brand'] = __( 'ACH Direct Debit', 'woocommerce-gateway-paypal-powered-by-braintree' );
+		$bank_name = $core_token->get_bank_name();
+		if ( empty( $bank_name ) ) {
+			$brand = __( 'ACH Direct Debit', 'woocommerce-gateway-paypal-powered-by-braintree' );
+		} else {
+			// translators: %s is the bank name.
+			$brand = sprintf( __( 'ACH for %s', 'woocommerce-gateway-paypal-powered-by-braintree' ), $bank_name );
+		}
+		$item['method']['brand']     = $brand;
+		$item['method']['last4']     = $core_token->get_last_four();
+		$item['method']['bank_name'] = $core_token->get_bank_name();
 
 		// Override the payment method type to prevent WooCommerce from displaying "echeck".
 		$item['method']['type'] = __( 'ACH Direct Debit', 'woocommerce-gateway-paypal-powered-by-braintree' );

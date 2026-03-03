@@ -93,14 +93,15 @@ class WC_Braintree_Remote_Configuration {
 	/**
 	 * Constructor.
 	 *
-	 * @param string $gateway_id The ID of the Braintree payment gateway to get the configuration for.
+	 * @param string $gateway_id    The ID of the Braintree payment gateway to get the configuration for.
+	 * @param bool   $force_refresh Whether to force a refresh of the configuration.
 	 * @return void
 	 * @throws \Exception If the gateway ID is invalid.
 	 */
-	public function __construct( string $gateway_id ) {
+	public function __construct( string $gateway_id, bool $force_refresh = false ) {
 		self::validate_gateway_id( $gateway_id );
 
-		$this->fetch_configuration( $gateway_id );
+		$this->fetch_configuration( $gateway_id, $force_refresh );
 	}
 
 	/**
@@ -222,28 +223,63 @@ class WC_Braintree_Remote_Configuration {
 			}
 		}
 
-		return new self( $gateway_id );
+		$configuration = new self( $gateway_id, $force_refresh );
+
+		if ( ! $force_refresh && isset( self::$configurations[ $configuration->merchant_id ] ) ) {
+			return self::$configurations[ $configuration->merchant_id ];
+		}
+
+		return $configuration;
+	}
+
+	/**
+	 * Get the payment gateway instance from the WooCommerce payment gateway data.
+	 *
+	 * @param string $gateway_id The gateway ID.
+	 * @return WC_Gateway_Braintree|null The gateway instance or null.
+	 * @throws \Exception If the gateway ID is invalid.
+	 */
+	protected function get_payment_gateway_instance( string $gateway_id ): ?WC_Gateway_Braintree {
+		self::validate_gateway_id( $gateway_id );
+
+		$payment_gateways = WC()->payment_gateways()->payment_gateways();
+		$payment_gateway  = $payment_gateways[ $gateway_id ] ?? null;
+
+		if ( null === $payment_gateway || ! $payment_gateway instanceof WC_Gateway_Braintree ) {
+			\WC_Braintree\Logger::warning( 'Failed to get Braintree configuration for unavailable gateway', [ 'gateway_id' => $gateway_id ] );
+			return null;
+		}
+
+		return $payment_gateway;
 	}
 
 	/**
 	 * Fetch the configuration for the given Braintree payment gateway.
 	 *
-	 * @param string $gateway_id The ID of the gateway to fetch the configuration for.
+	 * @param string $gateway_id    The ID of the gateway to fetch the configuration for.
+	 * @param bool   $force_refresh Whether to force a refresh of the configuration.
 	 * @return void
 	 */
-	protected function fetch_configuration( string $gateway_id ): void {
-		$payment_gateways = WC()->payment_gateways()->payment_gateways();
-
-		$payment_gateway = $payment_gateways[ $gateway_id ] ?? null;
-		if ( null === $payment_gateway || ! $payment_gateway instanceof WC_Gateway_Braintree ) {
-			\WC_Braintree\Logger::warning( 'Failed to get Braintree configuration for unavailable gateway', [ 'gateway_id' => $gateway_id ] );
+	public function fetch_configuration( string $gateway_id, bool $force_refresh = false ): void {
+		$payment_gateway = $this->get_payment_gateway_instance( $gateway_id );
+		if ( null === $payment_gateway ) {
 			return;
 		}
 
 		$this->merchant_id = $payment_gateway->get_merchant_id();
 
 		if ( ! empty( $this->merchant_id ) ) {
-			self::$gateway_map[ $gateway_id ]           = $this->merchant_id;
+			self::$gateway_map[ $gateway_id ] = $this->merchant_id;
+			if ( ! $force_refresh ) {
+				// If we already have data for the merchant ID, we don't need to fetch it again.
+				$existing_configuration = self::$configurations[ $this->merchant_id ] ?? null;
+				if ( null !== $existing_configuration && $existing_configuration instanceof self && $existing_configuration->merchant_id === $this->merchant_id ) {
+					$this->merchant_accounts             = $existing_configuration->get_merchant_accounts();
+					$this->merchant_accounts_fetch_error = $existing_configuration->get_merchant_accounts_fetch_error();
+					return;
+				}
+			}
+
 			self::$configurations[ $this->merchant_id ] = $this;
 		}
 
@@ -267,9 +303,19 @@ class WC_Braintree_Remote_Configuration {
 			}
 		}
 
-		$this->braintree_gateway = new \Braintree\Gateway( $configuration );
+		$this->braintree_gateway = $this->create_braintree_gateway( $configuration );
 
 		$this->merchant_accounts = $this->fetch_merchant_accounts( $this->braintree_gateway );
+	}
+
+	/**
+	 * Create a Braintree Gateway instance.
+	 *
+	 * @param array $configuration The gateway configuration.
+	 * @return \Braintree\Gateway The gateway instance.
+	 */
+	protected function create_braintree_gateway( array $configuration ): \Braintree\Gateway {
+		return new \Braintree\Gateway( $configuration );
 	}
 
 	/**

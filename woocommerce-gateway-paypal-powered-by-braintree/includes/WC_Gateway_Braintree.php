@@ -386,16 +386,54 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 	 * @see SV_WC_Payment_Gateway::enqueue_scripts()
 	 */
 	public function enqueue_gateway_assets() {
+		$this->register_gateway_assets();
 
 		if ( $this->is_available() ) {
+			wp_enqueue_script( 'braintree-js-latinise' );
+			wp_enqueue_script( 'braintree-js-client' );
 
-			wp_enqueue_script( 'braintree-js-latinise', $this->get_plugin()->get_plugin_url() . '/assets/js/frontend/latinise.min.js' );
+			$utils_asset_path = $this->get_plugin()->get_plugin_path() . '/assets/js/frontend/wc-braintree-utils.asset.php';
+			$utils_version    = WC_Braintree::VERSION;
+			$utils_deps       = array( 'braintree-js-client' );
 
-			// braintree.js library.
-			wp_enqueue_script( 'braintree-js-client', 'https://js.braintreegateway.com/web/' . WC_Braintree::BRAINTREE_JS_SDK_VERSION . '/js/client.min.js', array(), WC_Braintree::VERSION, true );
+			if ( file_exists( $utils_asset_path ) ) {
+				$utils_asset   = require $utils_asset_path;
+				$utils_version = $utils_asset['version'] ?? $utils_version;
+				$utils_deps    = array_merge( $utils_deps, $utils_asset['dependencies'] ?? array() );
+			}
+
+			// Note that we only _register_ the utils script here. It will get enqueued by the gateway scripts that need it.
+			wp_register_script( 'wc-braintree-utils', $this->get_plugin()->get_plugin_url() . '/assets/js/frontend/wc-braintree-utils.min.js', $utils_deps, $utils_version, true );
 
 			parent::enqueue_gateway_assets();
 		}
+	}
+
+	/**
+	 * Helper function to register the gateway assets without enqueuing them.
+	 *
+	 * @since 3.8.0
+	 * @return void
+	 */
+	public function register_gateway_assets() {
+		if ( ! $this->is_available() ) {
+			return;
+		}
+
+		wp_register_script( 'braintree-js-latinise', $this->get_plugin()->get_plugin_url() . '/assets/js/frontend/latinise.min.js', array(), WC_Braintree::VERSION, true );
+		wp_register_script( 'braintree-js-client', 'https://js.braintreegateway.com/web/' . WC_Braintree::BRAINTREE_JS_SDK_VERSION . '/js/client.min.js', array(), WC_Braintree::VERSION, true );
+		wp_register_script( 'braintree-js-data-collector', 'https://js.braintreegateway.com/web/' . WC_Braintree::BRAINTREE_JS_SDK_VERSION . '/js/data-collector.min.js', array( 'braintree-js-client' ), WC_Braintree::VERSION, true );
+
+		$utils_asset_path = $this->get_plugin()->get_plugin_path() . '/assets/js/frontend/wc-braintree-utils.asset.php';
+		$utils_version    = WC_Braintree::VERSION;
+		$utils_deps       = array( 'braintree-js-client' );
+
+		if ( file_exists( $utils_asset_path ) ) {
+			$utils_asset   = require $utils_asset_path;
+			$utils_version = $utils_asset['version'] ?? $utils_version;
+			$utils_deps    = array_merge( $utils_deps, $utils_asset['dependencies'] ?? array() );
+		}
+		wp_register_script( 'wc-braintree-utils', $this->get_plugin()->get_plugin_url() . '/assets/js/frontend/wc-braintree-utils.min.js', $utils_deps, $utils_version, true );
 	}
 
 
@@ -1788,7 +1826,7 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 		}
 
 		$id = sprintf( 'woocommerce_%s_merchant_account_id_%s', $this->get_id(), $currency_code );
-		/* translators: %s: currency code */
+		/* translators: %s: currency code, e.g. USD, EUR, GBP, AUD */
 		$title = sprintf( __( 'Merchant Account ID (%s)', 'woocommerce-gateway-paypal-powered-by-braintree' ), $currency_display );
 
 		$remote_config     = $this->get_remote_config();

@@ -348,21 +348,18 @@ class WC_Gateway_Braintree_Credit_Card extends WC_Gateway_Braintree {
 
 		$fields = array_merge( $fields, $this->get_3d_secure_fields() );
 
-		// Add Fastlane settings if feature flag is enabled.
-		if ( WC_Braintree_Feature_Flags::is_fastlane_enabled() ) {
-			$fields['fastlane_settings_title'] = [
-				'title' => esc_html__( 'PayPal Fastlane - [Early Access]', 'woocommerce-gateway-paypal-powered-by-braintree' ),
-				'type'  => 'title',
-			];
+		$fields['fastlane_settings_title'] = [
+			'title' => esc_html__( 'PayPal Fastlane', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+			'type'  => 'title',
+		];
 
-			$fields['enable_fastlane'] = [
-				'title'       => esc_html__( 'Enable Fastlane', 'woocommerce-gateway-paypal-powered-by-braintree' ),
-				'type'        => 'checkbox',
-				'label'       => esc_html__( 'Enable Fastlane when available', 'woocommerce-gateway-paypal-powered-by-braintree' ),
-				'description' => esc_html__( 'Fastlane must be activated in your PayPal Fastlane Dashboard. This setting only controls whether Fastlane is used on your site once it is enabled in PayPal.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
-				'default'     => 'no',
-			];
-		}
+		$fields['enable_fastlane'] = [
+			'title'       => esc_html__( 'Enable Fastlane', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+			'type'        => 'checkbox',
+			'label'       => esc_html__( 'Enable Fastlane when available', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+			'description' => esc_html__( 'Fastlane must be activated in your PayPal Fastlane Dashboard. This setting only controls whether Fastlane is used on your site once it is enabled in PayPal.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+			'default'     => 'no',
+		];
 
 		return array_merge( parent::get_method_form_fields(), $fields );
 	}
@@ -1219,6 +1216,12 @@ class WC_Gateway_Braintree_Credit_Card extends WC_Gateway_Braintree {
 	 * the regular hosted credit card fields to prevent the store user identity
 	 * from conflicting with the Fastlane identity.
 	 *
+	 * Fastlane is also disabled when the cart contains a subscription and
+	 * checkout requires manual password creation (i.e. "Allow subscription
+	 * customers to create an account during checkout" is enabled but "Send
+	 * password setup link" is not). In that case WooCommerce renders a password
+	 * field that Fastlane's UI cannot accommodate.
+	 *
 	 * @since 3.7.0
 	 *
 	 * @return bool
@@ -1230,6 +1233,19 @@ class WC_Gateway_Braintree_Credit_Card extends WC_Gateway_Braintree {
 			return false;
 		}
 
-		return WC_Braintree_Feature_Flags::is_fastlane_enabled() && 'yes' === $this->enable_fastlane;
+		if ( 'yes' !== get_option( 'woocommerce_enable_guest_checkout' ) ) {
+			return false;
+		}
+
+		// Disable Fastlane when subscription checkout requires manual password creation.
+		if (
+			$this->cart_contains_subscription()
+			&& 'yes' === get_option( 'woocommerce_enable_signup_from_checkout_for_subscriptions', 'no' )
+			&& 'yes' !== get_option( 'woocommerce_registration_generate_password' )
+		) {
+			return false;
+		}
+
+		return 'yes' === $this->enable_fastlane;
 	}
 }

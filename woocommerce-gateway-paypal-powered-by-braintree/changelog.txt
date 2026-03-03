@@ -1,5 +1,22 @@
 *** Changelog ***
 
+= 3.8.0 - 2026-03-03 =
+* Add - Make ACH gateway generally accessible.
+* Add - Make Fastlane generally available without requiring the early access toggle.
+* Add - Support for ACH in blocks checkout.
+* Add - Fastlane support to blocks checkout.
+* Add - Style extraction for Fastlane card component to match the active theme's checkout styling.
+* Fix - "View Transaction Details" button functionality when using legacy order screen.
+* Fix - Reduce L3 cooldown period from 3 months to 1 day and add `wc_braintree_level3_bank_declined_cooldown_window` filter.
+* Fix - Add a guard to prevent `assert()` failures when rendering checkout.
+* Fix - Resolve "_doing_it_wrong" notice caused by direct order property access during credit card transactions.
+* Fix - Show standard shipping fields when a Fastlane member has no saved shipping address.
+* Fix - Show card input fields when a Fastlane member has no saved cards in their profile.
+* Fix - Update build code to ensure all translatable strings are included.
+* Update - Remove email confirmation modal for autofilled emails in Fastlane checkout.
+* Tweak - keep billing fields visible when Fastlane returns incomplete address data.
+* Dev - Extract shared Fastlane utility functions into a shared module for reuse across classic and blocks checkout.
+
 = 3.7.0 - 2026-02-02 =
 * Add - Make Venmo gateway generally available.
 * Add - PayPal Fastlane integration for accelerated checkout on shortcode checkout pages.

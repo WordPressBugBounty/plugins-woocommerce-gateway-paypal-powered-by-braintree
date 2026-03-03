@@ -170,7 +170,7 @@ class WC_Braintree_ACH_Payment_Form extends WC_Braintree_Payment_Form {
 	 * @since 3.7.0
 	 * @return array The mandate data for the ACH payment form.
 	 */
-	protected function get_mandate_data(): array {
+	public function get_mandate_data(): array {
 		/*
 		 * This configuration applies any time tokenization is applied, including all of the following:
 		 * - Tokenization is forced

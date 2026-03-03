@@ -28,6 +28,79 @@ final class WC_Gateway_Braintree_Credit_Card_Blocks_Support extends WC_Gateway_B
 
 		// Get the saved token 3DS nonce via AJAX.
 		add_filter( 'wp_ajax_wc_' . $this->name . '_get_token_data', array( $this, 'ajax_get_token_data' ) );
+
+		// Enqueue Fastlane initializer on checkout blocks page load.
+		add_action( 'woocommerce_blocks_enqueue_checkout_block_scripts_after', array( $this, 'enqueue_fastlane_initializer' ) );
+	}
+
+	/**
+	 * Enqueue Fastlane initializer script on checkout page load.
+	 *
+	 * This script initializes Fastlane and renders the watermark below the email field,
+	 * independent of which payment method is selected.
+	 */
+	public function enqueue_fastlane_initializer() {
+		$payment_gateways = WC()->payment_gateways->payment_gateways();
+		$gateway          = $payment_gateways[ $this->name ] ?? null;
+
+		if ( ! $gateway || ! $gateway->is_fastlane_enabled() ) {
+			return;
+		}
+
+		// Enqueue Braintree client SDK.
+		wp_enqueue_script(
+			'braintree-js-client',
+			'https://js.braintreegateway.com/web/' . WC_Braintree::BRAINTREE_JS_SDK_VERSION . '/js/client.min.js',
+			array(),
+			WC_Braintree::VERSION,
+			true
+		);
+
+		// Enqueue data collector (required by Fastlane).
+		wp_enqueue_script(
+			'braintree-js-data-collector',
+			'https://js.braintreegateway.com/web/' . WC_Braintree::BRAINTREE_JS_SDK_VERSION . '/js/data-collector.min.js',
+			array( 'braintree-js-client' ),
+			WC_Braintree::VERSION,
+			true
+		);
+
+		// Enqueue Fastlane SDK.
+		wp_enqueue_script(
+			'braintree-js-fastlane',
+			'https://js.braintreegateway.com/web/' . WC_Braintree::BRAINTREE_JS_SDK_VERSION . '/js/fastlane.min.js',
+			array( 'braintree-js-client', 'braintree-js-data-collector' ),
+			WC_Braintree::VERSION,
+			true
+		);
+
+		// Enqueue Fastlane styles.
+		wp_enqueue_style(
+			'wc-braintree-fastlane-blocks',
+			WC_Braintree::instance()->get_plugin_url() . '/assets/css/frontend/wc-braintree-fastlane.min.css',
+			array(),
+			WC_Braintree::VERSION
+		);
+
+		// Get asset file for dependencies.
+		$asset_path   = WC_Braintree::instance()->get_plugin_path() . '/assets/js/blocks/fastlane-init.asset.php';
+		$version      = WC_Braintree::VERSION;
+		$dependencies = array( 'braintree-js-client', 'braintree-js-data-collector', 'braintree-js-fastlane' );
+
+		if ( file_exists( $asset_path ) ) {
+			$asset        = require $asset_path;
+			$version      = isset( $asset['version'] ) ? $asset['version'] : $version;
+			$dependencies = array_merge( $dependencies, isset( $asset['dependencies'] ) ? $asset['dependencies'] : array() );
+		}
+
+		// Enqueue Fastlane initializer script.
+		wp_enqueue_script(
+			'wc-braintree-fastlane-blocks-init',
+			WC_Braintree::instance()->get_plugin_url() . '/assets/js/blocks/fastlane-init.min.js',
+			$dependencies,
+			$version,
+			true
+		);
 	}
 
 	/**
@@ -76,6 +149,9 @@ final class WC_Gateway_Braintree_Credit_Card_Blocks_Support extends WC_Gateway_B
 				'apple_pay_button_style'             => $apple_pay_button_style,
 				'apple_pay_display_locations'        => $apple_pay_display_locations,
 				'apple_pay_recalculate_totals_nonce' => wp_create_nonce( 'wc_' . $this->name . '_apple_pay_recalculate_totals' ),
+
+				// Fastlane data.
+				'fastlane_enabled'                   => $gateway->is_fastlane_enabled(),
 			),
 		);
 

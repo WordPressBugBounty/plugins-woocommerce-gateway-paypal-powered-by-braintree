@@ -38,7 +38,7 @@ class WC_Braintree extends Framework\SV_WC_Payment_Gateway_Plugin {
 
 
 	/** plugin version number */
-	const VERSION = '3.7.0'; // WRCS: DEFINED_VERSION.
+	const VERSION = '3.8.0'; // WRCS: DEFINED_VERSION.
 
 	/** Braintree JS SDK version  */
 	const BRAINTREE_JS_SDK_VERSION = '3.129.1';
@@ -96,12 +96,8 @@ class WC_Braintree extends Framework\SV_WC_Payment_Gateway_Plugin {
 			self::CREDIT_CARD_GATEWAY_ID => self::CREDIT_CARD_GATEWAY_CLASS_NAME,
 			self::PAYPAL_GATEWAY_ID      => self::PAYPAL_GATEWAY_CLASS_NAME,
 			self::VENMO_GATEWAY_ID       => self::VENMO_GATEWAY_CLASS_NAME,
+			self::ACH_GATEWAY_ID         => self::ACH_GATEWAY_CLASS_NAME,
 		);
-
-		// Add ACH gateway if feature flag is enabled.
-		if ( WC_Braintree_Feature_Flags::is_ach_enabled() ) {
-			$gateways[ self::ACH_GATEWAY_ID ] = self::ACH_GATEWAY_CLASS_NAME;
-		}
 
 		// Add SEPA gateway if feature flag is enabled.
 		if ( WC_Braintree_Feature_Flags::is_sepa_enabled() ) {

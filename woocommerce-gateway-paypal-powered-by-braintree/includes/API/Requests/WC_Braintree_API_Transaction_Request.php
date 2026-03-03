@@ -238,7 +238,7 @@ class WC_Braintree_API_Transaction_Request extends WC_Braintree_API_Request {
 		);
 
 		// If there is no payment_method, the get_gateway will return the default gateway (which is the one that is being used for the transaction).
-		$gateway     = WC_Braintree::instance()->get_gateway( $this->get_order()->data['payment_method'] );
+		$gateway     = WC_Braintree::instance()->get_gateway( $this->get_order()->get_payment_method() );
 		$environment = $gateway->get_environment();
 
 		// Check if Level 3 data is allowed, and it should be added to the transaction request data.

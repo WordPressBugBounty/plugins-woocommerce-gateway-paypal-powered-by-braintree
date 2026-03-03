@@ -609,7 +609,7 @@ class WC_Gateway_Braintree_PayPal extends WC_Gateway_Braintree {
 
 			// adds the transaction id (if any) to the order note
 			if ( $response->get_transaction_id() ) {
-				/* translators: Placeholders: %s - transaction ID */
+				/* translators: Placeholder: %s - transaction ID */
 				$message .= ' ' . sprintf( esc_html__( '(Transaction ID %s)', 'woocommerce-gateway-paypal-powered-by-braintree' ), $response->get_transaction_id() );
 			}
 

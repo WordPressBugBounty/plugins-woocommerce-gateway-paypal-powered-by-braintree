@@ -86,9 +86,7 @@ class Order {
 	 * Enqueue scripts for the order edit page.
 	 */
 	public function enqueue_scripts() {
-		$screen = get_current_screen();
-
-		if ( ! $screen || 'woocommerce_page_wc-orders' !== $screen->id || ! isset( $_GET['action'] ) || 'edit' !== $_GET['action'] ) { // phpcs:ignore WordPress.Security.NonceVerification
+		if ( ! Framework\SV_WC_Order_Compatibility::is_order_edit_screen() ) {
 			return;
 		}
 
@@ -114,7 +112,9 @@ class Order {
 			'woocommerce-gateway-paypal-powered-by-braintree'
 		);
 
-		$order_id = isset( $_GET['id'] ) ? intval( $_GET['id'] ) : 0; // phpcs:ignore WordPress.Security.NonceVerification
+		// Get order ID - HPOS uses 'id', legacy uses 'post'.
+		$order_id_param = Framework\SV_WC_Plugin_Compatibility::is_hpos_enabled() ? 'id' : 'post';
+		$order_id       = isset( $_GET[ $order_id_param ] ) ? intval( $_GET[ $order_id_param ] ) : 0; // phpcs:ignore WordPress.Security.NonceVerification
 
 		// Localize script.
 		wp_localize_script(

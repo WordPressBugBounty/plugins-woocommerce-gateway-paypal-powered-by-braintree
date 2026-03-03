@@ -649,7 +649,7 @@ class WC_Braintree_API extends Framework\SV_WC_API_Base implements Framework\SV_
 			$response = call_user_func_array( array( $sdk_gateway->$resource(), $callback ), $callback_params );
 
 			// When there is a problem with the Level 3 data, Braintree returns a 2046 error code.
-			// This is the generic decline code, Braintree does not provide a specific error code for Level3 data errors.
+			// This is a generic bank declined error code, Braintree does not provide a specific error code for Level3 data errors.
 			//
 			// @see https://developer.paypal.com/braintree/articles/control-panel/transactions/declines#code-2046
 			// @see https://developer.paypal.com/braintree/docs/reference/general/level-2-and-3-processing/required-fields/php/#validation-errors
@@ -670,7 +670,7 @@ class WC_Braintree_API extends Framework\SV_WC_API_Base implements Framework\SV_
 					//
 					// @see https://developer.paypal.com/braintree/articles/control-panel/transactions/declines#retrying-declined-transactions.
 					//
-					// For this reason, we disable Level 3 data for 3 months after a 2046 error is returned.
+					// For this reason, we use a configurable cooldown window for sending Level 3 data after a 2046 error is returned.
 
 					// Update the option to disable Level 3 data for the current environment.
 					$environment = sanitize_key( $environment );
@@ -687,7 +687,12 @@ class WC_Braintree_API extends Framework\SV_WC_API_Base implements Framework\SV_
 					unset( $callback_params[0]['lineItems'] );
 
 					$this->get_plugin()->log( 'Level3 request data error. Reason: ' . $response->transaction->additionalProcessorResponse );
-					$this->get_plugin()->log( 'Disabling Level 2 and Level 3 transaction data for 3 months' );
+					$cooldown_window = self::get_level3_data_bank_declined_cooldown_window( $environment );
+					if ( 0 < $cooldown_window ) {
+						$this->get_plugin()->log( 'Disabling Level 2 and Level 3 transaction data for the current cooldown window: ' . $cooldown_window . ' seconds' );
+					} else {
+						$this->get_plugin()->log( 'Retrying without Level 2 and Level 3 transaction data; no cooldown window is configured (data will be sent for the next eligible transaction).' );
+					}
 
 					// Make the request again without Level 2/3 data.
 					$response = call_user_func_array( array( $sdk_gateway->$resource(), $callback ), $callback_params );
@@ -976,8 +981,47 @@ class WC_Braintree_API extends Framework\SV_WC_API_Base implements Framework\SV_
 		$environment = sanitize_key( $environment );
 
 		// Check the timestamp option for Level 3 data not allowed,
-		// if it's set and is a valid timestamp, and it's not older than the 3 months mark, we return false (level 3 data disabled).
+		// if it's set and is a valid timestamp, and the cooldown window has not expired, we return false (level 3 data disabled).
 		$timestamp = get_option( 'wc_braintree_level3_not_allowed_' . $environment, false );
-		return ! ( is_numeric( $timestamp ) && $timestamp > ( time() - 3 * MONTH_IN_SECONDS ) );
+		if ( ! $timestamp || ! is_numeric( $timestamp ) ) {
+			return true;
+		}
+		$cooldown_window = self::get_level3_data_bank_declined_cooldown_window( $environment );
+		if ( 0 === $cooldown_window ) {
+			return true;
+		}
+		return ( $timestamp + $cooldown_window ) < time();
+	}
+
+	/**
+	 * Get the cooldown window for sending Level 3 data after a 2046 bank declined error.
+	 *
+	 * @see https://developer.paypal.com/braintree/articles/control-panel/transactions/declines#code-2046
+	 * @since 3.8.0
+	 *
+	 * @param string $environment The environment of the gateway.
+	 * @return int The cooldown window in seconds.
+	 */
+	protected static function get_level3_data_bank_declined_cooldown_window( $environment ): int {
+		$environment = sanitize_key( $environment );
+
+		/**
+		 * Filter the cooldown window for sending Level 3 data after a 2046 bank declined error.
+		 * Note that returning 0 means there will be no cooldown window and Level 3 data will be sent for the next transaction.
+		 *
+		 * @see https://developer.paypal.com/braintree/articles/control-panel/transactions/declines#retrying-declined-transactions
+		 * @see https://developer.paypal.com/braintree/articles/control-panel/transactions/declines#code-2046
+		 *
+		 * @param int $cooldown_window The cooldown window in seconds. Default is 1 day, as charges are incurred for >15 retries per 30 days.
+		 * @param string $environment The environment of the gateway.
+		 *
+		 * @since 3.8.0
+		 */
+		$cooldown_window = apply_filters( 'wc_braintree_level3_bank_declined_cooldown_window', DAY_IN_SECONDS, $environment );
+		if ( is_numeric( $cooldown_window ) && $cooldown_window >= 0 ) {
+			return (int) $cooldown_window;
+		}
+
+		return DAY_IN_SECONDS;
 	}
 }

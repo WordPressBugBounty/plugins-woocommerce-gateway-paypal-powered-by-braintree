@@ -48,13 +48,6 @@ class WC_Braintree_Feature_Flags {
 	public const FEATURE_FLAGS_OPTION_NAME = 'wc_braintree_feature_flags';
 
 	/**
-	 * The name of the feature flag for ACH.
-	 *
-	 * @var string
-	 */
-	private const FEATURE_ACH = 'ach';
-
-	/**
 	 * The name of the feature flag for SEPA.
 	 *
 	 * @var string
@@ -75,7 +68,6 @@ class WC_Braintree_Feature_Flags {
 	 */
 	private array $feature_flags = [
 		self::FEATURE_SEPA           => 'no',
-		self::FEATURE_ACH            => 'no',
 		self::FEATURE_LOCAL_PAYMENTS => 'no',
 	];
 
@@ -172,11 +164,13 @@ class WC_Braintree_Feature_Flags {
 	 * Check if ACH feature is enabled.
 	 *
 	 * @since 3.7.0
+	 * @deprecated 3.8.0 ACH is now generally available.
 	 *
-	 * @return bool True if ACH is enabled, false otherwise.
+	 * @return true Always returns true since ACH is generally available.
 	 */
 	public static function is_ach_enabled(): bool {
-		return self::instance()->is_early_access_enabled() && self::instance()->is_feature_flag_enabled( self::FEATURE_ACH );
+		wc_deprecated_function( __METHOD__, '3.8.0', 'ACH is now generally available and this method always returns true.' );
+		return true;
 	}
 
 	/**
@@ -194,11 +188,13 @@ class WC_Braintree_Feature_Flags {
 	 * Check if Fastlane feature is enabled.
 	 *
 	 * @since 3.7.0
+	 * @deprecated 3.8.0 Fastlane is now generally available.
 	 *
-	 * @return bool True if Fastlane is enabled, false otherwise.
+	 * @return true Always returns true since Fastlane is generally available.
 	 */
 	public static function is_fastlane_enabled(): bool {
-		return self::instance()->is_early_access_enabled();
+		wc_deprecated_function( __METHOD__, '3.8.0', 'Fastlane is now generally available and this method always returns true.' );
+		return true;
 	}
 
 	/**

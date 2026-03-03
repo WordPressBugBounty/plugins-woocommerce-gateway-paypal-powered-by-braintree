@@ -37,6 +37,13 @@ abstract class WC_Gateway_Braintree_Blocks_Support extends AbstractPaymentMethod
 	protected $script_url;
 
 	/**
+	 * Additional script dependencies to be added to the main script.
+	 *
+	 * @var string[]
+	 */
+	protected array $additional_dependencies = array();
+
+	/**
 	 * Initializes the payment method type.
 	 */
 	public function initialize() {
@@ -49,8 +56,7 @@ abstract class WC_Gateway_Braintree_Blocks_Support extends AbstractPaymentMethod
 	 * @return boolean
 	 */
 	public function is_active() {
-		$payment_gateways = WC()->payment_gateways->payment_gateways();
-		$gateway          = $payment_gateways[ $this->name ] ?? null;
+		$gateway = $this->get_gateway();
 
 		if ( ! $gateway ) {
 			return false;
@@ -65,7 +71,7 @@ abstract class WC_Gateway_Braintree_Blocks_Support extends AbstractPaymentMethod
 	 * @return array
 	 */
 	public function get_payment_method_script_handles() {
-		wp_enqueue_script(
+		wp_register_script(
 			'braintree-js-client',
 			'https://js.braintreegateway.com/web/' . WC_Braintree::BRAINTREE_JS_SDK_VERSION . '/js/client.min.js',
 			[],
@@ -76,14 +82,14 @@ abstract class WC_Gateway_Braintree_Blocks_Support extends AbstractPaymentMethod
 		$asset_path   = $this->asset_path;
 		$version      = WC_Braintree::VERSION;
 		$script_name  = 'wc-' . $this->name . '-blocks-integration';
-		$dependencies = [ 'braintree-js-client' ];
+		$dependencies = array_merge( array( 'braintree-js-client' ), $this->additional_dependencies );
 		if ( file_exists( $asset_path ) ) {
 			$asset        = require $asset_path;
 			$version      = is_array( $asset ) && isset( $asset['version'] )
 				? $asset['version']
 				: $version;
-			$dependencies = is_array( $asset ) && isset( $asset['dependencies'] )
-				? $asset['dependencies']
+			$dependencies = is_array( $asset ) && is_array( $asset['dependencies'] ?? null )
+				? array_merge( $dependencies, $asset['dependencies'] )
 				: $dependencies;
 		}
 		wp_register_script(
@@ -123,8 +129,7 @@ abstract class WC_Gateway_Braintree_Blocks_Support extends AbstractPaymentMethod
 	 * @return string[]
 	 */
 	public function get_supported_features() {
-		$payment_gateways = WC()->payment_gateways->payment_gateways();
-		$gateway          = $payment_gateways[ $this->name ] ?? null;
+		$gateway = $this->get_gateway();
 
 		if ( ! $gateway ) {
 			return array();
@@ -174,13 +179,25 @@ abstract class WC_Gateway_Braintree_Blocks_Support extends AbstractPaymentMethod
 	 * @return WC_Braintree_Payment_Form|null
 	 */
 	protected function get_payment_form_instance() {
-		$payment_gateways = WC()->payment_gateways->payment_gateways();
-		$gateway          = $payment_gateways[ $this->name ] ?? null;
+		$gateway = $this->get_gateway();
 
 		if ( ! $gateway ) {
 			return null;
 		}
 
 		return $gateway->get_payment_form_instance();
+	}
+
+	/**
+	 * Returns the payment gateway instance for this instance.
+	 *
+	 * @since 3.8.0
+	 *
+	 * @return WC_Gateway_Braintree|null
+	 */
+	protected function get_gateway() {
+		$gateways = WC()->payment_gateways->payment_gateways();
+
+		return $gateways[ $this->name ] ?? null;
 	}
 }

@@ -177,7 +177,7 @@ class WC_Braintree_Payment_Method_Handler extends Framework\SV_WC_Payment_Gatewa
 	 * @return array
 	 */
 	public function get_apple_pay_card_tokens() {
-		if ( ! $this->get_gateway()->tokenization_enabled() ) {
+		if ( ! $this->get_gateway()->supports_tokenization() || ! $this->get_gateway()->tokenization_enabled() ) {
 			return array();
 		}
 
@@ -201,7 +201,7 @@ class WC_Braintree_Payment_Method_Handler extends Framework\SV_WC_Payment_Gatewa
 	 * @return array
 	 */
 	public function get_google_pay_card_tokens() {
-		if ( ! $this->get_gateway()->tokenization_enabled() ) {
+		if ( ! $this->get_gateway()->supports_tokenization() || ! $this->get_gateway()->tokenization_enabled() ) {
 			return array();
 		}
 
