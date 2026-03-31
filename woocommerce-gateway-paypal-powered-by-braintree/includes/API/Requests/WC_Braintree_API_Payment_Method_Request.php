@@ -24,6 +24,8 @@
 
 namespace WC_Braintree\API\Requests;
 
+use SkyVerge\WooCommerce\PluginFramework\v6_0_1\Helpers\OrderHelper;
+
 defined( 'ABSPATH' ) or exit;
 
 /**
@@ -48,16 +50,19 @@ class WC_Braintree_API_Payment_Method_Request extends WC_Braintree_API_Vault_Req
 
 		$this->order = $order;
 
+		$payment     = OrderHelper::get_payment( $order );
+		$customer_id = OrderHelper::get_customer_id( $order );
+
 		$this->set_resource( 'paymentMethod' );
 		$this->set_callback( 'create' );
 
 		$this->request_data = array(
-			'customerId'         => $order->customer_id,
-			'paymentMethodNonce' => $order->payment->nonce,
+			'customerId'         => $customer_id,
+			'paymentMethodNonce' => $payment->nonce,
 		);
 
 		// add verification data for credit cards.
-		if ( 'credit_card' === $order->payment->type ) {
+		if ( 'credit_card' === $payment->type ) {
 			$this->request_data['billingAddress'] = $this->get_billing_address();
 			$this->request_data['cardholderName'] = $order->get_formatted_billing_full_name();
 			$this->request_data['options']        = $this->get_credit_card_options();
@@ -141,12 +146,15 @@ class WC_Braintree_API_Payment_Method_Request extends WC_Braintree_API_Vault_Req
 	 */
 	public function verify_ach_direct_debit_account( \WC_Order $order ) {
 
+		$payment     = OrderHelper::get_payment( $order );
+		$customer_id = OrderHelper::get_customer_id( $order );
+
 		$this->set_resource( 'paymentMethod' );
 		$this->set_callback( 'create' );
 
 		$this->request_data = [
-			'customerId'         => $order->customer_id,
-			'paymentMethodNonce' => $order->payment->nonce,
+			'customerId'         => $customer_id,
+			'paymentMethodNonce' => $payment->nonce,
 			'options'            => $this->get_ach_direct_debit_options(),
 		];
 

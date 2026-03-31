@@ -25,7 +25,8 @@
 namespace WC_Braintree;
 
 use Braintree;
-use SkyVerge\WooCommerce\PluginFramework\v5_15_10 as Framework;
+use SkyVerge\WooCommerce\PluginFramework\v6_0_1 as Framework;
+use SkyVerge\WooCommerce\PluginFramework\v6_0_1\Helpers\OrderHelper;
 use WC_Braintree\API\WC_Braintree_API;
 use WC_Order;
 
@@ -512,65 +513,71 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 
 		$order = parent::get_order( $order );
 
+		$payment = OrderHelper::get_payment( $order );
+
 		// nonce may be previously populated by Apple Pay.
-		if ( empty( $order->payment->nonce ) ) {
-			$order->payment->nonce = Framework\SV_WC_Helper::get_posted_value( 'wc_' . $this->get_id() . '_payment_nonce' );
+		if ( empty( $payment->nonce ) ) {
+			$payment->nonce = Framework\SV_WC_Helper::get_posted_value( 'wc_' . $this->get_id() . '_payment_nonce' );
 		}
 
-		$order->payment->tokenize = $this->get_payment_tokens_handler()->should_tokenize() || $this->should_tokenize_apple_pay_card() || $this->should_tokenize_google_pay_card();
+		$payment->tokenize = $this->get_payment_tokens_handler()->should_tokenize() || $this->should_tokenize_apple_pay_card() || $this->should_tokenize_google_pay_card();
 
 		// billing address ID if using existing payment token.
-		if ( ! empty( $order->payment->token ) && $this->get_payment_tokens_handler()->user_has_token( $order->get_user_id(), $order->payment->token ) ) {
+		if ( ! empty( $payment->token ) && $this->get_payment_tokens_handler()->user_has_token( $order->get_user_id(), $payment->token ) ) {
 
-			$token = $this->get_payment_tokens_handler()->get_token( $order->get_user_id(), $order->payment->token );
+			$token = $this->get_payment_tokens_handler()->get_token( $order->get_user_id(), $payment->token );
 
 			if ( $billing_address_id = $token->get_billing_address_id() ) {
-				$order->payment->billing_address_id = $billing_address_id;
+				$payment->billing_address_id = $billing_address_id;
 			}
 		}
 
 		// fraud tool data as a JSON string, unslashed as WP slashes $_POST data which breaks the JSON.
-		$order->payment->device_data = wp_unslash( Framework\SV_WC_Helper::get_posted_value( 'wc_braintree_device_data' ) );
+		$payment->device_data = wp_unslash( Framework\SV_WC_Helper::get_posted_value( 'wc_braintree_device_data' ) );
 
 		// merchant account ID.
 		if ( $merchant_account_id = $this->get_merchant_account_id( $order->get_currency() ) ) {
-			$order->payment->merchant_account_id = $merchant_account_id;
+			$payment->merchant_account_id = $merchant_account_id;
 		}
 
 		// dynamic descriptors.
-		$order->payment->dynamic_descriptors = new \stdClass();
+		$payment->dynamic_descriptors = new \stdClass();
 
 		// only set the name descriptor if it is valid.
 		if ( $this->get_name_dynamic_descriptor() && $this->is_name_dynamic_descriptor_valid() ) {
-			$order->payment->dynamic_descriptors->name = $this->get_name_dynamic_descriptor();
+			$payment->dynamic_descriptors->name = $this->get_name_dynamic_descriptor();
 		}
 
 		// only set the phone descriptor if it is valid.
 		if ( $this->get_phone_dynamic_descriptor() && $this->is_phone_dynamic_descriptor_valid() ) {
-			$order->payment->dynamic_descriptors->phone = $this->get_phone_dynamic_descriptor();
+			$payment->dynamic_descriptors->phone = $this->get_phone_dynamic_descriptor();
 		}
 
 		// the URL descriptor doesn't have any specific validation, so just truncate it if needed.
-		$url_dynamic_descriptor                   = empty( $this->get_url_dynamic_descriptor() ) ? '' : $this->get_url_dynamic_descriptor();
-		$order->payment->dynamic_descriptors->url = Framework\SV_WC_Helper::str_truncate( $url_dynamic_descriptor, 13, '' );
+		$url_dynamic_descriptor            = empty( $this->get_url_dynamic_descriptor() ) ? '' : $this->get_url_dynamic_descriptor();
+		$payment->dynamic_descriptors->url = Framework\SV_WC_Helper::str_truncate( $url_dynamic_descriptor, 13, '' );
 
 		// add the recurring flag to Subscriptions renewal orders.
 		if ( $this->get_plugin()->is_subscriptions_active() && wcs_order_contains_subscription( $order, 'any' ) ) {
 
-			$order->payment->subscription             = new \stdClass();
-			$order->payment->subscription->is_renewal = false;
+			$payment->subscription             = new \stdClass();
+			$payment->subscription->is_renewal = false;
 
 			if ( wcs_order_contains_renewal( $order ) ) {
 
-				$order->payment->recurring                = true;
-				$order->payment->subscription->is_renewal = true;
+				$payment->recurring                = true;
+				$payment->subscription->is_renewal = true;
 			}
 		}
 
 		// test amount when in sandbox mode.
 		if ( $this->is_test_environment() && ( $test_amount = Framework\SV_WC_Helper::get_posted_value( 'wc-' . $this->get_id_dasherized() . '-test-amount' ) ) ) {
-			$order->payment_total = Framework\SV_WC_Helper::number_format( $test_amount );
+			$payment_total = Framework\SV_WC_Helper::number_format( $test_amount );
+			OrderHelper::set_payment_total( $order, $payment_total );
 		}
+
+		// Set payment info on the order object.
+		OrderHelper::set_payment( $order, $payment );
 
 		return $order;
 	}
@@ -698,7 +705,7 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 		$tokenize_credit_card     = $this->get_payment_tokens_handler()->should_tokenize();
 		$tokenize_apple_pay_card  = $this->should_tokenize_apple_pay_card();
 		$tokenize_google_pay_card = $this->should_tokenize_google_pay_card();
-		$result                   = ( $tokenize_credit_card || $tokenize_apple_pay_card || $tokenize_google_pay_card ) && ( '0.00' === $order->payment_total || $this->tokenize_before_sale() );
+		$result                   = ( $tokenize_credit_card || $tokenize_apple_pay_card || $tokenize_google_pay_card ) && ( '0.00' === OrderHelper::get_payment_total( $order ) || $this->tokenize_before_sale() );
 
 		/**
 		 * Filters whether tokenization should be performed before the sale, for a given order.
@@ -778,9 +785,14 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 
 		$order = parent::get_order_for_refund( $order, $amount, $reason );
 
-		if ( empty( $order->refund->trans_id ) ) {
+		$refund = OrderHelper::get_property( $order, 'refund', null, new \stdClass() );
 
-			$order->refund->trans_id = $order->get_transaction_id( 'edit' );
+		if ( empty( $refund->trans_id ) ) {
+
+			$refund->trans_id = $order->get_transaction_id( 'edit' );
+
+			// Set refund info on the order object.
+			OrderHelper::set_property( $order, 'refund', $refund );
 		}
 
 		return $order;
@@ -2735,7 +2747,7 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 			if ( $this->supports_tokenization() && 0 !== (int) $order->get_user_id() ) {
 
 				// if already paying with an existing method, try and updated it locally and remotely.
-				if ( ! empty( $order->payment->token ) ) {
+				if ( ! empty( OrderHelper::get_property( $order, 'payment', 'token' ) ) ) {
 
 					$this->update_transaction_payment_method( $order );
 
@@ -2755,7 +2767,7 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 					$stored_tokens = \WC_Payment_Tokens::get_customer_tokens( get_current_user_id(), \WC_Braintree\WC_Braintree::CREDIT_CARD_GATEWAY_ID );
 
 					foreach ( $stored_tokens as $stored_token_id => $stored_token_object ) {
-						if ( $stored_token_object->get_token() === $order->payment->token ) {
+						if ( $stored_token_object->get_token() === OrderHelper::get_property( $order, 'payment', 'token' ) ) {
 							$stored_token_object->add_meta_data( 'instrument_type', 'apple_pay' );
 							$stored_token_object->save();
 						}
@@ -2765,7 +2777,7 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 					$stored_tokens = \WC_Payment_Tokens::get_customer_tokens( get_current_user_id(), \WC_Braintree\WC_Braintree::CREDIT_CARD_GATEWAY_ID );
 
 					foreach ( $stored_tokens as $stored_token_id => $stored_token_object ) {
-						if ( $stored_token_object->get_token() === $order->payment->token ) {
+						if ( $stored_token_object->get_token() === OrderHelper::get_property( $order, 'payment', 'token' ) ) {
 							$stored_token_object->add_meta_data( 'instrument_type', 'google_pay' );
 							$stored_token_object->save();
 						}
@@ -2773,7 +2785,7 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 				}
 
 				// add transaction data for zero-dollar "orders".
-				if ( '0.00' === $order->payment_total ) {
+				if ( '0.00' === OrderHelper::get_payment_total( $order ) ) {
 					$this->add_transaction_data( $order );
 				}
 

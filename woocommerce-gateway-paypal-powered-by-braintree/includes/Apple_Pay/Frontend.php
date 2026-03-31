@@ -24,7 +24,7 @@
 
 namespace WC_Braintree\Apple_Pay;
 
-use SkyVerge\WooCommerce\PluginFramework\v5_15_10 as Framework;
+use SkyVerge\WooCommerce\PluginFramework\v6_0_1 as Framework;
 use WC_Braintree\WC_Braintree_Express_Checkout_Frontend;
 
 defined( 'ABSPATH' ) || exit;
@@ -92,7 +92,7 @@ class Frontend extends Framework\SV_WC_Payment_Gateway_Apple_Pay_Frontend {
 		// Enqueue SkyVerge framework Apple Pay CSS.
 		$framework_version = $this->get_plugin()->get_assets_version( 'braintree_credit_card' );
 		wp_enqueue_style(
-			'sv-wc-apple-pay-v5_15_10',
+			'sv-wc-apple-pay-v6_0_1',
 			$this->get_plugin()->get_payment_gateway_framework_assets_url() . '/css/frontend/sv-wc-payment-gateway-apple-pay.css',
 			array(),
 			$framework_version

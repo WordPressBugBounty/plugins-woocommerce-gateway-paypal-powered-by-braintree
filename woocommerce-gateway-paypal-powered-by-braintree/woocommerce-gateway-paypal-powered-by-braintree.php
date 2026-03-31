@@ -7,16 +7,16 @@
  * Description: Receive credit card or PayPal payments using Braintree for WooCommerce.  A server with cURL, SSL support, and a valid SSL certificate is required (for security reasons) for this gateway to function. Requires PHP 7.4+
  * Author: WooCommerce
  * Author URI: http://woocommerce.com/
- * Version: 3.8.0
+ * Version: 3.9.0
  * Text Domain: woocommerce-gateway-paypal-powered-by-braintree
  * Domain Path: /i18n/languages/
  *
- * Requires at least: 6.7
+ * Requires at least: 6.8
  * Tested up to: 6.9
- * WC requires at least: 10.3
- * WC tested up to: 10.5
+ * WC requires at least: 10.4
+ * WC tested up to: 10.6
  * Requires PHP: 7.4
- * PHP tested up to: 8.3
+ * PHP tested up to: 8.4
  *
  * Copyright (c) 2016-2020, Automattic, Inc.
  *
@@ -58,13 +58,13 @@ class WC_PayPal_Braintree_Loader {
 	const MINIMUM_PHP_VERSION = '7.4';
 
 	/** minimum WordPress version required by this plugin */
-	const MINIMUM_WP_VERSION = '6.7';
+	const MINIMUM_WP_VERSION = '6.8';
 
 	/** minimum WooCommerce version required by this plugin */
-	const MINIMUM_WC_VERSION = '10.3';
+	const MINIMUM_WC_VERSION = '10.4';
 
 	/** SkyVerge plugin framework version used by this plugin */
-	const FRAMEWORK_VERSION = '5.15.10';
+	const FRAMEWORK_VERSION = '6.0.1';
 
 	/** the plugin name, for displaying notices */
 	const PLUGIN_NAME = 'Braintree for WooCommerce';
@@ -106,6 +106,9 @@ class WC_PayPal_Braintree_Loader {
 
 		// Filter credit card settings to ensure validity of card_types.
 		add_filter( 'option_woocommerce_braintree_credit_card_settings', array( $this, 'ensure_card_types_is_an_array' ) );
+
+		// Opt-in to use Dynamic_Props class for storing order data.
+		add_filter( 'sv_wc_plugin_framework_use_dynamic_props_class', '__return_true' );
 
 		// Add 'Enable early access payment methods' option to the WooCommerce > Advanced > Features page.
 		add_filter( 'woocommerce_settings_features', array( $this, 'add_enable_early_access_to_woocommerce_feature_setting' ) );
@@ -584,6 +587,19 @@ class WC_PayPal_Braintree_Loader {
 					$payment_method_registry->register( new WC_Braintree\WC_Gateway_Braintree_Credit_Card_Blocks_Support() );
 					$payment_method_registry->register( new WC_Braintree\WC_Gateway_Braintree_Venmo_Blocks_Support() );
 					$payment_method_registry->register( new WC_Braintree\WC_Gateway_Braintree_ACH_Blocks_Support() );
+
+					// Register Local Payment Method Blocks Support classes.
+					if ( WC_Braintree\WC_Braintree_Feature_Flags::are_local_payments_enabled() ) {
+						$gateways = WC()->payment_gateways->payment_gateways();
+
+						foreach ( $gateways as $gateway ) {
+							if ( $gateway instanceof WC_Braintree\WC_Gateway_Braintree_Local_Payment ) {
+								$payment_method_registry->register(
+									new WC_Braintree\WC_Gateway_Braintree_Local_Payment_Blocks_Support( $gateway )
+								);
+							}
+						}
+					}
 				}
 			);
 

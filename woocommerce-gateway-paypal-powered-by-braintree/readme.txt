@@ -1,10 +1,10 @@
 === Braintree for WooCommerce Payment Gateway ===
 Contributors: woocommerce, automattic, skyverge
 Tags: ecommerce, e-commerce, commerce, woothemes, wordpress ecommerce, store, sales, sell, shop, shopping, cart, checkout, configurable, paypal, braintree
-Requires at least: 6.7
+Requires at least: 6.8
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 3.8.0
+Stable tag: 3.9.0
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
@@ -90,6 +90,27 @@ First, [review our documentation](https://woocommerce.com/document/woocommerce-g
 
 == Changelog ==
 
+= 3.9.0 - 2026-03-30 =
+* Add - EPS local payment gateway
+* Add - iDEAL local payment gateway.
+* Add - P24 local payment method gateway.
+* Add - Bancontact local payment gateway.
+* Add - BLIK local payment method gateway.
+* Add - MyBank local payment gateway.
+* Add - Make LPM gateways generally accessible.
+* Add - WooCommerce Blocks checkout support for Local Payment Methods.
+* Add - Show admin notice when a local payment method gateway is missing a Merchant Account ID for its supported currencies.
+* Fix - Deprecation messages caused by dynamic properties in PHP 8.2.
+* Dev - Upgrade SkyVerge Framework from 5.15.10 to 6.0.1.
+* Dev - Add compatibility for PHP 8.4.
+* Dev - Bump WooCommerce "tested up to" version 10.6.
+* Dev - Bump WooCommerce minimum supported version to 10.4.
+* Dev - Bump Wordpress minimum supported version to 6.8.
+* Dev - Centralize braintree-js-data-collector script registration.
+* Dev - Add per-method Local Payment Method gateway infrastructure.
+* Dev - Github workflow to run JS unit tests on each PR.
+* Dev - Add additional E2E tests for better coverage.
+
 = 3.8.0 - 2026-03-03 =
 * Add - Make ACH gateway generally accessible.
 * Add - Make Fastlane generally available without requiring the early access toggle.
@@ -158,37 +179,5 @@ First, [review our documentation](https://woocommerce.com/document/woocommerce-g
 * Dev - Fix ESLint configuration for plugin text domain and Braintree global.
 * Dev - Add JavaScript unit testing runner pipeline.
 * Dev - Enforce ESLint on new JS changes.
-
-= 3.5.1 - 2025-11-18 =
-* Fix - Fix missing assets in the 3.5.0 release package
-
-= 3.5.0 - 2025-11-17 =
-
-**Important Fixes and Updates**
-
-* Add - Apple Pay express payment support for WooCommerce Blocks Cart and Checkout pages.
-* Add - Show Webhook URL configuration information.
-* Fix - Allow changing shipping method in the Apple Pay modal.
-* Fix - Issue with empty `_billing_address_index` in `wp_postmeta` table when using Apple Pay.
-* Fix - Fatal error when trying to register Blocks before the class is available.
-* Dev - Bump WooCommerce "tested up to" version 10.3.
-* Dev - Bump WooCommerce minimum supported version to 10.1.
-* Dev - Update Braintree PHP SDK from 6.21.0 to 6.28.0.
-* Dev - Update Braintree JS SDK from 3.94.0 to 3.129.1.
-
-**Internal Changes and Early Access Features**
-
-* Add - Add Early Access support for new payment methods (can be enabled on the WooCommerce Features page).
-* Add - Early access support for Google Pay.
-* Add - Early access support for Venmo.
-* Add - Google Pay express payment support on product pages.
-* Add - Google Pay express payment support for WooCommerce Cart and Checkout block pages.
-* Add - Allow Google Pay to be used for Subscriptions.
-* Add - Automatic customer account creation for subscription purchases through Google Pay when the user is not logged in.
-* Tweak - Update Google Pay button height to match Apple Pay button.
-* Tweak - Add support for using different logging severities and additional structured data.
-* Dev - Prevent duplicate pages/products when setting up the test environment.
-* Dev - Updates to our QIT GitHub Action workflow.
-* Dev - Add new deploy workflow.
 
 [See changelog for all versions](https://plugins.svn.wordpress.org/woocommerce-gateway-paypal-powered-by-braintree/trunk/changelog.txt).

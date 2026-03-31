@@ -24,7 +24,7 @@
 
 namespace WC_Braintree\Payment_Forms;
 
-use SkyVerge\WooCommerce\PluginFramework\v5_15_10 as Framework;
+use SkyVerge\WooCommerce\PluginFramework\v6_0_1 as Framework;
 use function \WC_Braintree\wc_braintree;
 
 defined( 'ABSPATH' ) or exit;
@@ -211,7 +211,7 @@ class WC_Braintree_Hosted_Fields_Payment_Form extends WC_Braintree_Payment_Form 
 	 */
 	protected function get_enabled_card_types() {
 
-		$types = array_map( '\\SkyVerge\\WooCommerce\\PluginFramework\\v5_15_10\\SV_WC_Payment_Gateway_Helper::normalize_card_type', $this->get_gateway()->get_card_types() );
+		$types = array_map( '\\SkyVerge\\WooCommerce\\PluginFramework\\v6_0_1\\SV_WC_Payment_Gateway_Helper::normalize_card_type', $this->get_gateway()->get_card_types() );
 
 		// The Braintree SDK has its own strings for a few card types that we need to match.
 		$types = str_replace(
@@ -281,10 +281,6 @@ class WC_Braintree_Hosted_Fields_Payment_Form extends WC_Braintree_Payment_Form 
 			echo '<input type="hidden" name="wc-' . esc_attr( $this->get_gateway()->get_id_dasherized() ) . '-' . esc_attr( $field ) . '" value="" />';
 		}
 
-		$order_total = $this->get_order_total_for_3d_secure();
-
-		echo '<input type="hidden" name="wc-' . esc_attr( $this->get_gateway()->get_id_dasherized() ) . '-3d-secure-order-total" value="' . esc_attr( Framework\SV_WC_Helper::number_format( $order_total ) ) . '" />';
-
 		if ( wc_braintree()->is_subscriptions_active() && \WC_Subscriptions_Cart::cart_contains_subscription() ) {
 			echo '<input type="hidden" name="wc-' . esc_attr( $this->get_gateway()->get_id_dasherized() ) . '-cart-contains-subscription" value="1" />';
 		}
@@ -295,7 +291,23 @@ class WC_Braintree_Hosted_Fields_Payment_Form extends WC_Braintree_Payment_Form 
 
 			$order = wc_get_order( $order_id );
 
-			if ( $order ) {
+			$is_valid_order = $order instanceof \WC_Order;
+			$can_view_order = false;
+
+			// On the order pay page, verify order ownership before rendering order data for 3D Secure.
+			if ( $is_valid_order ) {
+				if ( $order->get_customer_id() ) {
+					$can_view_order = (int) $order->get_customer_id() === (int) get_current_user_id();
+				} else {
+					$can_view_order = $order->key_is_valid( sanitize_text_field( wp_unslash( $_GET['key'] ?? '' ) ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+				}
+			}
+
+			if ( $is_valid_order && $can_view_order ) {
+
+				$order_total = $this->get_order_total_for_3d_secure();
+
+				echo '<input type="hidden" name="wc-' . esc_attr( $this->get_gateway()->get_id_dasherized() ) . '-3d-secure-order-total" value="' . esc_attr( Framework\SV_WC_Helper::number_format( $order_total ) ) . '" />';
 
 				echo '<input type="hidden" name="billing_first_name" value="' . esc_attr( $order->get_billing_first_name( 'edit' ) ) . '" />';
 				echo '<input type="hidden" name="billing_last_name" value="' . esc_attr( $order->get_billing_last_name( 'edit' ) ) . '" />';
@@ -322,6 +334,11 @@ class WC_Braintree_Hosted_Fields_Payment_Form extends WC_Braintree_Payment_Form 
 					echo '<input type="hidden" id="shipping_country" value="' . esc_attr( $order->get_shipping_country( 'edit' ) ) . '" />';
 				}
 			}
+		} else {
+
+			$order_total = $this->get_order_total_for_3d_secure();
+
+			echo '<input type="hidden" name="wc-' . esc_attr( $this->get_gateway()->get_id_dasherized() ) . '-3d-secure-order-total" value="' . esc_attr( Framework\SV_WC_Helper::number_format( $order_total ) ) . '" />';
 		}
 
 		parent::render_payment_fields();

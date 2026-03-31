@@ -7,7 +7,7 @@
 
 namespace WC_Braintree;
 
-use SkyVerge\WooCommerce\PluginFramework\v5_15_10 as Framework;
+use SkyVerge\WooCommerce\PluginFramework\v6_0_1 as Framework;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -47,23 +47,11 @@ final class WC_Gateway_Braintree_Credit_Card_Blocks_Support extends WC_Gateway_B
 			return;
 		}
 
-		// Enqueue Braintree client SDK.
-		wp_enqueue_script(
-			'braintree-js-client',
-			'https://js.braintreegateway.com/web/' . WC_Braintree::BRAINTREE_JS_SDK_VERSION . '/js/client.min.js',
-			array(),
-			WC_Braintree::VERSION,
-			true
-		);
+		$gateway->register_gateway_assets();
 
-		// Enqueue data collector (required by Fastlane).
-		wp_enqueue_script(
-			'braintree-js-data-collector',
-			'https://js.braintreegateway.com/web/' . WC_Braintree::BRAINTREE_JS_SDK_VERSION . '/js/data-collector.min.js',
-			array( 'braintree-js-client' ),
-			WC_Braintree::VERSION,
-			true
-		);
+		// Enqueue Braintree client SDK and data collector (registered in WC_Gateway_Braintree::register_gateway_assets()).
+		wp_enqueue_script( 'braintree-js-client' );
+		wp_enqueue_script( 'braintree-js-data-collector' );
 
 		// Enqueue Fastlane SDK.
 		wp_enqueue_script(

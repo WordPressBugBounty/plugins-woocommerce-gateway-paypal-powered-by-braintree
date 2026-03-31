@@ -143,7 +143,12 @@ class WC_Braintree_Merchant_Account {
 				return $this->is_ach_enabled();
 			case \WC_Braintree\WC_Braintree::CREDIT_CARD_GATEWAY_ID:
 				return true;
-			case \WC_Braintree\WC_Braintree::LOCAL_PAYMENTS_GATEWAY_ID:
+			case \WC_Braintree\WC_Braintree::IDEAL_GATEWAY_ID:
+			case \WC_Braintree\WC_Braintree::BANCONTACT_GATEWAY_ID:
+			case \WC_Braintree\WC_Braintree::MYBANK_GATEWAY_ID:
+			case \WC_Braintree\WC_Braintree::EPS_GATEWAY_ID:
+			case \WC_Braintree\WC_Braintree::P24_GATEWAY_ID:
+			case \WC_Braintree\WC_Braintree::BLIK_GATEWAY_ID:
 				return $this->are_local_payments_enabled();
 			case \WC_Braintree\WC_Braintree::PAYPAL_GATEWAY_ID:
 				return $this->is_paypal_enabled();

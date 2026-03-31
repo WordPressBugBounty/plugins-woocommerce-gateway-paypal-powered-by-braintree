@@ -25,6 +25,7 @@
 namespace WC_Braintree;
 
 use Automattic\WooCommerce\Enums\OrderStatus;
+use SkyVerge\WooCommerce\PluginFramework\v6_0_1\Helpers\OrderHelper;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -328,9 +329,10 @@ class WC_Gateway_Braintree_ACH extends WC_Gateway_Braintree {
 	 * @return \WC_Braintree\API\Responses\Transaction_Response
 	 */
 	protected function do_ach_transaction( \WC_Order $order ) {
+		$payment = OrderHelper::get_payment( $order );
 
 		// Only verify and tokenize if using a new bank account (not a saved token).
-		if ( empty( $order->payment->token ) ) {
+		if ( empty( $payment->token ) ) {
 
 			// Verify account and get payment token.
 			$response = $this->get_api()->verify_ach_direct_debit_account( $order );
@@ -340,8 +342,11 @@ class WC_Gateway_Braintree_ACH extends WC_Gateway_Braintree {
 			}
 
 			// Set the token from verification response.
-			$payment_token         = $response->get_payment_token();
-			$order->payment->token = $payment_token->get_id();
+			$payment_token  = $response->get_payment_token();
+			$payment->token = $payment_token->get_id();
+
+			// Set payment info on the order object.
+			OrderHelper::set_payment( $order, $payment );
 
 			// Save the token to the user's payment methods if tokenization is enabled.
 			if ( $this->supports_tokenization() && $this->get_payment_tokens_handler()->should_tokenize() && 0 !== (int) $order->get_user_id() ) {

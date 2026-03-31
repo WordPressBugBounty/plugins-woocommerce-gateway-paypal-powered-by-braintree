@@ -24,6 +24,7 @@
 
 namespace WC_Braintree;
 
+use SkyVerge\WooCommerce\PluginFramework\v6_0_1\Helpers\OrderHelper;
 use WC_Braintree\PayPal\Buttons;
 use WC_Braintree\WC_Payment_Token_Braintree_PayPal;
 use WC_Braintree\Payment_Forms\WC_Braintree_PayPal_Payment_Form;
@@ -169,7 +170,7 @@ class WC_Gateway_Braintree_PayPal extends WC_Gateway_Braintree {
 
 			wp_enqueue_script( 'braintree-js-paypal-client', 'https://js.braintreegateway.com/web/' . WC_Braintree::BRAINTREE_JS_SDK_VERSION . '/js/client.min.js', [], WC_Braintree::VERSION, true );
 			wp_enqueue_script( 'braintree-js-paypal-checkout', 'https://js.braintreegateway.com/web/' . WC_Braintree::BRAINTREE_JS_SDK_VERSION . '/js/paypal-checkout.min.js', [], WC_Braintree::VERSION, true );
-			wp_enqueue_script( 'braintree-js-data-collector', 'https://js.braintreegateway.com/web/' . WC_Braintree::BRAINTREE_JS_SDK_VERSION . '/js/data-collector.min.js', array( 'braintree-js-client' ), WC_Braintree::VERSION, true );
+			wp_enqueue_script( 'braintree-js-data-collector' );
 		}
 	}
 
@@ -416,7 +417,7 @@ class WC_Gateway_Braintree_PayPal extends WC_Gateway_Braintree {
 				'bancontact'  => _x( 'Bancontact', 'Name of payment method', 'woocommerce-gateway-paypal-powered-by-braintree' ),
 				'eps'         => _x( 'eps', 'Name of payment method', 'woocommerce-gateway-paypal-powered-by-braintree' ),
 				'giropay'     => _x( 'giropay', 'Name of payment method', 'woocommerce-gateway-paypal-powered-by-braintree' ),
-				'ideal'       => _x( 'iDEAL', 'Name of payment method', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+				'ideal'       => _x( 'iDEAL | Wero', 'Name of payment method', 'woocommerce-gateway-paypal-powered-by-braintree' ),
 				'mercadopago' => _x( 'Mercado Pago', 'Name of payment method', 'woocommerce-gateway-paypal-powered-by-braintree' ),
 				'mybank'      => _x( 'MyBank', 'Name of payment method', 'woocommerce-gateway-paypal-powered-by-braintree' ),
 				'p24'         => _x( 'Przelewy24', 'Name of payment method', 'woocommerce-gateway-paypal-powered-by-braintree' ),
@@ -651,7 +652,7 @@ class WC_Gateway_Braintree_PayPal extends WC_Gateway_Braintree {
 		}
 
 		// charge captured.
-		if ( $order->payment_total > 0 ) {
+		if ( OrderHelper::get_payment_total( $order ) > 0 ) {
 			// mark as captured.
 			if ( $this->perform_credit_card_charge( $order ) ) {
 				$captured = 'yes';

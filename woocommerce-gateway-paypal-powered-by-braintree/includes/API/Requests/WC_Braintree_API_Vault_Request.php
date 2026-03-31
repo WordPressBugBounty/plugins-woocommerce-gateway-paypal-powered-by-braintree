@@ -25,6 +25,7 @@
 namespace WC_Braintree\API\Requests;
 
 use Braintree\Result\UsBankAccountVerification;
+use SkyVerge\WooCommerce\PluginFramework\v6_0_1\Helpers\OrderHelper;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -78,8 +79,11 @@ abstract class WC_Braintree_API_Vault_Request extends WC_Braintree_API_Request {
 			'verifyCard'                   => true,
 		);
 
-		if ( ! empty( $this->get_order()->payment->merchant_account_id ) ) {
-			$options['verificationMerchantAccountId'] = $this->get_order()->payment->merchant_account_id;
+		$order   = $this->get_order();
+		$payment = OrderHelper::get_payment( $order );
+
+		if ( ! empty( $payment->merchant_account_id ) ) {
+			$options['verificationMerchantAccountId'] = $payment->merchant_account_id;
 		}
 
 		/**
@@ -106,8 +110,11 @@ abstract class WC_Braintree_API_Vault_Request extends WC_Braintree_API_Request {
 			'usBankAccountVerificationMethod' => UsBankAccountVerification::INDEPENDENT_CHECK,
 		];
 
-		if ( ! empty( $this->get_order()->payment->merchant_account_id ) ) {
-			$options['verificationMerchantAccountId'] = $this->get_order()->payment->merchant_account_id;
+		$order   = $this->get_order();
+		$payment = OrderHelper::get_payment( $order );
+
+		if ( ! empty( $payment->merchant_account_id ) ) {
+			$options['verificationMerchantAccountId'] = $payment->merchant_account_id;
 		}
 
 		/**
@@ -129,9 +136,12 @@ abstract class WC_Braintree_API_Vault_Request extends WC_Braintree_API_Request {
 	 */
 	protected function add_device_data() {
 
-		if ( $device_data = $this->get_order()->payment->device_data ) {
+		$order   = $this->get_order();
+		$payment = OrderHelper::get_payment( $order );
 
-			$this->request_data['deviceData'] = $device_data;
+		if ( $payment->device_data ) {
+
+			$this->request_data['deviceData'] = $payment->device_data;
 		}
 	}
 }

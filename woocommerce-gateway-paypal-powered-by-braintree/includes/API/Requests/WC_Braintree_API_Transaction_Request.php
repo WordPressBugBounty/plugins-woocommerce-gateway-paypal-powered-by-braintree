@@ -24,7 +24,8 @@
 
 namespace WC_Braintree\API\Requests;
 
-use SkyVerge\WooCommerce\PluginFramework\v5_15_10 as Framework;
+use SkyVerge\WooCommerce\PluginFramework\v6_0_1 as Framework;
+use SkyVerge\WooCommerce\PluginFramework\v6_0_1\Helpers\OrderHelper;
 use WC_Braintree\API\WC_Braintree_API;
 use WC_Braintree\WC_Braintree;
 
@@ -119,23 +120,25 @@ class WC_Braintree_API_Transaction_Request extends WC_Braintree_API_Request {
 		$this->set_resource( 'transaction' );
 		$this->set_callback( 'sale' );
 
-		$order = $this->get_order();
+		$order   = $this->get_order();
+		$payment = OrderHelper::get_payment( $order );
 
 		$this->request_data = [
-			'amount'             => $order->payment_total,
-			'paymentMethodToken' => $order->payment->token,
+			'amount'             => OrderHelper::get_payment_total( $order ),
+			'paymentMethodToken' => $payment->token,
 			'orderId'            => $order->get_order_number(),
-			'merchantAccountId'  => $order->payment->merchant_account_id ?? null,
+			'merchantAccountId'  => empty( $payment->merchant_account_id ) ? null : $payment->merchant_account_id,
 			'options'            => [
 				'submitForSettlement' => true,
 			],
 			'channel'            => $this->get_channel(),
-			'deviceData'         => $order->payment->device_data ?? null,
+			'deviceData'         => empty( $payment->device_data ) ? null : $payment->device_data,
 		];
 
 		// Set customer data if available.
-		if ( $order->customer_id ) {
-			$this->request_data['customerId'] = $order->customer_id;
+		$customer_id = OrderHelper::get_customer_id( $order );
+		if ( $customer_id ) {
+			$this->request_data['customerId'] = $customer_id;
 		}
 
 		// Set billing data.
@@ -149,6 +152,56 @@ class WC_Braintree_API_Transaction_Request extends WC_Braintree_API_Request {
 		 * @param \WC_Braintree_API_Transaction_Request $request the request object.
 		 */
 		$this->request_data = apply_filters( 'wc_braintree_ach_transaction_data', $this->request_data, $this );
+	}
+
+
+	/**
+	 * Creates a Local Payments charge request using a payment method nonce.
+	 *
+	 * @link https://developers.braintreepayments.com/reference/request/transaction/sale/php
+	 *
+	 * @since 3.9.0
+	 */
+	public function create_local_payments_charge() {
+
+		$this->set_resource( 'transaction' );
+		$this->set_callback( 'sale' );
+
+		$order   = $this->get_order();
+		$payment = OrderHelper::get_payment( $order );
+
+		$this->request_data = [
+			'amount'             => OrderHelper::get_payment_total( $order ),
+			'paymentMethodNonce' => $payment->nonce,
+			'orderId'            => $order->get_order_number(),
+			'merchantAccountId'  => empty( $payment->merchant_account_id ) ? null : $payment->merchant_account_id,
+			'options'            => [
+				'submitForSettlement' => true,
+			],
+			'channel'            => $this->get_channel(),
+			'deviceData'         => empty( $payment->device_data ) ? null : $payment->device_data,
+		];
+
+		// Set customer data if available.
+		$customer_id = OrderHelper::get_customer_id( $order );
+		if ( $customer_id ) {
+			$this->request_data['customerId'] = $customer_id;
+		}
+
+		// Set billing data.
+		$this->set_billing();
+
+		// Set dynamic descriptors.
+		$this->set_dynamic_descriptors();
+
+		/**
+		 * Filters the request data for Local Payments transactions.
+		 *
+		 * @since 3.9.0
+		 * @param array $data The transaction/sale data.
+		 * @param \WC_Braintree_API_Transaction_Request $request the request object.
+		 */
+		$this->request_data = apply_filters( 'wc_braintree_local_payments_transaction_data', $this->request_data, $this );
 	}
 
 
@@ -177,7 +230,10 @@ class WC_Braintree_API_Transaction_Request extends WC_Braintree_API_Request {
 		$this->set_resource( 'transaction' );
 		$this->set_callback( 'submitForSettlement' );
 
-		$this->request_data = array( $this->get_order()->capture->trans_id, $this->get_order()->capture->amount );
+		$order   = $this->get_order();
+		$capture = OrderHelper::get_property( $order, 'capture', null, new \stdClass() );
+
+		$this->request_data = array( $capture->trans_id, $capture->amount );
 	}
 
 
@@ -193,7 +249,10 @@ class WC_Braintree_API_Transaction_Request extends WC_Braintree_API_Request {
 		$this->set_resource( 'transaction' );
 		$this->set_callback( 'refund' );
 
-		$this->request_data = array( $this->get_order()->refund->trans_id, $this->get_order()->refund->amount );
+		$order  = $this->get_order();
+		$refund = OrderHelper::get_property( $order, 'refund', null, new \stdClass() );
+
+		$this->request_data = array( $refund->trans_id, $refund->amount );
 	}
 
 
@@ -209,7 +268,10 @@ class WC_Braintree_API_Transaction_Request extends WC_Braintree_API_Request {
 		$this->set_resource( 'transaction' );
 		$this->set_callback( 'void' );
 
-		$this->request_data = $this->get_order()->refund->trans_id;
+		$order  = $this->get_order();
+		$refund = OrderHelper::get_property( $order, 'refund', null, new \stdClass() );
+
+		$this->request_data = $refund->trans_id;
 	}
 
 
@@ -226,15 +288,18 @@ class WC_Braintree_API_Transaction_Request extends WC_Braintree_API_Request {
 		$this->set_resource( 'transaction' );
 		$this->set_callback( 'sale' );
 
+		$order   = $this->get_order();
+		$payment = OrderHelper::get_payment( $order );
+
 		$this->request_data = array(
-			'amount'            => $this->get_order()->payment_total,
-			'orderId'           => $this->get_order()->get_order_number(),
-			'merchantAccountId' => empty( $this->get_order()->payment->merchant_account_id ) ? null : $this->get_order()->payment->merchant_account_id,
+			'amount'            => OrderHelper::get_payment_total( $order ),
+			'orderId'           => $order->get_order_number(),
+			'merchantAccountId' => empty( $payment->merchant_account_id ) ? null : $payment->merchant_account_id,
 			'shipping'          => $this->get_shipping_address(),
 			'options'           => $this->get_options( $settlement_type ),
 			'channel'           => $this->get_channel(),
-			'deviceData'        => empty( $this->get_order()->payment->device_data ) ? null : $this->get_order()->payment->device_data,
-			'taxExempt'         => $this->get_order()->get_user_id() > 0 && is_callable( array( WC()->customer, 'is_vat_exempt' ) ) ? WC()->customer->is_vat_exempt() : false,
+			'deviceData'        => empty( $payment->device_data ) ? null : $payment->device_data,
+			'taxExempt'         => $order->get_user_id() > 0 && is_callable( array( WC()->customer, 'is_vat_exempt' ) ) ? WC()->customer->is_vat_exempt() : false,
 		);
 
 		// If there is no payment_method, the get_gateway will return the default gateway (which is the one that is being used for the transaction).
@@ -307,10 +372,13 @@ class WC_Braintree_API_Transaction_Request extends WC_Braintree_API_Request {
 	 */
 	protected function set_customer() {
 
-		if ( $this->get_order()->customer_id ) {
+		$order       = $this->get_order();
+		$customer_id = OrderHelper::get_customer_id( $order );
+
+		if ( $customer_id ) {
 
 			// use existing customer ID.
-			$this->request_data['customerId'] = $this->get_order()->customer_id;
+			$this->request_data['customerId'] = $customer_id;
 
 		} else {
 
@@ -337,10 +405,13 @@ class WC_Braintree_API_Transaction_Request extends WC_Braintree_API_Request {
 	 */
 	protected function set_billing() {
 
-		if ( ! empty( $this->get_order()->payment->billing_address_id ) ) {
+		$order   = $this->get_order();
+		$payment = OrderHelper::get_payment( $order );
+
+		if ( ! empty( $payment->billing_address_id ) ) {
 
 			// use the existing billing address when using a saved payment method.
-			$this->request_data['billingAddressId'] = $this->get_order()->payment->billing_address_id;
+			$this->request_data['billingAddressId'] = $payment->billing_address_id;
 
 		} else {
 
@@ -405,26 +476,29 @@ class WC_Braintree_API_Transaction_Request extends WC_Braintree_API_Request {
 	 */
 	protected function set_payment_method() {
 
-		if ( ! empty( $this->get_order()->payment->token ) && empty( $this->get_order()->payment->use_3ds_nonce ) ) {
+		$order   = $this->get_order();
+		$payment = OrderHelper::get_payment( $order );
+
+		if ( ! empty( $payment->token ) && empty( $payment->use_3ds_nonce ) ) {
 
 			// use saved payment method (token).
-			$this->request_data['paymentMethodToken'] = $this->get_order()->payment->token;
+			$this->request_data['paymentMethodToken'] = $payment->token;
 
 		} else {
 
 			// use new payment method (nonce).
-			$this->request_data['paymentMethodNonce'] = $this->get_order()->payment->nonce;
+			$this->request_data['paymentMethodNonce'] = $payment->nonce;
 
-			// set cardholder name when adding a credit card, note this isn't possible
+			// set cardholder name when adding a credit card, note this isn't possible.
 			// when using a 3DS nonce.
-			if ( 'credit_card' === $this->get_order()->payment->type && empty( $this->get_order()->payment->use_3ds_nonce ) ) {
-				$this->request_data['creditCard'] = array( 'cardholderName' => $this->get_order()->get_formatted_billing_full_name() );
+			if ( 'credit_card' === $payment->type && empty( $payment->use_3ds_nonce ) ) {
+				$this->request_data['creditCard'] = array( 'cardholderName' => $order->get_formatted_billing_full_name() );
 			}
 		}
 
 		// add recurring flag to transactions that are subscription renewals.
-		if ( ! empty( $this->get_order()->payment->subscription ) ) {
-			$this->request_data['transactionSource'] = $this->get_order()->payment->subscription->is_renewal ? 'recurring' : 'recurring_first';
+		if ( ! empty( $payment->subscription ) ) {
+			$this->request_data['transactionSource'] = $payment->subscription->is_renewal ? 'recurring' : 'recurring_first';
 		}
 	}
 
@@ -439,15 +513,18 @@ class WC_Braintree_API_Transaction_Request extends WC_Braintree_API_Request {
 	 */
 	protected function set_dynamic_descriptors() {
 
+		$order   = $this->get_order();
+		$payment = OrderHelper::get_payment( $order );
+
 		// dynamic descriptors.
-		if ( ! empty( $this->get_order()->payment->dynamic_descriptors ) ) {
+		if ( ! empty( $payment->dynamic_descriptors ) ) {
 
 			$this->request_data['descriptor'] = array();
 
 			foreach ( array( 'name', 'phone', 'url' ) as $key ) {
 
-				if ( ! empty( $this->get_order()->payment->dynamic_descriptors->$key ) ) {
-					$this->request_data['descriptor'][ $key ] = $this->get_order()->payment->dynamic_descriptors->$key;
+				if ( ! empty( $payment->dynamic_descriptors->$key ) ) {
+					$this->request_data['descriptor'][ $key ] = $payment->dynamic_descriptors->$key;
 				}
 			}
 		}
@@ -464,17 +541,19 @@ class WC_Braintree_API_Transaction_Request extends WC_Braintree_API_Request {
 	 * @return array
 	 */
 	protected function get_options( $settlement_type ) {
+		$order   = $this->get_order();
+		$payment = OrderHelper::get_payment( $order );
 
 		$options = array(
 			'submitForSettlement'   => $settlement_type,
-			'storeInVaultOnSuccess' => $this->get_order()->payment->tokenize,
+			'storeInVaultOnSuccess' => $payment->tokenize,
 		);
 
-		if ( $this->get_order()->payment->tokenize ) {
+		if ( $payment->tokenize ) {
 			$options['addBillingAddressToPaymentMethod'] = true;
 		}
 
-		if ( ! empty( $this->get_order()->payment->is_3ds_required ) ) {
+		if ( ! empty( $payment->is_3ds_required ) ) {
 			$options['three_d_secure'] = array( 'required' => true );
 		}
 

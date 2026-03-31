@@ -55,20 +55,12 @@ class WC_Braintree_Feature_Flags {
 	private const FEATURE_SEPA = 'sepa';
 
 	/**
-	 * The name of the feature flag for Local Payments.
-	 *
-	 * @var string
-	 */
-	private const FEATURE_LOCAL_PAYMENTS = 'local_payments';
-
-	/**
 	 * Default values for feature flags.
 	 *
 	 * @var array<string, string> Feature flags
 	 */
 	private array $feature_flags = [
-		self::FEATURE_SEPA           => 'no',
-		self::FEATURE_LOCAL_PAYMENTS => 'no',
+		self::FEATURE_SEPA => 'no',
 	];
 
 	/**
@@ -201,10 +193,12 @@ class WC_Braintree_Feature_Flags {
 	 * Check if Local Payments are enabled.
 	 *
 	 * @since 3.7.0
+	 * @deprecated 3.9.0 Local Payments are now generally available.
 	 *
-	 * @return bool True if Local Payments are enabled, false otherwise.
+	 * @return true Always returns true since Local Payments are generally available.
 	 */
 	public static function are_local_payments_enabled(): bool {
-		return self::instance()->is_early_access_enabled() && self::instance()->is_feature_flag_enabled( self::FEATURE_LOCAL_PAYMENTS );
+		wc_deprecated_function( __METHOD__, '3.9.0', 'Local Payments are now generally available and this method always returns true.' );
+		return true;
 	}
 }

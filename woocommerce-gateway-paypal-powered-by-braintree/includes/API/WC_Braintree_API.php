@@ -25,7 +25,8 @@
 namespace WC_Braintree\API;
 
 use Braintree\Result\Error;
-use SkyVerge\WooCommerce\PluginFramework\v5_15_10 as Framework;
+use SkyVerge\WooCommerce\PluginFramework\v6_0_1 as Framework;
+use SkyVerge\WooCommerce\PluginFramework\v6_0_1\Helpers\OrderHelper;
 use WC_Braintree\API\Responses\WC_Braintree_API_Merchant_Configuration_Response;
 use WC_Braintree\API\Requests\WC_Braintree_API_Client_Token_Request;
 use WC_Braintree\API\Requests\WC_Braintree_API_Transaction_Request;
@@ -232,12 +233,14 @@ class WC_Braintree_API extends Framework\SV_WC_API_Base implements Framework\SV_
 	 */
 	public function verify_csc( \WC_Order $order ) {
 
+		$payment = OrderHelper::get_payment( $order );
+
 		// don't verify the CSC for transactions that are already 3ds verified.
-		if ( ! empty( $order->payment->use_3ds_nonce ) ) {
+		if ( ! empty( $payment->use_3ds_nonce ) ) {
 			return;
 		}
 
-		if ( ! empty( $order->payment->nonce ) && ! empty( $order->payment->token ) ) {
+		if ( ! empty( $payment->nonce ) && ! empty( $payment->token ) ) {
 
 			$request = $this->get_new_request(
 				array(
@@ -246,7 +249,7 @@ class WC_Braintree_API extends Framework\SV_WC_API_Base implements Framework\SV_
 				)
 			);
 
-			$request->verify_csc( $order->payment->token, $order->payment->nonce );
+			$request->verify_csc( $payment->token, $payment->nonce );
 
 			$result = $this->perform_request( $request );
 
@@ -365,7 +368,8 @@ class WC_Braintree_API extends Framework\SV_WC_API_Base implements Framework\SV_
 	 */
 	public function verify_ach_direct_debit_account( \WC_Order $order ) {
 
-		if ( ! $order->customer_id ) {
+		$customer_id = OrderHelper::get_customer_id( $order );
+		if ( ! $customer_id ) {
 			// A customer is required to validate an ACH nonce.
 			$request = $this->get_new_request(
 				[
@@ -378,7 +382,7 @@ class WC_Braintree_API extends Framework\SV_WC_API_Base implements Framework\SV_
 			$response = $this->perform_request( $request );
 
 			if ( $response->transaction_approved() ) {
-				$order->customer_id = $response->get_customer_id();
+				OrderHelper::set_customer_id( $order, $response->get_customer_id() );
 			}
 		}
 
@@ -416,6 +420,30 @@ class WC_Braintree_API extends Framework\SV_WC_API_Base implements Framework\SV_
 		return $this->perform_request( $request );
 	}
 
+
+	/**
+	 * Creates a new Local Payments charge transaction.
+	 *
+	 * @since 3.9.0
+	 *
+	 * @param \WC_Order $order The order object.
+	 * @return \WC_Braintree\API\Responses\WC_Braintree_API_PayPal_Transaction_Response
+	 * @throws Framework\SV_WC_Plugin_Exception When the request fails.
+	 */
+	public function local_payments_charge( \WC_Order $order ) {
+
+		$request = $this->get_new_request(
+			array(
+				'type'  => 'transaction',
+				'order' => $order,
+			)
+		);
+
+		$request->create_local_payments_charge();
+
+		return $this->perform_request( $request );
+	}
+
 	/** API Tokenization methods **********************************************/
 
 
@@ -431,7 +459,7 @@ class WC_Braintree_API extends Framework\SV_WC_API_Base implements Framework\SV_
 	 */
 	public function tokenize_payment_method( \WC_Order $order ) {
 
-		if ( $order->customer_id ) {
+		if ( OrderHelper::get_customer_id( $order ) ) {
 
 			// create a payment method for existing customer.
 			$request = $this->get_new_request(
@@ -865,6 +893,9 @@ class WC_Braintree_API extends Framework\SV_WC_API_Base implements Framework\SV_
 						break;
 					case 'venmo':
 						$response_handler = 'WC_Braintree\\API\\Responses\\WC_Braintree_API_Venmo_Transaction_Response';
+						break;
+					case 'local_payment':
+						$response_handler = 'WC_Braintree\\API\\Responses\\WC_Braintree_API_PayPal_Transaction_Response';
 						break;
 					case 'paypal':
 					default:

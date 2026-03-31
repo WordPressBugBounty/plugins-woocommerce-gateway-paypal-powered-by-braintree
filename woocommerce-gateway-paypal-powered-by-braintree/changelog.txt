@@ -1,5 +1,26 @@
 *** Changelog ***
 
+= 3.9.0 - 2026-03-30 =
+* Add - EPS local payment gateway
+* Add - iDEAL local payment gateway.
+* Add - P24 local payment method gateway.
+* Add - Bancontact local payment gateway.
+* Add - BLIK local payment method gateway.
+* Add - MyBank local payment gateway.
+* Add - Make LPM gateways generally accessible.
+* Add - WooCommerce Blocks checkout support for Local Payment Methods.
+* Add - Show admin notice when a local payment method gateway is missing a Merchant Account ID for its supported currencies.
+* Fix - Deprecation messages caused by dynamic properties in PHP 8.2.
+* Dev - Upgrade SkyVerge Framework from 5.15.10 to 6.0.1.
+* Dev - Add compatibility for PHP 8.4.
+* Dev - Bump WooCommerce "tested up to" version 10.6.
+* Dev - Bump WooCommerce minimum supported version to 10.4.
+* Dev - Bump Wordpress minimum supported version to 6.8.
+* Dev - Centralize braintree-js-data-collector script registration.
+* Dev - Add per-method Local Payment Method gateway infrastructure.
+* Dev - Github workflow to run JS unit tests on each PR.
+* Dev - Add additional E2E tests for better coverage.
+
 = 3.8.0 - 2026-03-03 =
 * Add - Make ACH gateway generally accessible.
 * Add - Make Fastlane generally available without requiring the early access toggle.

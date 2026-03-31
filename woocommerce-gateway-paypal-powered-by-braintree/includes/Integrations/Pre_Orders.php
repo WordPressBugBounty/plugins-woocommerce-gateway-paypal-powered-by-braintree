@@ -24,7 +24,8 @@
 
 namespace WC_Braintree\Integrations;
 
-use SkyVerge\WooCommerce\PluginFramework\v5_15_10 as Framework;
+use SkyVerge\WooCommerce\PluginFramework\v6_0_1 as Framework;
+use SkyVerge\WooCommerce\PluginFramework\v6_0_1\Helpers\OrderHelper;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -50,14 +51,17 @@ class Pre_Orders extends Framework\SV_WC_Payment_Gateway_Integration_Pre_Orders 
 		try {
 
 			// set order defaults.
-			$order = $this->get_gateway()->get_order( $order->get_id() );
+			$order   = $this->get_gateway()->get_order( $order->get_id() );
+			$payment = OrderHelper::get_payment( $order );
 
 			// order description.
 			/* translators: %1$s - site name, %2$s - order number */
-			$order->description = sprintf( esc_html__( '%1$s - Pre-Order Release Payment for Order %2$s', 'woocommerce-gateway-paypal-powered-by-braintree' ), esc_html( Framework\SV_WC_Helper::get_site_name() ), $order->get_order_number() );
+			$description = sprintf( esc_html__( '%1$s - Pre-Order Release Payment for Order %2$s', 'woocommerce-gateway-paypal-powered-by-braintree' ), esc_html( Framework\SV_WC_Helper::get_site_name() ), $order->get_order_number() );
+
+			OrderHelper::set_property( $order, 'description', $description );
 
 			// token is required.
-			if ( ! $order->payment->token ) {
+			if ( ! $payment->token ) {
 				throw new Framework\SV_WC_Payment_Gateway_Exception( esc_html__( 'Payment token missing/invalid.', 'woocommerce-gateway-paypal-powered-by-braintree' ) );
 			}
 
@@ -75,8 +79,10 @@ class Pre_Orders extends Framework\SV_WC_Payment_Gateway_Integration_Pre_Orders 
 
 			// success! update order record.
 			if ( $response->transaction_approved() ) {
+				// Re-fetch the payment to get the updated payment object, in case it was modified during transaction processing.
+				$payment = OrderHelper::get_payment( $order );
 
-				$last_four = substr( $order->payment->account_number, -4 );
+				$last_four = substr( $payment->account_number ?? '', -4 );
 
 				// order note based on gateway type.
 				if ( $this->get_gateway()->is_credit_card_gateway() ) {
@@ -86,16 +92,16 @@ class Pre_Orders extends Framework\SV_WC_Payment_Gateway_Integration_Pre_Orders 
 						__( '%1$s %2$s Pre-Order Release Payment Approved: %3$s ending in %4$s (expires %5$s)', 'woocommerce-gateway-paypal-powered-by-braintree' ),
 						$this->get_gateway()->get_method_title(),
 						$this->get_gateway()->perform_credit_card_authorization( $order ) ? 'Authorization' : 'Charge',
-						Framework\SV_WC_Payment_Gateway_Helper::payment_type_to_name( ( ! empty( $order->payment->card_type ) ? $order->payment->card_type : 'card' ) ),
+						Framework\SV_WC_Payment_Gateway_Helper::payment_type_to_name( ( ! empty( $payment->card_type ) ? $payment->card_type : 'card' ) ),
 						$last_four,
-						( ! empty( $order->payment->exp_month ) && ! empty( $order->payment->exp_year ) ? $order->payment->exp_month . '/' . substr( $order->payment->exp_year, -2 ) : 'n/a' )
+						( ! empty( $payment->exp_month ) && ! empty( $payment->exp_year ) ? $payment->exp_month . '/' . substr( $payment->exp_year, -2 ) : 'n/a' )
 					);
 
 				} elseif ( $this->get_gateway()->is_echeck_gateway() ) {
 
 					// account type (checking/savings) may or may not be available, which is fine.
 					/* translators: Placeholders: %1$s - payment method title, like PayPal, %2$s - account type, like Bank, %3$s - last four digits of the account number */
-					$message = sprintf( esc_html__( '%1$s eCheck Pre-Order Release Payment Approved: %2$s ending in %3$s', 'woocommerce-gateway-paypal-powered-by-braintree' ), $this->get_gateway()->get_method_title(), Framework\SV_WC_Payment_Gateway_Helper::payment_type_to_name( ( ! empty( $order->payment->account_type ) ? $order->payment->account_type : 'bank' ) ), $last_four );
+					$message = sprintf( esc_html__( '%1$s eCheck Pre-Order Release Payment Approved: %2$s ending in %3$s', 'woocommerce-gateway-paypal-powered-by-braintree' ), $this->get_gateway()->get_method_title(), Framework\SV_WC_Payment_Gateway_Helper::payment_type_to_name( ( ! empty( $payment->account_type ) ? $payment->account_type : 'bank' ) ), $last_four );
 
 				} else {
 

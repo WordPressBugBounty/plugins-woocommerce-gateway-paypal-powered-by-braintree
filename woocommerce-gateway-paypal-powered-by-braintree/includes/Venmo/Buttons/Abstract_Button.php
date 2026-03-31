@@ -24,7 +24,7 @@
 
 namespace WC_Braintree\Venmo\Buttons;
 
-use SkyVerge\WooCommerce\PluginFramework\v5_15_10 as Framework;
+use SkyVerge\WooCommerce\PluginFramework\v6_0_1 as Framework;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -124,10 +124,11 @@ abstract class Abstract_Button extends Framework\Handlers\Script_Handler {
 	 * @since 3.5.0
 	 */
 	protected function enqueue_scripts() {
+		$this->gateway->register_gateway_assets();
+
 		// Enqueue Braintree Venmo SDK.
-		wp_enqueue_script( 'braintree-js-client', 'https://js.braintreegateway.com/web/' . \WC_Braintree\WC_Braintree::BRAINTREE_JS_SDK_VERSION . '/js/client.min.js', array(), \WC_Braintree\WC_Braintree::VERSION, true );
 		wp_enqueue_script( 'braintree-js-venmo', 'https://js.braintreegateway.com/web/' . \WC_Braintree\WC_Braintree::BRAINTREE_JS_SDK_VERSION . '/js/venmo.min.js', array( 'braintree-js-client' ), \WC_Braintree\WC_Braintree::VERSION, true );
-		wp_enqueue_script( 'braintree-js-data-collector', 'https://js.braintreegateway.com/web/' . \WC_Braintree\WC_Braintree::BRAINTREE_JS_SDK_VERSION . '/js/data-collector.min.js', array( 'braintree-js-client' ), \WC_Braintree\WC_Braintree::VERSION, true );
+		wp_enqueue_script( 'braintree-js-data-collector' );
 	}
 
 

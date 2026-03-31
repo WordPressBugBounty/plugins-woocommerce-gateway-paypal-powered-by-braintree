@@ -24,7 +24,8 @@
 
 namespace WC_Braintree\API\Requests;
 
-use SkyVerge\WooCommerce\PluginFramework\v5_15_10 as Framework;
+use SkyVerge\WooCommerce\PluginFramework\v6_0_1 as Framework;
+use SkyVerge\WooCommerce\PluginFramework\v6_0_1\Helpers\OrderHelper;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -50,6 +51,8 @@ class WC_Braintree_API_Customer_Request extends WC_Braintree_API_Vault_Request {
 
 		$this->order = $order;
 
+		$payment = OrderHelper::get_payment( $order );
+
 		$this->set_resource( 'customer' );
 		$this->set_callback( 'create' );
 
@@ -59,11 +62,11 @@ class WC_Braintree_API_Customer_Request extends WC_Braintree_API_Vault_Request {
 			'phone'              => Framework\SV_WC_Helper::str_truncate( preg_replace( '/[^\d\-().]/', '', $order->get_billing_phone( 'edit' ) ), 14, '' ),
 			'firstName'          => $order->get_billing_first_name( 'edit' ),
 			'lastName'           => $order->get_billing_last_name( 'edit' ),
-			'paymentMethodNonce' => $order->payment->nonce,
+			'paymentMethodNonce' => $payment->nonce,
 		);
 
 		// add verification data for credit cards.
-		if ( 'credit_card' === $order->payment->type ) {
+		if ( 'credit_card' === $payment->type ) {
 			$this->request_data['creditCard'] = array(
 				'billingAddress' => $this->get_billing_address(),
 				'cardholderName' => $order->get_formatted_billing_full_name(),

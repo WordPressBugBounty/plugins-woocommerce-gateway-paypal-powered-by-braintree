@@ -24,8 +24,8 @@
 
 namespace WC_Braintree;
 
-use SkyVerge\WooCommerce\PluginFramework\v5_15_10 as Framework;
-use SkyVerge\WooCommerce\PluginFramework\v5_15_10\SV_WC_Payment_Gateway_Payment_Token;
+use SkyVerge\WooCommerce\PluginFramework\v6_0_1 as Framework;
+use SkyVerge\WooCommerce\PluginFramework\v6_0_1\SV_WC_Payment_Gateway_Payment_Token;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -38,7 +38,7 @@ class WC_Braintree extends Framework\SV_WC_Payment_Gateway_Plugin {
 
 
 	/** plugin version number */
-	const VERSION = '3.8.0'; // WRCS: DEFINED_VERSION.
+	const VERSION = '3.9.0'; // WRCS: DEFINED_VERSION.
 
 	/** Braintree JS SDK version  */
 	const BRAINTREE_JS_SDK_VERSION = '3.129.1';
@@ -79,11 +79,40 @@ class WC_Braintree extends Framework\SV_WC_Payment_Gateway_Plugin {
 	/** SEPA gateway ID */
 	const SEPA_GATEWAY_ID = 'braintree_sepa';
 
-	/** Local Payments gateway class name */
-	const LOCAL_PAYMENTS_GATEWAY_CLASS_NAME = 'WC_Braintree\\WC_Gateway_Braintree_Local_Payments';
+	/** Gateway class name for iDEAL */
+	const IDEAL_GATEWAY_CLASS_NAME = 'WC_Braintree\\WC_Gateway_Braintree_Ideal';
 
-	/** Local Payments gateway ID */
-	const LOCAL_PAYMENTS_GATEWAY_ID = 'braintree_local_payments';
+	/** Gateway ID for iDEAL */
+	const IDEAL_GATEWAY_ID = 'braintree_lpm_ideal';
+
+	/** Bancontact gateway class name */
+	const BANCONTACT_GATEWAY_CLASS_NAME = 'WC_Braintree\\WC_Gateway_Braintree_Bancontact';
+
+	/** Bancontact gateway ID */
+	const BANCONTACT_GATEWAY_ID = 'braintree_lpm_bancontact';
+	/** MyBank gateway class name */
+	const MYBANK_GATEWAY_CLASS_NAME = 'WC_Braintree\\WC_Gateway_Braintree_Mybank';
+
+	/** MyBank gateway ID */
+	const MYBANK_GATEWAY_ID = 'braintree_lpm_mybank';
+
+	/** EPS gateway class name */
+	const EPS_GATEWAY_CLASS_NAME = 'WC_Braintree\\WC_Gateway_Braintree_EPS';
+
+	/** EPS gateway ID */
+	const EPS_GATEWAY_ID = 'braintree_lpm_eps';
+
+	/** P24 gateway class name */
+	const P24_GATEWAY_CLASS_NAME = 'WC_Braintree\\WC_Gateway_Braintree_P24';
+
+	/** P24 gateway ID */
+	const P24_GATEWAY_ID = 'braintree_lpm_p24';
+
+	/** BLIK gateway class name */
+	const BLIK_GATEWAY_CLASS_NAME = 'WC_Braintree\\WC_Gateway_Braintree_Blik';
+
+	/** BLIK gateway ID */
+	const BLIK_GATEWAY_ID = 'braintree_lpm_blik';
 
 	/**
 	 * Initializes the plugin
@@ -104,10 +133,12 @@ class WC_Braintree extends Framework\SV_WC_Payment_Gateway_Plugin {
 			$gateways[ self::SEPA_GATEWAY_ID ] = self::SEPA_GATEWAY_CLASS_NAME;
 		}
 
-		// Add Local Payments gateway if feature flag is enabled.
-		if ( WC_Braintree_Feature_Flags::are_local_payments_enabled() ) {
-			$gateways[ self::LOCAL_PAYMENTS_GATEWAY_ID ] = self::LOCAL_PAYMENTS_GATEWAY_CLASS_NAME;
-		}
+		$gateways[ self::IDEAL_GATEWAY_ID ]      = self::IDEAL_GATEWAY_CLASS_NAME;
+		$gateways[ self::BANCONTACT_GATEWAY_ID ] = self::BANCONTACT_GATEWAY_CLASS_NAME;
+		$gateways[ self::MYBANK_GATEWAY_ID ]     = self::MYBANK_GATEWAY_CLASS_NAME;
+		$gateways[ self::P24_GATEWAY_ID ]        = self::P24_GATEWAY_CLASS_NAME;
+		$gateways[ self::BLIK_GATEWAY_ID ]       = self::BLIK_GATEWAY_CLASS_NAME;
+		$gateways[ self::EPS_GATEWAY_ID ]        = self::EPS_GATEWAY_CLASS_NAME;
 
 		parent::__construct(
 			self::PLUGIN_ID,
@@ -682,9 +713,96 @@ class WC_Braintree extends Framework\SV_WC_Payment_Gateway_Plugin {
 			);
 		}
 
+		// Check that enabled LPM gateways have access to a Merchant Account ID
+		// for at least one of their supported currencies. Without a MAID for the
+		// correct currency, transactions will fail with a settlement error.
+		$this->maybe_add_lpm_merchant_account_notice();
+
 		// Merchant account availability check for gateways.
-		$this->add_merchant_account_availability_notice();
+		$this->maybe_add_merchant_account_availability_notice();
 	}
+
+	/**
+	 * Adds a notice for each enabled LPM gateway that has no Merchant Account ID for any of its supported currencies.
+	 *
+	 * @since 3.9.0
+	 * @return void
+	 */
+	private function maybe_add_lpm_merchant_account_notice() {
+
+		if ( ! $this->is_plugin_settings() ) {
+			return;
+		}
+
+		foreach ( $this->get_gateways() as $gateway ) {
+			if ( ! $gateway instanceof WC_Gateway_Braintree_Local_Payment ) {
+				continue;
+			}
+
+			$gateway_settings = $this->get_gateway_settings( $gateway->get_id() );
+
+			if ( ! isset( $gateway_settings['enabled'] ) || 'yes' !== $gateway_settings['enabled'] ) {
+				continue;
+			}
+
+			if ( $this->lpm_gateway_has_merchant_account( $gateway ) ) {
+				continue;
+			}
+
+			$this->get_admin_notice_handler()->add_admin_notice(
+				sprintf(
+					/* translators: Placeholders: %1$s - gateway title (e.g. "Braintree (P24)"), %2$s - supported currencies (e.g. "EUR, PLN"), %3$s - <a> tag, %4$s - </a> tag */
+					esc_html__( '%1$s requires a Merchant Account ID configured for %2$s. %3$sConfigure a Merchant Account ID%4$s to enable this gateway at checkout.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+					'<strong>' . esc_html( $gateway->get_method_title() ) . '</strong>',
+					'<strong>' . esc_html( implode( ', ', $gateway->get_supported_currencies() ) ) . '</strong>',
+					'<a href="' . esc_url( $this->get_settings_url( $gateway->get_id() ) ) . '">',
+					'</a>'
+				),
+				$gateway->get_id() . '-merchant-account-id-notice',
+				array(
+					'dismissible'  => false,
+					'notice_class' => 'notice-warning',
+				)
+			);
+		}
+	}
+
+	/**
+	 * Checks whether an LPM gateway has a Merchant Account ID for at least one of its supported currencies.
+	 *
+	 * Checks both gateway-specific MAID settings and the default MAID from the
+	 * remote configuration.
+	 *
+	 * @since 3.9.0
+	 *
+	 * @param WC_Gateway_Braintree_Local_Payment $gateway The LPM gateway to check.
+	 * @return bool
+	 */
+	private function lpm_gateway_has_merchant_account( WC_Gateway_Braintree_Local_Payment $gateway ) {
+
+		// Check if any supported currency has a gateway-specific MAID configured.
+		foreach ( $gateway->get_supported_currencies() as $currency ) {
+			if ( $gateway->get_merchant_account_id( $currency ) ) {
+				return true;
+			}
+		}
+
+		// No gateway-specific MAID. Check if the default MAID's currency matches.
+		try {
+			$remote_config    = WC_Braintree_Remote_Configuration::get_remote_configuration( $gateway->get_credentials_source() );
+			$default_account  = $remote_config->get_default_merchant_account();
+			$default_currency = $default_account ? $default_account->get_currency() : '';
+
+			if ( in_array( $default_currency, $gateway->get_supported_currencies(), true ) ) {
+				return true;
+			}
+		} catch ( \Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+			// If remote config fails, we can't verify — assume no MAID to be safe.
+		}
+
+		return false;
+	}
+
 
 	/**
 	 * Adds a notice if the merchant account is not available for the payment gateway of the current page.
@@ -692,7 +810,7 @@ class WC_Braintree extends Framework\SV_WC_Payment_Gateway_Plugin {
 	 * @since 3.7.0
 	 * @return void
 	 */
-	private function add_merchant_account_availability_notice() {
+	private function maybe_add_merchant_account_availability_notice() {
 		// We only show this notice on the plugin settings page.
 		if ( ! $this->is_plugin_settings() ) {
 			return;

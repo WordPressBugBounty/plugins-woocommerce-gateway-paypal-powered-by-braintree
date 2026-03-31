@@ -24,7 +24,8 @@
 
 namespace WC_Braintree;
 
-use SkyVerge\WooCommerce\PluginFramework\v5_15_10 as Framework;
+use SkyVerge\WooCommerce\PluginFramework\v6_0_1 as Framework;
+use SkyVerge\WooCommerce\PluginFramework\v6_0_1\Helpers\OrderHelper;
 use WC_Braintree\Payment_Forms\WC_Braintree_Hosted_Fields_Payment_Form;
 use WC_Order;
 
@@ -243,8 +244,8 @@ class WC_Gateway_Braintree_Credit_Card extends WC_Gateway_Braintree {
 			// Advanced/kount fraud tool.
 			if ( $this->is_advanced_fraud_tool_enabled() ) {
 
-				// Enqueue braintree-data.js library.
-				wp_enqueue_script( 'braintree-js-data-collector', 'https://js.braintreegateway.com/web/' . WC_Braintree::BRAINTREE_JS_SDK_VERSION . '/js/data-collector.min.js', array( 'braintree-js-client' ), WC_Braintree::VERSION, true );
+				// Enqueue braintree-data.js library (registered in WC_Gateway_Braintree::register_gateway_assets()).
+				wp_enqueue_script( 'braintree-js-data-collector' );
 
 				// Adjust the script tag to add async attribute.
 				add_filter( 'clean_url', array( $this, 'adjust_fraud_script_tag' ) );
@@ -549,26 +550,34 @@ class WC_Gateway_Braintree_Credit_Card extends WC_Gateway_Braintree {
 
 		$order = parent::get_order( $order );
 
-		// ensure the card type is normalized to FW format.
-		if ( empty( $order->payment->card_type ) ) {
-			$order->payment->card_type = Framework\SV_WC_Payment_Gateway_Helper::normalize_card_type( Framework\SV_WC_Helper::get_posted_value( 'wc-' . $this->get_id_dasherized() . '-card-type' ) );
+		$payment = OrderHelper::get_payment( $order );
+
+		// Ensure the card type is normalized to FW format.
+		if ( empty( $payment->card_type ) ) {
+			$payment->card_type = Framework\SV_WC_Payment_Gateway_Helper::normalize_card_type( Framework\SV_WC_Helper::get_posted_value( 'wc-' . $this->get_id_dasherized() . '-card-type' ) );
+
+			// Set payment info on the order object.
+			OrderHelper::set_payment( $order, $payment );
 		}
 
-		// add information for 3DS transactions, note that server-side verification
+		// Add information for 3DS transactions, note that server-side verification
 		// has already been checked in validate_fields() and passed.
-		if ( $this->is_3d_secure_enabled() && Framework\SV_WC_Helper::get_posted_value( 'wc-' . $this->get_id_dasherized() . '-3d-secure-enabled' ) && ( ! $order->payment->card_type || $this->card_type_supports_3d_secure( $order->payment->card_type ) ) ) {
+		if ( $this->is_3d_secure_enabled() && Framework\SV_WC_Helper::get_posted_value( 'wc-' . $this->get_id_dasherized() . '-3d-secure-enabled' ) && ( ! $payment->card_type || $this->card_type_supports_3d_secure( $payment->card_type ) ) ) {
 
-			// indicate if 3DS should be required for every transaction -- note
+			// Indicate if 3DS should be required for every transaction -- note
 			// this will result in a gateway rejection for *every* transaction
 			// that doesn't have a liability shift.
-			$order->payment->is_3ds_required = $this->is_3d_secure_liability_shift_always_required();
+			$payment->is_3ds_required = $this->is_3d_secure_liability_shift_always_required();
 
-			// when using a saved payment method for a transaction that has been
+			// When using a saved payment method for a transaction that has been
 			// 3DS verified, indicate the nonce should be used instead, which
 			// passes the 3DS verification details to Braintree.
-			if ( Framework\SV_WC_Helper::get_posted_value( 'wc-' . $this->get_id_dasherized() . '-3d-secure-verified' ) && ! empty( $order->payment->token ) && ! empty( $order->payment->nonce ) ) {
-				$order->payment->use_3ds_nonce = true;
+			if ( Framework\SV_WC_Helper::get_posted_value( 'wc-' . $this->get_id_dasherized() . '-3d-secure-verified' ) && ! empty( $payment->token ) && ! empty( $payment->nonce ) ) {
+				$payment->use_3ds_nonce = true;
 			}
+
+			// Set payment info on the order object.
+			OrderHelper::set_payment( $order, $payment );
 		}
 
 		return $order;
@@ -576,7 +585,7 @@ class WC_Gateway_Braintree_Credit_Card extends WC_Gateway_Braintree {
 
 
 	/**
-	 * Overrides the parent method to set the $order->payment members that are
+	 * Overrides the parent method to set the payment information that is
 	 * usually set prior to payment with a direct gateway. Because Braintree uses
 	 * a nonce, we don't have access to the card info (last four, expiry date, etc)
 	 * until after the transaction is processed.
@@ -595,11 +604,15 @@ class WC_Gateway_Braintree_Credit_Card extends WC_Gateway_Braintree {
 			$response = $this->perform_credit_card_charge( $order ) ? $this->get_api()->credit_card_charge( $order ) : $this->get_api()->credit_card_authorization( $order );
 
 			if ( $response->transaction_approved() ) {
-				$order->payment->account_number = $response->get_masked_number();
-				$order->payment->last_four      = $response->get_last_four();
-				$order->payment->card_type      = Framework\SV_WC_Payment_Gateway_Helper::card_type_from_account_number( $response->get_masked_number() );
-				$order->payment->exp_month      = $response->get_exp_month();
-				$order->payment->exp_year       = $response->get_exp_year();
+				$payment                 = OrderHelper::get_payment( $order );
+				$payment->account_number = $response->get_masked_number();
+				$payment->last_four      = $response->get_last_four();
+				$payment->card_type      = Framework\SV_WC_Payment_Gateway_Helper::card_type_from_account_number( $response->get_masked_number() );
+				$payment->exp_month      = $response->get_exp_month();
+				$payment->exp_year       = $response->get_exp_year();
+
+				// Set payment info on the order object.
+				OrderHelper::set_payment( $order, $payment );
 			}
 		}
 
@@ -650,8 +663,13 @@ class WC_Gateway_Braintree_Credit_Card extends WC_Gateway_Braintree {
 
 		$order = parent::get_order_for_apple_pay( $order, $response );
 
+		$payment = OrderHelper::get_payment( $order );
+
 		/** @var \WC_Braintree\Apple_Pay\API\Payment_Response $response */
-		$order->payment->nonce = $response->get_braintree_nonce();
+		$payment->nonce = $response->get_braintree_nonce();
+
+		// Set payment info on the order object.
+		OrderHelper::set_payment( $order, $payment );
 
 		return $order;
 	}
@@ -671,11 +689,16 @@ class WC_Gateway_Braintree_Credit_Card extends WC_Gateway_Braintree {
 
 		$order = parent::get_order_for_google_pay( $order, $response );
 
+		$payment = OrderHelper::get_payment( $order );
+
 		// SkyVerge does not have a Google Pay response object wrapper, so we need to parse the tokenization data manually.
 		if ( isset( $response ) && is_array( $response ) ) {
 			$token = json_decode( $response['paymentMethodData']['tokenizationData']['token'] ?? '', true );
 			if ( is_array( $token ) && isset( $token['androidPayCards'][0] ) ) {
-				$order->payment->nonce = $token['androidPayCards'][0]['nonce'] ?? null;
+				$payment->nonce = $token['androidPayCards'][0]['nonce'] ?? null;
+
+				// Set payment info on the order object.
+				OrderHelper::set_payment( $order, $payment );
 			}
 		}
 

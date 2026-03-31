@@ -25,7 +25,7 @@
 namespace WC_Braintree\Google_Pay;
 
 use Exception;
-use SkyVerge\WooCommerce\PluginFramework\v5_15_10 as Framework;
+use SkyVerge\WooCommerce\PluginFramework\v6_0_1 as Framework;
 use WC_Braintree\Integrations\AvaTax;
 use WC_Braintree\WC_Braintree_Express_Checkout;
 use WC_Cart;

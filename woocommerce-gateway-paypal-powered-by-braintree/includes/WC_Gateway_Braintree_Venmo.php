@@ -146,7 +146,7 @@ class WC_Gateway_Braintree_Venmo extends WC_Gateway_Braintree {
 
 		// Enqueue Braintree Venmo SDK.
 		wp_enqueue_script( 'braintree-js-venmo', 'https://js.braintreegateway.com/web/' . WC_Braintree::BRAINTREE_JS_SDK_VERSION . '/js/venmo.min.js', array( 'braintree-js-client' ), WC_Braintree::VERSION, true );
-		wp_enqueue_script( 'braintree-js-data-collector', 'https://js.braintreegateway.com/web/' . WC_Braintree::BRAINTREE_JS_SDK_VERSION . '/js/data-collector.min.js', array( 'braintree-js-client' ), WC_Braintree::VERSION, true );
+		wp_enqueue_script( 'braintree-js-data-collector' );
 
 		// Load dependencies from webpack asset file.
 		$asset_path   = $this->get_plugin()->get_plugin_path() . '/assets/js/frontend/wc-braintree-venmo.asset.php';

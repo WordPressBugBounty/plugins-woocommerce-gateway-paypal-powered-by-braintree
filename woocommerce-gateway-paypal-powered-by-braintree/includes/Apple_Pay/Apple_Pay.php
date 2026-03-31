@@ -24,7 +24,7 @@
 
 namespace WC_Braintree\Apple_Pay;
 
-use SkyVerge\WooCommerce\PluginFramework\v5_15_10 as Framework;
+use SkyVerge\WooCommerce\PluginFramework\v6_0_1 as Framework;
 use WC_Braintree\Apple_Pay\Frontend;
 use WC_Braintree\Apple_Pay\API\Payment_Response;
 use WC_Braintree\Integrations\AvaTax;

@@ -24,7 +24,7 @@
 
 namespace WC_Braintree;
 
-use SkyVerge\WooCommerce\PluginFramework\v5_15_10 as Framework;
+use SkyVerge\WooCommerce\PluginFramework\v6_0_1 as Framework;
 use WC_Braintree\API\WC_Braintree_API;
 
 defined( 'ABSPATH' ) or exit;
@@ -58,7 +58,7 @@ class WC_Braintree_My_Payment_Methods extends Framework\SV_WC_Payment_Gateway_My
 	public function maybe_enqueue_styles_scripts() {
 		parent::maybe_enqueue_styles_scripts();
 
-		$dependencies = array( 'jquery-tiptip', 'jquery', 'sv-wc-payment-gateway-my-payment-methods-v5_15_10' );
+		$dependencies = array( 'jquery-tiptip', 'jquery', 'sv-wc-payment-gateway-my-payment-methods-v6_0_1' );
 		wp_enqueue_script( 'wc-braintree-my-payment-methods', $this->plugin->get_plugin_url() . '/assets/js/frontend/wc-braintree-my-payment-methods.min.js', $dependencies, $this->plugin->get_version(), false );
 	}
 
