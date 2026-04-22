@@ -476,34 +476,21 @@ class WC_Gateway_Braintree_Credit_Card extends WC_Gateway_Braintree {
 
 		parent::admin_options();
 
-		ob_start();
-		?>
-		// show/hide the kount merchant ID field based on the fraud tools selection
-		$( 'select.js-fraud-tool' ).change( function() {
-
-			var $kount_id_row = $( '.js-kount-merchant-id' ).closest( 'tr' );
-
-			if ( 'kount_direct' === $( this ).val() ) {
-				$kount_id_row.show();
-			} else {
-				$kount_id_row.hide();
-			}
-		} ).change();
-		<?php
-
-		wc_enqueue_js( ob_get_clean() );
+		// Fraud tool show/hide (Kount merchant ID row) is handled in wc-braintree.js.
 
 		// 3D Secure setting handler
 		ob_start();
 		?>
-
-		if ( ! <?php echo (int) $this->is_3d_secure_available(); ?> ) {
-			$( '#woocommerce_braintree_credit_card_threed_secure_title' ).hide().next( 'p' ).hide().next( 'table' ).hide();
-		}
-
+		( function( $ ) {
+			$( function() {
+				if ( ! <?php echo (int) $this->is_3d_secure_available(); ?> ) {
+					$( '#woocommerce_braintree_credit_card_threed_secure_title' ).hide().next( 'p' ).hide().next( 'table' ).hide();
+				}
+			} );
+		} )( jQuery );
 		<?php
-
-		wc_enqueue_js( ob_get_clean() );
+		$javascript = ob_get_clean();
+		WC_Braintree::enqueue_inline_script( 'wc-braintree-credit-card-admin-threedsecure', $javascript );
 	}
 
 

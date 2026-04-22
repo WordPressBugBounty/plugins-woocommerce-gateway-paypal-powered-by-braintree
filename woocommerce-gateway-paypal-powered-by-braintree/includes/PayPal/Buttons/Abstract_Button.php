@@ -259,7 +259,15 @@ abstract class Abstract_Button extends Framework\Handlers\Script_Handler {
 	 */
 	protected function render_js() {
 
-		wc_enqueue_js( $this->get_safe_handler_js() );
+		ob_start();
+		?>
+		( function( $ ) {
+		<?php echo $this->get_safe_handler_js(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- get_safe_handler_js returns safe JS ?>
+		} )( jQuery );
+		<?php
+		$javascript = ob_get_clean();
+		$handle     = 'wc-braintree-' . $this->get_id_dasherized() . '-inline';
+		\WC_Braintree\WC_Braintree::enqueue_inline_script( $handle, $javascript );
 	}
 
 

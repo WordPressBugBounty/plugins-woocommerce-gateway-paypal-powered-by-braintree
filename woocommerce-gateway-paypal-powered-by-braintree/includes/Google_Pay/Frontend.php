@@ -90,8 +90,18 @@ class Frontend extends Framework\Payment_Gateway\External_Checkout\Google_Pay\Fr
 		);
 
 		// Enqueue the appropriate Google Pay script based on the page type.
-		if ( WC_Braintree::is_blocks_page() ) {
-			wp_enqueue_script( 'wc-braintree-blocks-google-pay' );
+		$has_cart_block     = has_block( 'woocommerce/cart' );
+		$has_checkout_block = has_block( 'woocommerce/checkout' );
+
+		if ( $has_cart_block || $has_checkout_block ) {
+			$display_locations = get_option( 'sv_wc_google_pay_display_locations', array() );
+
+			$show_on_cart     = $has_cart_block && in_array( 'cart', $display_locations, true );
+			$show_on_checkout = $has_checkout_block && in_array( 'checkout', $display_locations, true );
+
+			if ( $show_on_cart || $show_on_checkout ) {
+				wp_enqueue_script( 'wc-braintree-blocks-google-pay' );
+			}
 		} elseif ( parent::should_enqueue_scripts() ) {
 			// Only enqueue legacy script if framework says we should (for classic/shortcode pages).
 			wp_enqueue_script( 'wc-braintree-google-pay-js' );

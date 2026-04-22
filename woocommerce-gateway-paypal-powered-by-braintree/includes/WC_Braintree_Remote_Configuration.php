@@ -62,6 +62,13 @@ class WC_Braintree_Remote_Configuration {
 	protected static array $gateway_map = [];
 
 	/**
+	 * Cached remote configurations by gateway ID. Values may be null.
+	 *
+	 * @var array<string, WC_Braintree_Remote_Configuration|null>
+	 */
+	protected static array $gateway_configurations = [];
+
+	/**
 	 * The merchant ID for the current gateway and remote configuration.
 	 *
 	 * @var string|null
@@ -215,6 +222,31 @@ class WC_Braintree_Remote_Configuration {
 	 */
 	public static function get_remote_configuration( string $gateway_id, bool $force_refresh = false ): self {
 		self::validate_gateway_id( $gateway_id );
+
+		$cached_configuration     = null;
+		$has_cached_configuration = array_key_exists( $gateway_id, self::$gateway_configurations );
+		if ( ! $force_refresh && $has_cached_configuration ) {
+			$cached_configuration = self::$gateway_configurations[ $gateway_id ];
+		}
+
+		/**
+		 * Filters the remote configuration for the given gateway.
+		 *
+		 * @since 3.10.0
+		 *
+		 * @param null|WC_Braintree_Remote_Configuration $cached_configuration The cached configuration; defaults to null.
+		 * @param string                                 $gateway_id           The ID of the gateway that we are using for configuration.
+		 */
+		$remote_configuration = apply_filters( 'wc_braintree_get_remote_configuration', $cached_configuration, $gateway_id );
+
+		// Cache the result if it changed from what was cached, or if there was no cached value.
+		if ( ! $has_cached_configuration || $remote_configuration !== $cached_configuration ) {
+			self::$gateway_configurations[ $gateway_id ] = $remote_configuration;
+		}
+
+		if ( $remote_configuration instanceof self ) {
+			return $remote_configuration;
+		}
 
 		if ( ! $force_refresh && isset( self::$gateway_map[ $gateway_id ] ) ) {
 			$account_id = self::$gateway_map[ $gateway_id ];

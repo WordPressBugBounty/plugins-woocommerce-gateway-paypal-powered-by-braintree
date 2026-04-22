@@ -107,8 +107,18 @@ class Frontend extends Framework\SV_WC_Payment_Gateway_Apple_Pay_Frontend {
 		}
 
 		// Enqueue the appropriate Apple Pay script based on the page type.
-		if ( \WC_Braintree\WC_Braintree::is_blocks_page() ) {
-			wp_enqueue_script( 'wc-braintree-blocks-apple-pay' );
+		$has_cart_block     = has_block( 'woocommerce/cart' );
+		$has_checkout_block = has_block( 'woocommerce/checkout' );
+
+		if ( $has_cart_block || $has_checkout_block ) {
+			$display_locations = get_option( 'sv_wc_apple_pay_display_locations', array() );
+
+			$show_on_cart     = $has_cart_block && in_array( 'cart', $display_locations, true );
+			$show_on_checkout = $has_checkout_block && in_array( 'checkout', $display_locations, true );
+
+			if ( $show_on_cart || $show_on_checkout ) {
+				wp_enqueue_script( 'wc-braintree-blocks-apple-pay' );
+			}
 		} elseif ( parent::should_enqueue_scripts() ) {
 			// Only enqueue legacy script if framework says we should (classic pages).
 			wp_enqueue_script( 'wc-braintree-apple-pay-js' );

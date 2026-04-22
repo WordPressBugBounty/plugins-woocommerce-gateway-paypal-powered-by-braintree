@@ -1,5 +1,18 @@
 *** Changelog ***
 
+= 3.10.0 - 2026-04-22 =
+* Add - Introduce `wc_braintree_get_remote_configuration` filter to allow merchants to provide hardcoded remote configurations and improve performance with gateway configuration caching.
+* Fix - Apple Pay and Google Pay buttons on block-based Cart and Checkout pages now respect the "Allow on" display settings.
+* Fix - Change the gateway currency notice to include a link to the gateway settings.
+* Fix - Replaced `wc_enqueue_js` with `wp_add_inline_script` according to the recommended WordPress core script patterns.
+* Dev - Replace deep relative imports with webpack aliases for improved readability and maintainability.
+* Dev - Remove the deprecated LPM feature-flag check from Blocks checkout registration.
+* Dev - Fix ESLint import resolver configuration and fix multiple ESLint violations.
+* Dev - Bump WooCommerce "tested up to" version 10.7.
+* Dev - Bump WooCommerce minimum supported version to 10.5.
+* Dev - Bump WordPress "Tested up to" to 7.0.
+* Dev - Add additional E2E tests for better coverage.
+
 = 3.9.0 - 2026-03-30 =
 * Add - EPS local payment gateway
 * Add - iDEAL local payment gateway.

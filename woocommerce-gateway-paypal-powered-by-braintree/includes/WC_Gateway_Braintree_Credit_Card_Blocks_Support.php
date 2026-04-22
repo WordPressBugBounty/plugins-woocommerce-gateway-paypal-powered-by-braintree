@@ -150,6 +150,9 @@ final class WC_Gateway_Braintree_Credit_Card_Blocks_Support extends WC_Gateway_B
 		if ( $google_pay ) {
 			$data['google_pay'] = [
 				'merchant_id'              => $google_pay->get_merchant_id(),
+				'display_locations'        => $google_pay->get_display_locations(),
+				'is_cart_page'             => has_block( 'woocommerce/cart' ),
+				'is_checkout_page'         => has_block( 'woocommerce/checkout' ),
 				'recalculate_totals_nonce' => wp_create_nonce( 'wc_' . $this->name . '_google_pay_recalculate_totals' ),
 				'process_payment_nonce'    => wp_create_nonce( 'wc_' . $this->name . '_google_pay_process_payment' ),
 				'button_style'             => $google_pay->get_button_style(),

@@ -7,14 +7,14 @@
  * Description: Receive credit card or PayPal payments using Braintree for WooCommerce.  A server with cURL, SSL support, and a valid SSL certificate is required (for security reasons) for this gateway to function. Requires PHP 7.4+
  * Author: WooCommerce
  * Author URI: http://woocommerce.com/
- * Version: 3.9.0
+ * Version: 3.10.0
  * Text Domain: woocommerce-gateway-paypal-powered-by-braintree
  * Domain Path: /i18n/languages/
  *
  * Requires at least: 6.8
- * Tested up to: 6.9
- * WC requires at least: 10.4
- * WC tested up to: 10.6
+ * Tested up to: 7.0
+ * WC requires at least: 10.5
+ * WC tested up to: 10.7
  * Requires PHP: 7.4
  * PHP tested up to: 8.4
  *
@@ -61,7 +61,7 @@ class WC_PayPal_Braintree_Loader {
 	const MINIMUM_WP_VERSION = '6.8';
 
 	/** minimum WooCommerce version required by this plugin */
-	const MINIMUM_WC_VERSION = '10.4';
+	const MINIMUM_WC_VERSION = '10.5';
 
 	/** SkyVerge plugin framework version used by this plugin */
 	const FRAMEWORK_VERSION = '6.0.1';
@@ -589,15 +589,13 @@ class WC_PayPal_Braintree_Loader {
 					$payment_method_registry->register( new WC_Braintree\WC_Gateway_Braintree_ACH_Blocks_Support() );
 
 					// Register Local Payment Method Blocks Support classes.
-					if ( WC_Braintree\WC_Braintree_Feature_Flags::are_local_payments_enabled() ) {
-						$gateways = WC()->payment_gateways->payment_gateways();
+					$gateways = WC()->payment_gateways->payment_gateways();
 
-						foreach ( $gateways as $gateway ) {
-							if ( $gateway instanceof WC_Braintree\WC_Gateway_Braintree_Local_Payment ) {
-								$payment_method_registry->register(
-									new WC_Braintree\WC_Gateway_Braintree_Local_Payment_Blocks_Support( $gateway )
-								);
-							}
+					foreach ( $gateways as $gateway ) {
+						if ( $gateway instanceof WC_Braintree\WC_Gateway_Braintree_Local_Payment ) {
+							$payment_method_registry->register(
+								new WC_Braintree\WC_Gateway_Braintree_Local_Payment_Blocks_Support( $gateway )
+							);
 						}
 					}
 				}

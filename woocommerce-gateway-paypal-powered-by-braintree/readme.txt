@@ -2,9 +2,9 @@
 Contributors: woocommerce, automattic, skyverge
 Tags: ecommerce, e-commerce, commerce, woothemes, wordpress ecommerce, store, sales, sell, shop, shopping, cart, checkout, configurable, paypal, braintree
 Requires at least: 6.8
-Tested up to: 6.9
+Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 3.9.0
+Stable tag: 3.10.0
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
@@ -90,6 +90,19 @@ First, [review our documentation](https://woocommerce.com/document/woocommerce-g
 
 == Changelog ==
 
+= 3.10.0 - 2026-04-22 =
+* Add - Introduce `wc_braintree_get_remote_configuration` filter to allow merchants to provide hardcoded remote configurations and improve performance with gateway configuration caching.
+* Fix - Apple Pay and Google Pay buttons on block-based Cart and Checkout pages now respect the "Allow on" display settings.
+* Fix - Change the gateway currency notice to include a link to the gateway settings.
+* Fix - Replaced `wc_enqueue_js` with `wp_add_inline_script` according to the recommended WordPress core script patterns.
+* Dev - Replace deep relative imports with webpack aliases for improved readability and maintainability.
+* Dev - Remove the deprecated LPM feature-flag check from Blocks checkout registration.
+* Dev - Fix ESLint import resolver configuration and fix multiple ESLint violations.
+* Dev - Bump WooCommerce "tested up to" version 10.7.
+* Dev - Bump WooCommerce minimum supported version to 10.5.
+* Dev - Bump WordPress "Tested up to" to 7.0.
+* Dev - Add additional E2E tests for better coverage.
+
 = 3.9.0 - 2026-03-30 =
 * Add - EPS local payment gateway
 * Add - iDEAL local payment gateway.
@@ -155,29 +168,5 @@ First, [review our documentation](https://woocommerce.com/document/woocommerce-g
 * Dev - Upgrade woocommerce/plugin-check-action to v1.1.5.
 * Dev - Automatic formatting on pre-commit.
 * Dev - Format codebase with wp-scipts.
-
-= 3.6.0 - 2025-12-10 =
-* Add - Venmo payment method support to the block checkout page.
-* Add - Venmo payment method support to the block cart page
-* Add - Subscription support for Venmo.
-* Add - Admin notices for enabled gateways that don't support the current store currency.
-* Add - Dynamic descriptor name support for Venmo gateway.
-* Add - Adds filter `wc_braintree_is_level3_data_allowed` to disable adding Level3 in transaction the request.
-* Update - Make Google Pay generally available.
-* Fix - Venmo payment method label in the My Account subscriptions list.
-* Fix - Apple Pay vaulting consent checkbox is shown when Apple Pay is unavailable.
-* Fix - Prevent selecting unsupported shipping addresses in Apple Pay on shortcode checkout.
-* Fix - Resolve Level 2/3 line item validation error for PayPal transactions with discounts in EUR stores.
-* Fix - Hide Apple Pay and Google Pay tabs on non-Credit Card gateway settings.
-* Fix - Editing saved non-credit-card payment methods.
-* Fix - Early access gateway names in the Plugins page.
-* Tweak - Don't show an error when the shopper closes the Venmo QR modal.
-* Dev - Bump WordPress "tested up to" version 6.9.
-* Dev - Bump WooCommerce "tested up to" version 10.4.
-* Dev - Bump WooCommerce minimum supported version to 10.2.
-* Dev - Extract common/shared classic checkout form handling code to a common base class.
-* Dev - Fix ESLint configuration for plugin text domain and Braintree global.
-* Dev - Add JavaScript unit testing runner pipeline.
-* Dev - Enforce ESLint on new JS changes.
 
 [See changelog for all versions](https://plugins.svn.wordpress.org/woocommerce-gateway-paypal-powered-by-braintree/trunk/changelog.txt).

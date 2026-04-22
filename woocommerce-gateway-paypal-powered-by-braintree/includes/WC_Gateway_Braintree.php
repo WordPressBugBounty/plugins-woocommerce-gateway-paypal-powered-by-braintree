@@ -1198,25 +1198,30 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 
 		$field = ob_get_clean();
 
-		wc_enqueue_js(
-			"
-			$( '#wc-braintree-auth-disconnect' ).on( 'click', function( e ) {
-				e.preventDefault();
+		ob_start();
+		?>
+		( function( $ ) {
+			$( function() {
+				$( '#wc-braintree-auth-disconnect' ).on( 'click', function( e ) {
+					e.preventDefault();
 
-				$( '#wc-backbone-modal-dialog .modal-close' ).trigger( 'click' );
+					$( '#wc-backbone-modal-dialog .modal-close' ).trigger( 'click' );
 
-				new $.WCBackboneModal.View( {
-					target: 'wc-braintree-auth-disconnect-modal'
+					new $.WCBackboneModal.View( {
+						target: 'wc-braintree-auth-disconnect-modal'
+					} );
+
+					$( '.wc-braintree-auth-disconnect-modal .button' ).on( 'click', function( e ) {
+						if ( ! $( this ).hasClass( 'button-primary' ) ) {
+							$( '.wc-braintree-auth-disconnect-modal button.modal-close' ).trigger( 'click' );
+						}
+					} );
 				} );
-
-				$( '.wc-braintree-auth-disconnect-modal .button' ).on( 'click', function( e ) {
-					if ( ! $( this ).hasClass( 'button-primary' ) ) {
-						$( '.wc-braintree-auth-disconnect-modal button.modal-close' ).trigger( 'click' );
-					}
-				} );
-			} )
-		"
-		);
+			} );
+		} )( jQuery );
+		<?php
+		$javascript = ob_get_clean();
+		WC_Braintree::enqueue_inline_script( 'wc-braintree-auth-disconnect', $javascript );
 
 		return $field;
 	}
@@ -1431,67 +1436,72 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 
 			ob_start();
 			?>
-			// Gateway credentials data
-			var braintree_gateway_credentials = <?php echo $braintree_gateway_credentials; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Data is already JSON encoded ?>;
+			( function( $ ) {
+				$( function() {
+					// Gateway credentials data
+					var braintree_gateway_credentials = <?php echo $braintree_gateway_credentials; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Data is already JSON encoded ?>;
 
-			// Show/hide credential and environment fields based on inherit_settings_source selection
-			$( '#woocommerce_<?php echo esc_js( $this->get_id() ); ?>_inherit_settings_source' ).on( 'change', function() {
-				var source = $( this ).val();
-				var $credentialFields = $( '.environment-field' ).closest( 'tr' );
-				var $environmentField = $( '#woocommerce_<?php echo esc_js( $this->get_id() ); ?>_environment' ).closest( 'tr' );
-				var $environmentSelect = $( '#woocommerce_<?php echo esc_js( $this->get_id() ); ?>_environment' );
-				var gatewayId = '<?php echo esc_js( $this->get_id() ); ?>';
+					// Show/hide credential and environment fields based on inherit_settings_source selection
+					$( '#woocommerce_<?php echo esc_js( $this->get_id() ); ?>_inherit_settings_source' ).on( 'change', function() {
+						var source = $( this ).val();
+						var $credentialFields = $( '.environment-field' ).closest( 'tr' );
+						var $environmentField = $( '#woocommerce_<?php echo esc_js( $this->get_id() ); ?>_environment' ).closest( 'tr' );
+						var $environmentSelect = $( '#woocommerce_<?php echo esc_js( $this->get_id() ); ?>_environment' );
+						var gatewayId = '<?php echo esc_js( $this->get_id() ); ?>';
 
-				// Always show fields
-				$credentialFields.show();
-				$environmentField.show();
+						// Always show fields
+						$credentialFields.show();
+						$environmentField.show();
 
-				if ( source === 'manual' ) {
-					// Make fields editable
-					$credentialFields.find( 'input' ).prop( 'readonly', false );
-					$environmentSelect.prop( 'disabled', false );
-				} else {
-					// Make fields read-only and populate with source gateway values
-					$credentialFields.find( 'input' ).prop( 'readonly', true );
-					$environmentSelect.prop( 'disabled', true );
+						if ( source === 'manual' ) {
+							// Make fields editable
+							$credentialFields.find( 'input' ).prop( 'readonly', false );
+							$environmentSelect.prop( 'disabled', false );
+						} else {
+							// Make fields read-only and populate with source gateway values
+							$credentialFields.find( 'input' ).prop( 'readonly', true );
+							$environmentSelect.prop( 'disabled', true );
 
-					if ( braintree_gateway_credentials[ source ] ) {
-						var credentials = braintree_gateway_credentials[ source ];
+							if ( braintree_gateway_credentials[ source ] ) {
+								var credentials = braintree_gateway_credentials[ source ];
 
-						// Set environment from source gateway
-						$environmentSelect.val( credentials.environment );
+								// Set environment from source gateway
+								$environmentSelect.val( credentials.environment );
 
-						// Set credentials from source gateway
-						$( '#woocommerce_' + gatewayId + '_merchant_id' ).val( credentials.merchant_id );
-						$( '#woocommerce_' + gatewayId + '_public_key' ).val( credentials.public_key );
-						$( '#woocommerce_' + gatewayId + '_private_key' ).val( credentials.private_key );
-						$( '#woocommerce_' + gatewayId + '_sandbox_merchant_id' ).val( credentials.sandbox_merchant_id );
-						$( '#woocommerce_' + gatewayId + '_sandbox_public_key' ).val( credentials.sandbox_public_key );
-						$( '#woocommerce_' + gatewayId + '_sandbox_private_key' ).val( credentials.sandbox_private_key );
-					}
-				}
+								// Set credentials from source gateway
+								$( '#woocommerce_' + gatewayId + '_merchant_id' ).val( credentials.merchant_id );
+								$( '#woocommerce_' + gatewayId + '_public_key' ).val( credentials.public_key );
+								$( '#woocommerce_' + gatewayId + '_private_key' ).val( credentials.private_key );
+								$( '#woocommerce_' + gatewayId + '_sandbox_merchant_id' ).val( credentials.sandbox_merchant_id );
+								$( '#woocommerce_' + gatewayId + '_sandbox_public_key' ).val( credentials.sandbox_public_key );
+								$( '#woocommerce_' + gatewayId + '_sandbox_private_key' ).val( credentials.sandbox_private_key );
+							}
+						}
 
-				// Trigger environment change to show only relevant fields
-				$( '#woocommerce_<?php echo esc_js( $this->get_id() ); ?>_environment' ).change();
-			} ).change();
+						// Trigger environment change to show only relevant fields
+						$( '#woocommerce_<?php echo esc_js( $this->get_id() ); ?>_environment' ).change();
+					} ).change();
 
-			// Show/hide production vs sandbox fields based on environment selection
-			$( '#woocommerce_<?php echo esc_js( $this->get_id() ); ?>_environment' ).on( 'change', function() {
-				var environment = $( this ).val();
-				var $productionFields = $( '.production-field' ).closest( 'tr' );
-				var $sandboxFields = $( '.sandbox-field' ).closest( 'tr' );
+					// Show/hide production vs sandbox fields based on environment selection
+					$( '#woocommerce_<?php echo esc_js( $this->get_id() ); ?>_environment' ).on( 'change', function() {
+						var environment = $( this ).val();
+						var $productionFields = $( '.production-field' ).closest( 'tr' );
+						var $sandboxFields = $( '.sandbox-field' ).closest( 'tr' );
 
-				// Show/hide fields based on environment
-				if ( environment === 'production' ) {
-					$productionFields.show();
-					$sandboxFields.hide();
-				} else {
-					$productionFields.hide();
-					$sandboxFields.show();
-				}
-			} ).change();
+						// Show/hide fields based on environment
+						if ( environment === 'production' ) {
+							$productionFields.show();
+							$sandboxFields.hide();
+						} else {
+							$productionFields.hide();
+							$sandboxFields.show();
+						}
+					} ).change();
+				} );
+			} )( jQuery );
 			<?php
-			wc_enqueue_js( ob_get_clean() );
+			$javascript = ob_get_clean();
+			WC_Braintree::enqueue_inline_script( 'wc-braintree-admin-credentials', $javascript );
 		}
 
 		?>
@@ -1530,19 +1540,20 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 		</style>
 
 		<?php ob_start(); ?>
+		( function( $ ) {
+			$( function() {
+				$( document.body ).on( 'click', '.wc-braintree-auth.disabled .wc-braintree-connect-button', function( e ) {
+					e.preventDefault();
+				} );
 
-		$( document.body ).on( 'click', '.wc-braintree-auth.disabled .wc-braintree-connect-button', function( e ) {
-			e.preventDefault();
-		} );
+				<?php
+				// hide the "manually connect" toggle if already connected via Braintree Auth.
+				if ( $this->is_connected() ) :
+					?>
+					$( '#woocommerce_<?php echo esc_js( $this->get_id() ); ?>_connect_manually' ).closest( 'tr' ).hide();
+				<?php endif; ?>
 
-		<?php
-		// hide the "manually connect" toggle if already connected via Braintree Auth.
-		if ( $this->is_connected() ) :
-			?>
-			$( '#woocommerce_<?php echo esc_js( $this->get_id() ); ?>_connect_manually' ).closest( 'tr' ).hide();
-		<?php endif; ?>
-
-		$( '#woocommerce_<?php echo esc_js( $this->get_id() ); ?>_connect_manually' ).change( function() {
+				$( '#woocommerce_<?php echo esc_js( $this->get_id() ); ?>_connect_manually' ).change( function() {
 
 			var $environment = $( '#woocommerce_<?php echo esc_js( $this->get_id() ); ?>_environment' ).val();
 
@@ -1808,9 +1819,11 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 			$icon.removeClass( 'dashicons-no-alt' ).addClass( 'dashicons-yes' );
 			$( this ).addClass( 'js-dynamic-descriptor-valid' ).removeClass( 'js-dynamic-descriptor-invalid' );
 		} ).change();
+			} );
+		} )( jQuery );
 		<?php
-
-		wc_enqueue_js( ob_get_clean() );
+		$javascript = ob_get_clean();
+		WC_Braintree::enqueue_inline_script( 'wc-braintree-admin-settings', $javascript, [ 'jquery', 'wp-i18n' ] );
 	}
 
 

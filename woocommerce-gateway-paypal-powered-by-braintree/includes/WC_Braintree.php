@@ -38,7 +38,7 @@ class WC_Braintree extends Framework\SV_WC_Payment_Gateway_Plugin {
 
 
 	/** plugin version number */
-	const VERSION = '3.9.0'; // WRCS: DEFINED_VERSION.
+	const VERSION = '3.10.0'; // WRCS: DEFINED_VERSION.
 
 	/** Braintree JS SDK version  */
 	const BRAINTREE_JS_SDK_VERSION = '3.129.1';
@@ -692,10 +692,10 @@ class WC_Braintree extends Framework\SV_WC_Payment_Gateway_Plugin {
 
 			$this->get_admin_notice_handler()->add_admin_notice(
 				sprintf(
-					/* translators: Placeholders: %1$s - gateway title, %2$s - accepted currency/currencies, %3$s - current currency code, %4$s - <a> tag, %5$s - </a> tag */
+					/* translators: Placeholders: %1$s - gateway title, %2$s - accepted currency/currencies, %3$s - current currency code, %4$s - <a> tag, %5$s - </a> tag, %6$s - <a> tag, %7$s - </a> tag */
 					_n(
-						'%1$s gateway only accepts payments in %2$s, but your store currency is currently set to %3$s. %4$sChange the store currency%5$s to enable this gateway at checkout.',
-						'%1$s gateway only accepts payments in one of the following currencies: %2$s, but your store currency is currently set to %3$s. %4$sChange the store currency%5$s to enable this gateway at checkout.',
+						'%1$s gateway only accepts payments in %2$s, but your store currency is currently set to %3$s. %4$sChange the store currency%5$s to enable this gateway at checkout. Alternatively, you can %6$sdisable this gateway%7$s.',
+						'%1$s gateway only accepts payments in one of the following currencies: %2$s, but your store currency is currently set to %3$s. %4$sChange the store currency%5$s to enable this gateway at checkout. Alternatively, you can %6$sdisable this gateway%7$s.',
 						count( $accepted_currencies ),
 						'woocommerce-gateway-paypal-powered-by-braintree'
 					),
@@ -703,6 +703,8 @@ class WC_Braintree extends Framework\SV_WC_Payment_Gateway_Plugin {
 					'<strong>' . esc_html( implode( ', ', $accepted_currencies ) ) . '</strong>',
 					'<strong>' . esc_html( $store_currency ) . '</strong>',
 					'<a href="' . esc_url( admin_url( 'admin.php?page=wc-settings&tab=general' ) ) . '">',
+					'</a>',
+					'<a href="' . esc_url( admin_url( 'admin.php?page=wc-settings&tab=checkout&section=' . $gateway->get_id() ) ) . '">',
 					'</a>'
 				),
 				$notice_id,
@@ -1129,6 +1131,23 @@ class WC_Braintree extends Framework\SV_WC_Payment_Gateway_Plugin {
 		}
 
 		Logger::notice( $message, [ 'gateway' => $log_id ] );
+	}
+
+	/**
+	 * Registers, enqueues, and adds an inline script (replaces repeated wp_register_script + wp_enqueue_script + wp_add_inline_script).
+	 *
+	 * @since 3.10.0
+	 * @param string      $script_handle  Script handle.
+	 * @param string      $javascript     Inline JavaScript code.
+	 * @param array       $dependencies   Optional. Script dependencies. Default [ 'jquery' ].
+	 * @param string|null $version        Optional. Script version. Default WC_Braintree::VERSION.
+	 * @param bool        $in_footer      Optional. Whether to enqueue in footer. Default true.
+	 */
+	public static function enqueue_inline_script( string $script_handle, string $javascript, array $dependencies = [ 'jquery' ], ?string $version = null, bool $in_footer = true ): void {
+		$version = $version ?? self::VERSION;
+		wp_register_script( $script_handle, '', $dependencies, $version, $in_footer );
+		wp_enqueue_script( $script_handle );
+		wp_add_inline_script( $script_handle, $javascript );
 	}
 } // end \WC_Braintree
 
