@@ -1,5 +1,16 @@
 *** Changelog ***
 
+= 3.11.0 - 2026-06-15 =
+* Update - Rebrand the plugin title and related display surfaces from "Braintree" to "PayPal Enterprise Payments".
+* Tweak - Improved error messages for local payment methods.
+* Tweak - Improve the UI for test-mode payment methods in checkout pages.
+* Fix - Ensure Local Payment Methods work properly on the pay-for-order page.
+* Fix - Hide Google Pay express button when Google Pay is disabled on the merchant's Braintree account.
+* Dev - Move the credentials inheritance settings JavaScript from inline PHP to a standalone admin script for improved maintainability.
+* Dev - Bump WooCommerce "tested up to" version 10.8.
+* Dev - Bump WooCommerce minimum supported version to 10.6.
+* Dev - Add additional E2E tests for better coverage.
+
 = 3.10.0 - 2026-04-22 =
 * Add - Introduce `wc_braintree_get_remote_configuration` filter to allow merchants to provide hardcoded remote configurations and improve performance with gateway configuration caching.
 * Fix - Apple Pay and Google Pay buttons on block-based Cart and Checkout pages now respect the "Allow on" display settings.

@@ -87,8 +87,8 @@ class WC_Gateway_Braintree_PayPal extends WC_Gateway_Braintree {
 			WC_Braintree::PAYPAL_GATEWAY_ID,
 			wc_braintree(),
 			array(
-				'method_title'       => __( 'Braintree (PayPal)', 'woocommerce-gateway-paypal-powered-by-braintree' ),
-				'method_description' => __( 'Allow customers to securely pay using their PayPal account via Braintree.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+				'method_title'       => __( 'PayPal Enterprise Payments (PayPal)', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+				'method_description' => __( 'Allow customers to securely pay using their PayPal account via PayPal Enterprise Payments.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
 				'supports'           => array(
 					self::FEATURE_PRODUCTS,
 					self::FEATURE_CARD_TYPES,

@@ -156,12 +156,58 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 	}
 
 	/**
+	 * Returns a masked version of a private key, showing only the last 4 characters.
+	 *
+	 * @since 3.11.0
+	 *
+	 * @param string $key The private key to mask.
+	 * @return string The masked key, or empty string if key is empty.
+	 */
+	public function mask_private_key( string $key ): string {
+		if ( '' === $key ) {
+			return '';
+		}
+
+		$length = strlen( $key );
+
+		if ( $length > 4 ) {
+			return str_repeat( self::MASKED_KEY_CHAR, $length - 4 ) . substr( $key, -4 );
+		}
+
+		return str_repeat( self::MASKED_KEY_CHAR, $length );
+	}
+
+	/**
+	 * Checks whether a value is a masked private key placeholder.
+	 *
+	 * @since 3.11.0
+	 *
+	 * @param string $value The value to check.
+	 * @return bool Whether the value starts with the masked key character.
+	 */
+	public function is_masked_private_key( string $value ): bool {
+		if ( '' === $value ) {
+			return false;
+		}
+
+		return Framework\SV_WC_Helper::str_starts_with( $value, self::MASKED_KEY_CHAR );
+	}
+
+	/**
 	 * Stores credentials from all gateway sources for populating read-only fields.
 	 *
 	 * @since 3.7.0
 	 * @var array
 	 */
 	protected $gateway_credentials = array();
+
+	/**
+	 * Character used for masked private key placeholders.
+	 *
+	 * @since 3.11.0
+	 * @var string
+	 */
+	const MASKED_KEY_CHAR = '•';
 
 	/**
 	 * Whether credentials are unavailable for this gateway.
@@ -248,7 +294,7 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 	protected function get_admin_params() {
 		$merchant_account_configuration_params = $this->get_merchant_account_configuration_params();
 
-		return array(
+		$params = array(
 			'merchant_accounts_by_currency' => $merchant_account_configuration_params['merchant_accounts_by_currency'],
 			'current_values_by_currency'    => $merchant_account_configuration_params['current_values_by_currency'],
 			'gateway_id'                    => $this->get_id(),
@@ -260,6 +306,15 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 			'merchant_account_id_title'     => esc_html__( 'Merchant Account ID (%s)', 'woocommerce-gateway-paypal-powered-by-braintree' ),
 			'remove_merchant_account_title' => esc_attr__( 'Remove this merchant account ID', 'woocommerce-gateway-paypal-powered-by-braintree' ),
 		);
+
+		// Expose credential inheritance data only when this gateway supports shared settings,
+		// so the standalone admin script (src/js/admin/wc-braintree.js) can populate read-only
+		// fields when the merchant inherits credentials from a sibling gateway.
+		if ( ! empty( $this->shared_settings_names ) ) {
+			$params['gateway_credentials'] = $this->gateway_credentials;
+		}
+
+		return $params;
 	}
 
 	/**
@@ -459,6 +514,17 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 				$domain          = preg_replace( '/^www\./', '', $site_url );
 				$args['domains'] = array( $domain );
 			}
+
+			/**
+			 * Allow filtering the client token args for custom integrations that may need to pass
+			 * additional parameters to Braintree when generating the client token.
+			 *
+			 * @since 3.11.0
+			 *
+			 * @param array $args The client token args.
+			 * @param WC_Gateway_Braintree $gateway The gateway instance making the request.
+			 */
+			$args = apply_filters( 'wc_braintree_client_token_args', $args, $this );
 
 			$result = $this->get_api()->get_client_token( $args );
 
@@ -870,7 +936,7 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 				),
 				'private_key'         => array(
 					'title'    => __( 'Private Key', 'woocommerce-gateway-paypal-powered-by-braintree' ),
-					'type'     => 'password',
+					'type'     => 'masked_password',
 					'class'    => 'environment-field production-field',
 					'desc_tip' => __( 'The Private Key for your Braintree account.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
 				),
@@ -889,7 +955,7 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 				),
 				'sandbox_private_key' => array(
 					'title'    => __( 'Sandbox Private Key', 'woocommerce-gateway-paypal-powered-by-braintree' ),
-					'type'     => 'password',
+					'type'     => 'masked_password',
 					'class'    => 'environment-field sandbox-field',
 					'desc_tip' => __( 'The Private Key for your Braintree sandbox account.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
 				),
@@ -1019,10 +1085,10 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 					'environment'         => isset( $gateway_settings['environment'] ) ? $gateway_settings['environment'] : 'production',
 					'merchant_id'         => isset( $gateway_settings['merchant_id'] ) ? $gateway_settings['merchant_id'] : '',
 					'public_key'          => isset( $gateway_settings['public_key'] ) ? $gateway_settings['public_key'] : '',
-					'private_key'         => isset( $gateway_settings['private_key'] ) ? $gateway_settings['private_key'] : '',
+					'private_key'         => $this->mask_private_key( isset( $gateway_settings['private_key'] ) ? $gateway_settings['private_key'] : '' ),
 					'sandbox_merchant_id' => isset( $gateway_settings['sandbox_merchant_id'] ) ? $gateway_settings['sandbox_merchant_id'] : '',
 					'sandbox_public_key'  => isset( $gateway_settings['sandbox_public_key'] ) ? $gateway_settings['sandbox_public_key'] : '',
-					'sandbox_private_key' => isset( $gateway_settings['sandbox_private_key'] ) ? $gateway_settings['sandbox_private_key'] : '',
+					'sandbox_private_key' => $this->mask_private_key( isset( $gateway_settings['sandbox_private_key'] ) ? $gateway_settings['sandbox_private_key'] : '' ),
 				);
 			}
 		}
@@ -1137,8 +1203,8 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 				echo wc_help_tip( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 					sprintf( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 						'%s<br><br>%s<br><br>%s',
-						__( 'You just connected your Braintree account to WooCommerce. You can start taking payments now.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
-						__( 'Once you have processed a payment, PayPal will review your application for final approval. Before you ship any goods make sure you have received a final approval for your Braintree account.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+						__( 'You just connected your PayPal Enterprise Payments account to WooCommerce. You can start taking payments now.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+						__( 'Once you have processed a payment, PayPal will review your application for final approval. Before you ship any goods make sure you have received a final approval for your PayPal Enterprise Payments account.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
 						__( 'Questions? We are a phone call away: 1-855-489-0345.', 'woocommerce-gateway-paypal-powered-by-braintree' )
 					)
 				);
@@ -1152,7 +1218,7 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 					class="button-primary"
 				>
 				<?php
-					echo esc_html__( 'Disconnect from Braintree for WooCommerce', 'woocommerce-gateway-paypal-powered-by-braintree' );
+					echo esc_html__( 'Disconnect from PayPal Enterprise Payments', 'woocommerce-gateway-paypal-powered-by-braintree' );
 				?>
 				</a>
 			</td>
@@ -1163,7 +1229,7 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 				<div class="wc-backbone-modal-content">
 					<section class="wc-backbone-modal-main" role="main">
 						<header class="wc-backbone-modal-header">
-							<h1><?php esc_html_e( 'Braintree for WooCommerce', 'woocommerce-gateway-paypal-powered-by-braintree' ); ?></h1>
+							<h1><?php esc_html_e( 'PayPal Enterprise Payments', 'woocommerce-gateway-paypal-powered-by-braintree' ); ?></h1>
 							<button class="modal-close modal-close-link dashicons dashicons-no-alt">
 								<span class="screen-reader-text"><?php esc_html_e( 'Close modal panel and cancel', 'woocommerce-gateway-paypal-powered-by-braintree' ); ?></span>
 							</button>
@@ -1224,6 +1290,91 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 		WC_Braintree::enqueue_inline_script( 'wc-braintree-auth-disconnect', $javascript );
 
 		return $field;
+	}
+
+
+	/**
+	 * Generates HTML for the masked_password field type.
+	 *
+	 * Renders a text input with the stored value replaced by a masked placeholder
+	 * to prevent private key exposure in page source.
+	 *
+	 * @since 3.11.0
+	 *
+	 * @param string $key  Field key.
+	 * @param array  $data Field data.
+	 * @return string The field HTML.
+	 */
+	public function generate_masked_password_html( $key, $data ) {
+		$field_key = $this->get_field_key( $key );
+		$defaults  = array(
+			'title'             => '',
+			'disabled'          => false,
+			'class'             => '',
+			'css'               => '',
+			'placeholder'       => '',
+			'type'              => 'text',
+			'desc_tip'          => false,
+			'description'       => '',
+			'custom_attributes' => array(),
+		);
+
+		$data  = wp_parse_args( $data, $defaults );
+		$value = $this->mask_private_key( $this->get_option( $key ) );
+
+		ob_start();
+		?>
+		<tr valign="top">
+			<th scope="row" class="titledesc">
+				<label for="<?php echo esc_attr( $field_key ); ?>">
+					<?php echo wp_kses_post( $data['title'] ); ?>
+					<?php echo $this->get_tooltip_html( $data ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+				</label>
+			</th>
+			<td class="forminp">
+				<fieldset>
+					<legend class="screen-reader-text"><span><?php echo wp_kses_post( $data['title'] ); ?></span></legend>
+					<input
+						class="input-text regular-input <?php echo esc_attr( $data['class'] ); ?>"
+						type="text"
+						name="<?php echo esc_attr( $field_key ); ?>"
+						id="<?php echo esc_attr( $field_key ); ?>"
+						style="<?php echo esc_attr( $data['css'] ); ?>"
+						value="<?php echo esc_attr( $value ); ?>"
+						placeholder="<?php echo esc_attr( $data['placeholder'] ); ?>"
+						<?php disabled( $data['disabled'], true ); ?>
+						<?php echo $this->get_custom_attribute_html( $data ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+					/>
+					<?php echo $this->get_description_html( $data ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+				</fieldset>
+			</td>
+		</tr>
+		<?php
+
+		return ob_get_clean();
+	}
+
+
+	/**
+	 * Validates a masked_password field value during save.
+	 *
+	 * If the submitted value is a masked placeholder (unchanged by the user),
+	 * returns the existing stored value. Otherwise returns the new value as-is.
+	 *
+	 * @since 3.11.0
+	 *
+	 * @param string $key   Field key.
+	 * @param string $value The submitted field value.
+	 * @return string The value to save.
+	 */
+	public function validate_masked_password_field( $key, $value ) {
+		$value = is_null( $value ) ? '' : wc_clean( $value );
+
+		if ( $this->is_masked_private_key( $value ) ) {
+			return $this->get_option( $key );
+		}
+
+		return $value;
 	}
 
 
@@ -1429,80 +1580,6 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 	public function admin_options() {
 
 		parent::admin_options();
-
-		// Add JavaScript to toggle credential and environment fields visibility based on inherit_settings_source.
-		if ( ! empty( $this->shared_settings_names ) ) {
-			$braintree_gateway_credentials = wp_json_encode( $this->gateway_credentials );
-
-			ob_start();
-			?>
-			( function( $ ) {
-				$( function() {
-					// Gateway credentials data
-					var braintree_gateway_credentials = <?php echo $braintree_gateway_credentials; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Data is already JSON encoded ?>;
-
-					// Show/hide credential and environment fields based on inherit_settings_source selection
-					$( '#woocommerce_<?php echo esc_js( $this->get_id() ); ?>_inherit_settings_source' ).on( 'change', function() {
-						var source = $( this ).val();
-						var $credentialFields = $( '.environment-field' ).closest( 'tr' );
-						var $environmentField = $( '#woocommerce_<?php echo esc_js( $this->get_id() ); ?>_environment' ).closest( 'tr' );
-						var $environmentSelect = $( '#woocommerce_<?php echo esc_js( $this->get_id() ); ?>_environment' );
-						var gatewayId = '<?php echo esc_js( $this->get_id() ); ?>';
-
-						// Always show fields
-						$credentialFields.show();
-						$environmentField.show();
-
-						if ( source === 'manual' ) {
-							// Make fields editable
-							$credentialFields.find( 'input' ).prop( 'readonly', false );
-							$environmentSelect.prop( 'disabled', false );
-						} else {
-							// Make fields read-only and populate with source gateway values
-							$credentialFields.find( 'input' ).prop( 'readonly', true );
-							$environmentSelect.prop( 'disabled', true );
-
-							if ( braintree_gateway_credentials[ source ] ) {
-								var credentials = braintree_gateway_credentials[ source ];
-
-								// Set environment from source gateway
-								$environmentSelect.val( credentials.environment );
-
-								// Set credentials from source gateway
-								$( '#woocommerce_' + gatewayId + '_merchant_id' ).val( credentials.merchant_id );
-								$( '#woocommerce_' + gatewayId + '_public_key' ).val( credentials.public_key );
-								$( '#woocommerce_' + gatewayId + '_private_key' ).val( credentials.private_key );
-								$( '#woocommerce_' + gatewayId + '_sandbox_merchant_id' ).val( credentials.sandbox_merchant_id );
-								$( '#woocommerce_' + gatewayId + '_sandbox_public_key' ).val( credentials.sandbox_public_key );
-								$( '#woocommerce_' + gatewayId + '_sandbox_private_key' ).val( credentials.sandbox_private_key );
-							}
-						}
-
-						// Trigger environment change to show only relevant fields
-						$( '#woocommerce_<?php echo esc_js( $this->get_id() ); ?>_environment' ).change();
-					} ).change();
-
-					// Show/hide production vs sandbox fields based on environment selection
-					$( '#woocommerce_<?php echo esc_js( $this->get_id() ); ?>_environment' ).on( 'change', function() {
-						var environment = $( this ).val();
-						var $productionFields = $( '.production-field' ).closest( 'tr' );
-						var $sandboxFields = $( '.sandbox-field' ).closest( 'tr' );
-
-						// Show/hide fields based on environment
-						if ( environment === 'production' ) {
-							$productionFields.show();
-							$sandboxFields.hide();
-						} else {
-							$productionFields.hide();
-							$sandboxFields.show();
-						}
-					} ).change();
-				} );
-			} )( jQuery );
-			<?php
-			$javascript = ob_get_clean();
-			WC_Braintree::enqueue_inline_script( 'wc-braintree-admin-credentials', $javascript );
-		}
 
 		?>
 		<style type="text/css">

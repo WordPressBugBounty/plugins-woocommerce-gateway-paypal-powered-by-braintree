@@ -395,7 +395,7 @@ abstract class WC_Gateway_Braintree_Local_Payment extends WC_Gateway_Braintree {
 		// Set the correct payment method title on the order.
 		$title = sprintf(
 			/* translators: %s - Local payment method display name (e.g. "BLIK", "Przelewy24"). */
-			__( '%s (Braintree Local Payment Method)', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+			__( '%s (PayPal Enterprise Payments Local Payment Method)', 'woocommerce-gateway-paypal-powered-by-braintree' ),
 			$this->get_local_payment_display_name()
 		);
 		$order->set_payment_method_title( $title );

@@ -50,8 +50,8 @@ class WC_Gateway_Braintree_ACH extends WC_Gateway_Braintree {
 			WC_Braintree::ACH_GATEWAY_ID,
 			wc_braintree(),
 			array(
-				'method_title'       => __( 'Braintree (ACH Direct Debit)', 'woocommerce-gateway-paypal-powered-by-braintree' ),
-				'method_description' => __( 'Allow customers to securely pay using ACH Direct Debit via Braintree.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+				'method_title'       => __( 'PayPal Enterprise Payments (ACH Direct Debit)', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+				'method_description' => __( 'Allow customers to securely pay using ACH Direct Debit via PayPal Enterprise Payments.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
 				'supports'           => array(
 					self::FEATURE_PRODUCTS,
 					self::FEATURE_PAYMENT_FORM,

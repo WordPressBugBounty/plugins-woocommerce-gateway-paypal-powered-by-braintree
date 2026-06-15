@@ -285,59 +285,21 @@ class WC_Braintree_Hosted_Fields_Payment_Form extends WC_Braintree_Payment_Form 
 			echo '<input type="hidden" name="wc-' . esc_attr( $this->get_gateway()->get_id_dasherized() ) . '-cart-contains-subscription" value="1" />';
 		}
 
-		// add hidden inputs for billing information on the order pay page (so we can send it for 3D Secure).
-		$order_id = $this->get_gateway()->get_checkout_pay_page_order_id();
-		if ( is_checkout_pay_page() && $order_id ) {
+		// Render the 3DS order total. On pay-for-order, gate the input on the
+		// shared can_view_pay_page_order() check so we don't leak the order
+		// total to unauthorized viewers.
+		if ( is_checkout_pay_page() ) {
 
-			$order = wc_get_order( $order_id );
-
-			$is_valid_order = $order instanceof \WC_Order;
-			$can_view_order = false;
-
-			// On the order pay page, verify order ownership before rendering order data for 3D Secure.
-			if ( $is_valid_order ) {
-				if ( $order->get_customer_id() ) {
-					$can_view_order = (int) $order->get_customer_id() === (int) get_current_user_id();
-				} else {
-					$can_view_order = $order->key_is_valid( sanitize_text_field( wp_unslash( $_GET['key'] ?? '' ) ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-				}
-			}
-
-			if ( $is_valid_order && $can_view_order ) {
-
+			if ( $this->can_view_pay_page_order() ) {
 				$order_total = $this->get_order_total_for_3d_secure();
-
 				echo '<input type="hidden" name="wc-' . esc_attr( $this->get_gateway()->get_id_dasherized() ) . '-3d-secure-order-total" value="' . esc_attr( Framework\SV_WC_Helper::number_format( $order_total ) ) . '" />';
-
-				echo '<input type="hidden" name="billing_first_name" value="' . esc_attr( $order->get_billing_first_name( 'edit' ) ) . '" />';
-				echo '<input type="hidden" name="billing_last_name" value="' . esc_attr( $order->get_billing_last_name( 'edit' ) ) . '" />';
-				echo '<input type="hidden" name="billing_phone" value="' . esc_attr( $order->get_billing_phone( 'edit' ) ) . '" />';
-				echo '<input type="hidden" name="billing_address_1" value="' . esc_attr( $order->get_billing_address_1( 'edit' ) ) . '" />';
-				echo '<input type="hidden" name="billing_address_2" value="' . esc_attr( $order->get_billing_address_2( 'edit' ) ) . '" />';
-				echo '<input type="hidden" name="billing_postcode" value="' . esc_attr( $order->get_billing_postcode( 'edit' ) ) . '" />';
-				echo '<input type="hidden" name="billing_email" value="' . esc_attr( $order->get_billing_email( 'edit' ) ) . '" />';
-
-				echo '<input type="hidden" id="billing_city" value="' . esc_attr( $order->get_billing_city( 'edit' ) ) . '" />';
-				echo '<input type="hidden" id="billing_state" value="' . esc_attr( $order->get_billing_state( 'edit' ) ) . '" />';
-				echo '<input type="hidden" id="billing_country" value="' . esc_attr( $order->get_billing_country( 'edit' ) ) . '" />';
-
-				if ( $order->has_shipping_address() ) {
-
-					echo '<input type="hidden" name="shipping_first_name" value="' . esc_attr( $order->get_shipping_first_name( 'edit' ) ) . '" />';
-					echo '<input type="hidden" name="shipping_last_name" value="' . esc_attr( $order->get_shipping_last_name( 'edit' ) ) . '" />';
-					echo '<input type="hidden" name="shipping_address_1" value="' . esc_attr( $order->get_shipping_address_1( 'edit' ) ) . '" />';
-					echo '<input type="hidden" name="shipping_address_2" value="' . esc_attr( $order->get_shipping_address_2( 'edit' ) ) . '" />';
-					echo '<input type="hidden" name="shipping_city" value="' . esc_attr( $order->get_shipping_city( 'edit' ) ) . '" />';
-					echo '<input type="hidden" name="shipping_postcode" value="' . esc_attr( $order->get_shipping_postcode( 'edit' ) ) . '" />';
-
-					echo '<input type="hidden" id="shipping_state" value="' . esc_attr( $order->get_shipping_state( 'edit' ) ) . '" />';
-					echo '<input type="hidden" id="shipping_country" value="' . esc_attr( $order->get_shipping_country( 'edit' ) ) . '" />';
-				}
 			}
+
+			$this->render_pay_page_billing_inputs();
+
 		} else {
 
 			$order_total = $this->get_order_total_for_3d_secure();
-
 			echo '<input type="hidden" name="wc-' . esc_attr( $this->get_gateway()->get_id_dasherized() ) . '-3d-secure-order-total" value="' . esc_attr( Framework\SV_WC_Helper::number_format( $order_total ) ) . '" />';
 		}
 

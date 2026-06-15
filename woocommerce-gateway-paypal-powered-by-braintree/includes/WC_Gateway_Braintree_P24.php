@@ -44,8 +44,8 @@ class WC_Gateway_Braintree_P24 extends WC_Gateway_Braintree_Local_Payment {
 		parent::__construct(
 			WC_Braintree::P24_GATEWAY_ID,
 			[
-				'method_title'       => __( 'Braintree (Przelewy24)', 'woocommerce-gateway-paypal-powered-by-braintree' ),
-				'method_description' => __( 'Allow customers to pay using Przelewy24 via Braintree.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+				'method_title'       => __( 'PayPal Enterprise Payments (Przelewy24)', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+				'method_description' => __( 'Allow customers to pay using Przelewy24 via PayPal Enterprise Payments.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
 				'currencies'         => [ 'EUR', 'PLN' ],
 			]
 		);

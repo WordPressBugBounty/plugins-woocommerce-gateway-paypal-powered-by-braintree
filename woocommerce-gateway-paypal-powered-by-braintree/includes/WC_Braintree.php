@@ -38,7 +38,7 @@ class WC_Braintree extends Framework\SV_WC_Payment_Gateway_Plugin {
 
 
 	/** plugin version number */
-	const VERSION = '3.10.0'; // WRCS: DEFINED_VERSION.
+	const VERSION = '3.11.0'; // WRCS: DEFINED_VERSION.
 
 	/** Braintree JS SDK version  */
 	const BRAINTREE_JS_SDK_VERSION = '3.129.1';
@@ -176,6 +176,82 @@ class WC_Braintree extends Framework\SV_WC_Payment_Gateway_Plugin {
 		add_filter( 'woocommerce_my_subscriptions_payment_method', array( $this, 'maybe_filter_my_subscriptions_payment_method' ), 15, 2 );
 		add_action( 'woocommerce_payment_token_class', array( $this, 'filter_payment_token_classname' ), 10, 2 );
 		add_filter( 'woocommerce_saved_payment_methods_list', array( $this, 'add_brand_information' ), 99 );
+
+		// Test-mode UI: append a "Test" badge to Braintree gateway titles, and
+		// print the inline clipboard-copy handler for sandbox-credential helpers.
+		\WC_Braintree\Test_Mode_Badge::register();
+		add_action( 'wp_footer', array( $this, 'print_test_mode_clipboard_script' ), 20 );
+	}
+
+	/**
+	 * Prints an inline clipboard-copy script on classic checkout when at least one
+	 * Braintree gateway is running in sandbox mode.
+	 *
+	 * Binds click handlers to `[data-wc-braintree-copy]` buttons emitted by the
+	 * Test_Mode_UI_Trait. Feature-detects `navigator.clipboard.writeText`; if the
+	 * API is unavailable the copy buttons remain `hidden`.
+	 */
+	public function print_test_mode_clipboard_script(): void {
+		if ( ! function_exists( 'is_checkout' ) || ! is_checkout() ) {
+			return;
+		}
+		if ( ! \WC_Braintree\Test_Mode_Badge::any_gateway_in_sandbox() ) {
+			return;
+		}
+		?>
+		<script>
+		( function () {
+			if ( ! navigator.clipboard || typeof navigator.clipboard.writeText !== 'function' ) {
+				return;
+			}
+			var copiedText = <?php echo wp_json_encode( __( 'Copied!', 'woocommerce-gateway-paypal-powered-by-braintree' ) ); ?>;
+
+			function unhideCopyButtons() {
+				var buttons = document.querySelectorAll( '[data-wc-braintree-copy][hidden]' );
+				for ( var i = 0; i < buttons.length; i++ ) {
+					buttons[ i ].hidden = false;
+				}
+			}
+
+			unhideCopyButtons();
+
+			document.body.addEventListener( 'click', function ( event ) {
+				var button = event.target && event.target.closest
+					? event.target.closest( '[data-wc-braintree-copy]' )
+					: null;
+				if ( ! button ) {
+					return;
+				}
+				var container = button.closest( '.wc-braintree-test-mode-copy' );
+				if ( ! container ) {
+					return;
+				}
+				var valueNode = container.querySelector( '[data-wc-braintree-copy-value]' );
+				if ( ! valueNode ) {
+					return;
+				}
+				// Card-number spaces are intentional; only strip surrounding whitespace.
+				navigator.clipboard
+					.writeText( valueNode.textContent.trim() )
+					.then( function () {
+						var feedback = button.querySelector( '[data-wc-braintree-copy-feedback]' );
+						if ( ! feedback ) {
+							return;
+						}
+						feedback.textContent = copiedText;
+						setTimeout( function () { feedback.textContent = ''; }, 2000 );
+					} )
+					.catch( function () {
+						// Silently ignore permission denials — feedback stays empty.
+					} );
+			} );
+
+			if ( window.jQuery ) {
+				window.jQuery( document.body ).on( 'updated_checkout', unhideCopyButtons );
+			}
+		} )();
+		</script>
+		<?php
 	}
 
 	/**
@@ -411,7 +487,7 @@ class WC_Braintree extends Framework\SV_WC_Payment_Gateway_Plugin {
 				$message = esc_html__( 'Connected successfully.', 'woocommerce-gateway-paypal-powered-by-braintree' );
 				$class   = 'updated';
 			} else {
-				$message = esc_html__( 'There was an error connecting your Braintree account. Please try again.', 'woocommerce-gateway-paypal-powered-by-braintree' );
+				$message = esc_html__( 'There was an error connecting your PayPal Enterprise Payments account. Please try again.', 'woocommerce-gateway-paypal-powered-by-braintree' );
 				$class   = 'error';
 			}
 
@@ -624,7 +700,7 @@ class WC_Braintree extends Framework\SV_WC_Payment_Gateway_Plugin {
 			$this->get_admin_notice_handler()->add_admin_notice(
 				sprintf(
 					/* translators: Placeholders: %1$s - <a> tag, %2$s - </a> tag */
-						esc_html__( 'Heads up! You\'ve enabled advanced fraud tools for Braintree. Please make sure that advanced fraud tools are also enabled in your Braintree account. Need help? See the %1$sdocumentation%2$s.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+					esc_html__( 'Heads up! You\'ve enabled advanced fraud tools for PayPal Enterprise Payments. Please make sure that advanced fraud tools are also enabled in your account. Need help? See the %1$sdocumentation%2$s.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
 					'<a target="_blank" href="' . esc_url( $this->get_documentation_url() ) . '">',
 					'</a>'
 				), 'fraud-tool-notice', array( 'always_show_on_settings' => false, 'dismissible' => true, 'notice_class' => 'updated' )
@@ -642,7 +718,7 @@ class WC_Braintree extends Framework\SV_WC_Payment_Gateway_Plugin {
 				$this->get_admin_notice_handler()->add_admin_notice(
 					sprintf(
 						/* translators: Placeholders: %1$s - <a> tag, %2$s - </a> tag */
-						__( 'Braintree for WooCommerce is almost ready. To get started, %1$sconnect your Braintree account%2$s.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+						__( 'PayPal Enterprise Payments is almost ready. To get started, %1$sconnect your PayPal Enterprise Payments account%2$s.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
 						'<a href="' . esc_url( $this->get_settings_url() ) . '">', '</a>'
 					), 'install-notice', array( 'notice_class' => 'updated' )
 				);
@@ -654,7 +730,7 @@ class WC_Braintree extends Framework\SV_WC_Payment_Gateway_Plugin {
 				$this->get_admin_notice_handler()->add_admin_notice(
 					sprintf(
 						/* translators: Placeholders: %1$s - <a> tag, %2$s - </a> tag */
-						__( 'Upgrade successful! WooCommerce Braintree deactivated, and Braintree for WooCommerce has been %1$sconfigured with your previous settings%2$s.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+						__( 'Upgrade successful! WooCommerce Braintree deactivated, and PayPal Enterprise Payments has been %1$sconfigured with your previous settings%2$s.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
 						'<a href="' . esc_url( $this->get_settings_url() ) . '">', '</a>'
 					), 'install-notice', array( 'notice_class' => 'updated' )
 				);
@@ -667,7 +743,7 @@ class WC_Braintree extends Framework\SV_WC_Payment_Gateway_Plugin {
 
 				if ( ! wc_checkout_is_https() && ! $this->get_admin_notice_handler()->is_notice_dismissed( 'ssl-recommended-notice' ) ) {
 
-					$this->get_admin_notice_handler()->add_admin_notice( esc_html__( 'WooCommerce is not being forced over SSL -- Using PayPal with Braintree requires that checkout to be forced over SSL.', 'woocommerce-gateway-paypal-powered-by-braintree' ), 'ssl-recommended-notice' );
+					$this->get_admin_notice_handler()->add_admin_notice( esc_html__( 'WooCommerce is not being forced over SSL -- Using PayPal Enterprise Payments requires that checkout be forced over SSL.', 'woocommerce-gateway-paypal-powered-by-braintree' ), 'ssl-recommended-notice' );
 				}
 			}
 		}
@@ -753,7 +829,7 @@ class WC_Braintree extends Framework\SV_WC_Payment_Gateway_Plugin {
 
 			$this->get_admin_notice_handler()->add_admin_notice(
 				sprintf(
-					/* translators: Placeholders: %1$s - gateway title (e.g. "Braintree (P24)"), %2$s - supported currencies (e.g. "EUR, PLN"), %3$s - <a> tag, %4$s - </a> tag */
+					/* translators: Placeholders: %1$s - gateway title (e.g. "PayPal Enterprise Payments (Przelewy24)"), %2$s - supported currencies (e.g. "EUR, PLN"), %3$s - <a> tag, %4$s - </a> tag */
 					esc_html__( '%1$s requires a Merchant Account ID configured for %2$s. %3$sConfigure a Merchant Account ID%4$s to enable this gateway at checkout.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
 					'<strong>' . esc_html( $gateway->get_method_title() ) . '</strong>',
 					'<strong>' . esc_html( implode( ', ', $gateway->get_supported_currencies() ) ) . '</strong>',
@@ -865,8 +941,8 @@ class WC_Braintree extends Framework\SV_WC_Payment_Gateway_Plugin {
 		}
 
 		$message = sprintf(
-			/* translators: Placeholders: %1$s - credential source gateway title, %2$s - current payment method title. Both have a format like "Braintree (PayPal)" or "Braintree (Credit Card)". */
-			esc_html__( '%1$s cannot process transactions, as none of the Braintree merchant accounts for the credentials from %2$s support this payment method.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+			/* translators: Placeholders: %1$s - credential source gateway title, %2$s - current payment method title. Both have a format like "PayPal Enterprise Payments (PayPal)" or "PayPal Enterprise Payments (Credit Card)". */
+			esc_html__( '%1$s cannot process transactions, as none of the merchant accounts for the credentials from %2$s support this payment method.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
 			'<strong>' . esc_html( $current_gateway->get_method_title() ) . '</strong>',
 			'<strong>' . esc_html( $credentials_source_gateway->get_method_title() ) . '</strong>',
 		);
@@ -878,7 +954,7 @@ class WC_Braintree extends Framework\SV_WC_Payment_Gateway_Plugin {
 			: $current_gateway->get_method_title();
 
 			$message .= ' ' . sprintf(
-				/* translators: Placeholders: %1$s - other gateway title, %2$s - the current gateway title. Both have the format "Braintree (PayPal)" or "Braintree (Venmo)". */
+				/* translators: Placeholders: %1$s - other gateway title, %2$s - the current gateway title. Both have the format "PayPal Enterprise Payments (PayPal)" or "PayPal Enterprise Payments (Venmo)". */
 				esc_html__( 'Try using the credentials for %1$s to see if that account supports %2$s.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
 				'<strong>' . esc_html( $other_credentials_source_gateway->get_method_title() ) . '</strong>',
 				'<strong>' . esc_html( $current_method_name ) . '</strong>',
@@ -974,7 +1050,7 @@ class WC_Braintree extends Framework\SV_WC_Payment_Gateway_Plugin {
 	 * @return string the plugin name
 	 */
 	public function get_plugin_name() {
-		return esc_html__( 'Braintree for WooCommerce Payment Gateway', 'woocommerce-gateway-paypal-powered-by-braintree' );
+		return esc_html__( 'PayPal Enterprise Payments (formerly Braintree) for WooCommerce', 'woocommerce-gateway-paypal-powered-by-braintree' );
 	}
 
 

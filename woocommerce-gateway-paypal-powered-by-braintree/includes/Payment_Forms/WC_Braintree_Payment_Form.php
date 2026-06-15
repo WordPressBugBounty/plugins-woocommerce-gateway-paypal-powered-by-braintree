@@ -36,6 +36,9 @@ defined( 'ABSPATH' ) or exit;
 abstract class WC_Braintree_Payment_Form extends Framework\SV_WC_Payment_Gateway_Payment_Form {
 
 
+	use Test_Mode_UI_Trait;
+
+
 	/**
 	 * Sets up the class.
 	 *
@@ -91,9 +94,11 @@ abstract class WC_Braintree_Payment_Form extends Framework\SV_WC_Payment_Gateway
 
 
 	/**
-	 * Render a test amount input field that can be used to override the order total
-	 * when using the gateway in sandbox mode. The order total can then be set to
-	 * various amounts to simulate various authorization/settlement responses
+	 * Renders the payment form description, including the shared test-mode UI
+	 * block when the gateway is in a test environment.
+	 *
+	 * The shared test-mode UI (including the test-amount input) is suppressed
+	 * on the Add Payment Method page.
 	 *
 	 * @link https://developers.braintreepayments.com/reference/general/testing/php
 	 *
@@ -103,23 +108,41 @@ abstract class WC_Braintree_Payment_Form extends Framework\SV_WC_Payment_Gateway
 
 		parent::render_payment_form_description();
 
-		if ( $this->get_gateway()->is_test_environment() && $this->get_gateway()->is_credit_card_gateway() ) {
-
-			?><p>Test credit card numbers: <code>378282246310005</code> or <code>4111111111111111</code></p>
-			<?php
+		if ( is_add_payment_method_page() ) {
+			return;
 		}
 
-		if ( $this->get_gateway()->is_test_environment() && ! is_add_payment_method_page() ) {
+		$this->render_test_mode_ui();
+	}
 
-			$id = 'wc-' . $this->get_gateway()->get_id_dasherized() . '-test-amount';
 
-			?>
-			<p class="form-row">
-				<label for="<?php echo esc_attr( $id ); ?>">Test Amount <span style="font-size: 10px;" class="description">- Enter a <a href="https://developers.braintreepayments.com/reference/general/testing/php#test-amounts">test amount</a> to trigger a specific error response, or leave blank to use the order total.</span></label>
-				<input type="text" id="<?php echo esc_attr( $id ); ?>" name="<?php echo esc_attr( $id ); ?>" />
-			</p>
-			<?php
+	/**
+	 * Mirrors the framework implementation while suppressing the legacy
+	 * "TEST MODE ENABLED" banner - replaced by the Test badge
+	 *
+	 * @since 3.11.0
+	 *
+	 * @return string Payment form description HTML (admin description only).
+	 */
+	public function get_payment_form_description_html() {
+
+		$description = '';
+
+		if ( $this->get_gateway()->get_description() ) {
+			$description .= '<p>' . wp_kses_post( $this->get_gateway()->get_description() ) . '</p>';
 		}
+
+		/**
+		 * Payment Gateway Payment Form Description.
+		 *
+		 * Filters the HTML rendered for payment form description.
+		 *
+		 * @since 4.0.0
+		 *
+		 * @param string                                      $description
+		 * @param Framework\SV_WC_Payment_Gateway_Payment_Form $this        payment form instance
+		 */
+		return apply_filters( 'wc_' . $this->get_gateway()->get_id() . '_payment_form_description', $description, $this );
 	}
 
 
@@ -193,6 +216,91 @@ abstract class WC_Braintree_Payment_Form extends Framework\SV_WC_Payment_Gateway
 		} else {
 
 			return WC()->cart->total;
+		}
+	}
+
+
+	/**
+	 * Determines whether the current request is authorized to see the pay-for-order's data.
+	 *
+	 * Returns true when the requester is the order's logged-in owner (for orders with a
+	 * customer_id), or when they supply a valid order key in the URL (for guest orders).
+	 * Mirrors the gate the credit-card hosted-fields form has applied since SIRT PR #1035.
+	 *
+	 * @since 3.11.0
+	 *
+	 * @return bool
+	 */
+	protected function can_view_pay_page_order(): bool {
+
+		if ( ! is_checkout_pay_page() ) {
+			return false;
+		}
+
+		$order_id = $this->get_gateway()->get_checkout_pay_page_order_id();
+
+		if ( ! $order_id ) {
+			return false;
+		}
+
+		$order = wc_get_order( $order_id );
+
+		if ( ! $order instanceof \WC_Order ) {
+			return false;
+		}
+
+		if ( $order->get_customer_id() ) {
+			return (int) $order->get_customer_id() === (int) get_current_user_id();
+		}
+
+		return $order->key_is_valid( sanitize_text_field( wp_unslash( $_GET['key'] ?? '' ) ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	}
+
+
+	/**
+	 * Renders the order's billing/shipping data as hidden inputs on the pay-for-order page.
+	 *
+	 * The pay-for-order surface (form#order_review) does not render the usual billing
+	 * fields, so gateway JS that reads them via the DOM (LPM, 3DS card flows, etc.)
+	 * gets empty values. Mirror the order's address into hidden inputs using the same
+	 * names/IDs the regular checkout uses, gated by ownership verification.
+	 *
+	 * @since 3.11.0
+	 *
+	 * @return void
+	 */
+	protected function render_pay_page_billing_inputs() {
+
+		if ( ! $this->can_view_pay_page_order() ) {
+			return;
+		}
+
+		$order = wc_get_order( $this->get_gateway()->get_checkout_pay_page_order_id() );
+
+		// name= vs id= matches what gateway JS reads (input[name=...] vs #id).
+		echo '<input type="hidden" name="billing_first_name" value="' . esc_attr( $order->get_billing_first_name( 'edit' ) ) . '" />';
+		echo '<input type="hidden" name="billing_last_name" value="' . esc_attr( $order->get_billing_last_name( 'edit' ) ) . '" />';
+		echo '<input type="hidden" name="billing_phone" value="' . esc_attr( $order->get_billing_phone( 'edit' ) ) . '" />';
+		echo '<input type="hidden" name="billing_address_1" value="' . esc_attr( $order->get_billing_address_1( 'edit' ) ) . '" />';
+		echo '<input type="hidden" name="billing_address_2" value="' . esc_attr( $order->get_billing_address_2( 'edit' ) ) . '" />';
+		echo '<input type="hidden" name="billing_postcode" value="' . esc_attr( $order->get_billing_postcode( 'edit' ) ) . '" />';
+		echo '<input type="hidden" name="billing_email" value="' . esc_attr( $order->get_billing_email( 'edit' ) ) . '" />';
+
+		echo '<input type="hidden" id="billing_city" value="' . esc_attr( $order->get_billing_city( 'edit' ) ) . '" />';
+		echo '<input type="hidden" id="billing_state" value="' . esc_attr( $order->get_billing_state( 'edit' ) ) . '" />';
+		echo '<input type="hidden" id="billing_country" value="' . esc_attr( $order->get_billing_country( 'edit' ) ) . '" />';
+
+		if ( $order->has_shipping_address() ) {
+
+			echo '<input type="hidden" name="shipping_first_name" value="' . esc_attr( $order->get_shipping_first_name( 'edit' ) ) . '" />';
+			echo '<input type="hidden" name="shipping_last_name" value="' . esc_attr( $order->get_shipping_last_name( 'edit' ) ) . '" />';
+			echo '<input type="hidden" name="shipping_address_1" value="' . esc_attr( $order->get_shipping_address_1( 'edit' ) ) . '" />';
+			echo '<input type="hidden" name="shipping_address_2" value="' . esc_attr( $order->get_shipping_address_2( 'edit' ) ) . '" />';
+			echo '<input type="hidden" name="shipping_city" value="' . esc_attr( $order->get_shipping_city( 'edit' ) ) . '" />';
+			echo '<input type="hidden" name="shipping_postcode" value="' . esc_attr( $order->get_shipping_postcode( 'edit' ) ) . '" />';
+
+			echo '<input type="hidden" id="shipping_state" value="' . esc_attr( $order->get_shipping_state( 'edit' ) ) . '" />';
+			echo '<input type="hidden" id="shipping_country" value="' . esc_attr( $order->get_shipping_country( 'edit' ) ) . '" />';
 		}
 	}
 

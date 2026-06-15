@@ -155,8 +155,8 @@ class WC_Gateway_Braintree_Credit_Card extends WC_Gateway_Braintree {
 			WC_Braintree::CREDIT_CARD_GATEWAY_ID,
 			wc_braintree(),
 			array(
-				'method_title'       => __( 'Braintree (Credit Card)', 'woocommerce-gateway-paypal-powered-by-braintree' ),
-				'method_description' => __( 'Allow customers to securely pay using their credit card via Braintree.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+				'method_title'       => __( 'PayPal Enterprise Payments (Credit Card)', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+				'method_description' => __( 'Allow customers to securely pay using their credit card via PayPal Enterprise Payments.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
 				'supports'           => $supports,
 				'payment_type'       => self::PAYMENT_TYPE_CREDIT_CARD,
 				'environments'       => $this->get_braintree_environments(),

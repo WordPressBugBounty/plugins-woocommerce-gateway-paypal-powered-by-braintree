@@ -79,6 +79,7 @@ final class WC_Gateway_Braintree_ACH_Blocks_Support extends WC_Gateway_Braintree
 				'client_token_nonce'         => wp_create_nonce( 'wc_' . $this->name . '_get_client_token' ),
 				'cart_contains_subscription' => $gateway ? $gateway->cart_contains_subscription() : false,
 				'debug'                      => $gateway ? $gateway->debug_log() : false,
+				'is_test_environment'        => $gateway ? $gateway->is_test_environment() : false,
 				'integration_error_message'  => esc_html__( 'An error occurred while loading the ACH payment form. Please try again or use a different payment method.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
 				'payment_error_message'      => esc_html__( 'An error occurred while processing your ACH payment. Please try again.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
 				'mandate_data'               => $mandate_data,

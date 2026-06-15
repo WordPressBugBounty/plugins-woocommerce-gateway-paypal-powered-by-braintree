@@ -62,6 +62,7 @@ final class WC_Gateway_Braintree_Venmo_Blocks_Support extends WC_Gateway_Braintr
 				'client_token_nonce'                => wp_create_nonce( 'wc_' . $this->name . '_get_client_token' ),
 				'set_payment_method_nonce'          => wp_create_nonce( 'wc_' . $this->name . '_cart_set_payment_method' ),
 				'debug'                             => $gateway->debug_log(),
+				'is_test_environment'               => $gateway ? $gateway->is_test_environment() : false,
 				'is_checkout_confirmation'          => $is_checkout_confirmation,
 				'checkout_confirmation_description' => $checkout_confirmation_description,
 				'plugin_url'                        => $gateway->get_plugin()->get_plugin_url(),

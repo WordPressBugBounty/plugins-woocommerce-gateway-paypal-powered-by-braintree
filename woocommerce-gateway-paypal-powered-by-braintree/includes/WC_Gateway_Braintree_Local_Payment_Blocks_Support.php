@@ -175,6 +175,7 @@ final class WC_Gateway_Braintree_Local_Payment_Blocks_Support extends WC_Gateway
 				'supported_countries'  => $gateway ? $gateway->get_supported_countries() : array(),
 				'supported_currencies' => $gateway ? $gateway->get_supported_currencies() : array(),
 				'icon_url'             => $icon_url,
+				'is_test_environment'  => $gateway ? $gateway->is_test_environment() : false,
 				'redirect_url'         => wc_get_checkout_url(),
 			)
 		);

@@ -103,7 +103,37 @@ abstract class WC_Gateway_Braintree_Blocks_Support extends AbstractPaymentMethod
 			$script_name,
 			'woocommerce-gateway-paypal-powered-by-braintree'
 		);
+
+		$this->enqueue_block_styles( $version );
+
 		return array( $script_name );
+	}
+
+	/**
+	 * Enqueues shared styles for Braintree Blocks payment methods.
+	 *
+	 * Registers and enqueues the stylesheet that powers the "Test" pill and the
+	 * test-mode notice (test amount field + copyable card number). The stylesheet
+	 * is shared across every Braintree Blocks gateway because the TestBadge is
+	 * rendered in each gateway's payment method label.
+	 *
+	 * @since 3.11.0
+	 *
+	 * @param string $version Asset version string.
+	 */
+	protected function enqueue_block_styles( string $version ): void {
+		$handle = 'wc-braintree-blocks-test-mode';
+
+		if ( ! wp_style_is( $handle, 'registered' ) ) {
+			wp_register_style(
+				$handle,
+				WC_Braintree::instance()->get_plugin_url() . '/assets/css/blocks/wc-braintree-test-mode.css',
+				array(),
+				$version
+			);
+		}
+
+		wp_enqueue_style( $handle );
 	}
 
 	/**

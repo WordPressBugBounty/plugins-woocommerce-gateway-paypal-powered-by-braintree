@@ -1,18 +1,18 @@
-=== Braintree for WooCommerce Payment Gateway ===
+=== PayPal Enterprise Payments (formerly Braintree) for WooCommerce ===
 Contributors: woocommerce, automattic, skyverge
-Tags: ecommerce, e-commerce, commerce, woothemes, wordpress ecommerce, store, sales, sell, shop, shopping, cart, checkout, configurable, paypal, braintree
+Tags: paypal, braintree, woocommerce, payments, ecommerce
 Requires at least: 6.8
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 3.10.0
+Stable tag: 3.11.0
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
-Accept PayPal, Credit Cards, and Debit Cards on your WooCommerce store.
+The official PayPal Enterprise Payments extension for WooCommerce. Accept credit cards, PayPal, Apple Pay, Google Pay, Venmo, ACH Direct Debit, BNPL, local payment methods, and more — with Fastlane accelerated checkout built in.
 
 == Description ==
 
-Accept **all major cards, Apple Pay**, and **PayPal** directly with PayPal Braintree for WooCommerce. Customers can save their card details or link a PayPal account for an even faster checkout experience.
+Accept **credit cards, Apple Pay, Google Pay, PayPal, Venmo, ACH Direct Debit, BNPL**, local payment methods, and more with **PayPal Enterprise Payments (formerly Braintree) for WooCommerce** — with **Fastlane** accelerated checkout built in. Customers can save their card details or link a PayPal account for an even faster checkout experience.
 
 = Features =
 
@@ -35,21 +35,21 @@ Customers can **save their credit and debit card details** or **link a PayPal ac
 
 = Get paid upfront and earn recurring revenue =
 
-Take charge of how you sell online. PayPal Braintree supports [WooCommerce Subscriptions](https://woocommerce.com/products/woocommerce-subscriptions/) — the perfect solution for earning **recurring revenue**. It's also compatible with [WooCommerce Pre-Orders](https://woocommerce.com/products/woocommerce-pre-orders/), enabling you to accept payment **upfront** or as products ship.
+Take charge of how you sell online. PayPal Enterprise Payments (formerly Braintree) supports [WooCommerce Subscriptions](https://woocommerce.com/products/woocommerce-subscriptions/) — the perfect solution for earning **recurring revenue**. It's also compatible with [WooCommerce Pre-Orders](https://woocommerce.com/products/woocommerce-pre-orders/), enabling you to accept payment **upfront** or as products ship.
 
 == Frequently Asked Questions ==
 
 = Where can I find documentation? =
 
-You’ve come to the right place. [Our documentation](https://woocommerce.com/document/woocommerce-gateway-paypal-powered-by-braintree/) for PayPal Braintree for WooCommerce includes detailed setup instructions, troubleshooting tips, and more.
+You’ve come to the right place. [Our documentation](https://woocommerce.com/document/woocommerce-gateway-paypal-powered-by-braintree/) for PayPal Enterprise Payments (formerly Braintree) for WooCommerce includes detailed setup instructions, troubleshooting tips, and more.
 
 = Does this extension work with credit cards, or just PayPal? =
 
-Both! PayPal Braintree for WooCommerce supports payments with credit cards and PayPal. (You can also [enable Apple Pay](https://woocommerce.com/document/woocommerce-gateway-paypal-powered-by-braintree/#support-apple-pay).)
+Yes! PayPal Enterprise Payments (formerly Braintree) for WooCommerce supports credit cards, PayPal, Apple Pay, Google Pay, Venmo, ACH Direct Debit, BNPL, and local payment methods.
 
 = Does it support subscriptions? =
 
-Yes! PayPal Braintree supports tokenization (required for recurring payments) and is compatible with [WooCommerce Subscriptions](http://woocommerce.com/products/woocommerce-subscriptions/).
+Yes! PayPal Enterprise Payments (formerly Braintree) supports tokenization (required for recurring payments) and is compatible with [WooCommerce Subscriptions](http://woocommerce.com/products/woocommerce-subscriptions/).
 
 = Which currencies are supported? =
 
@@ -69,7 +69,7 @@ You may need to [enable PayPal in your Braintree account](https://woocommerce.co
 
 = Can I use this extension for PayPal only? =
 
-Sure thing! See our instructions on [using PayPal Braintree without credit cards](https://woocommerce.com/document/woocommerce-gateway-paypal-powered-by-braintree/#using-paypal-without-credit-cards).
+Sure thing! See our instructions on [using PayPal Enterprise Payments without credit cards](https://woocommerce.com/document/woocommerce-gateway-paypal-powered-by-braintree/#using-paypal-without-credit-cards).
 
 = Will it work with my site’s theme? =
 
@@ -81,7 +81,7 @@ First, [review our documentation](https://woocommerce.com/document/woocommerce-g
 
 == Screenshots ==
 
-1. Enter Braintree credentials
+1. Enter PayPal Enterprise Payments credentials
 2. Credit card gateway settings
 3. Advanced credit card gateway settings
 4. PayPal gateway settings
@@ -89,6 +89,17 @@ First, [review our documentation](https://woocommerce.com/document/woocommerce-g
 6. Checkout with PayPal directly from the product page
 
 == Changelog ==
+
+= 3.11.0 - 2026-06-15 =
+* Update - Rebrand the plugin title and related display surfaces from "Braintree" to "PayPal Enterprise Payments".
+* Tweak - Improved error messages for local payment methods.
+* Tweak - Improve the UI for test-mode payment methods in checkout pages.
+* Fix - Ensure Local Payment Methods work properly on the pay-for-order page.
+* Fix - Hide Google Pay express button when Google Pay is disabled on the merchant's Braintree account.
+* Dev - Move the credentials inheritance settings JavaScript from inline PHP to a standalone admin script for improved maintainability.
+* Dev - Bump WooCommerce "tested up to" version 10.8.
+* Dev - Bump WooCommerce minimum supported version to 10.6.
+* Dev - Add additional E2E tests for better coverage.
 
 = 3.10.0 - 2026-04-22 =
 * Add - Introduce `wc_braintree_get_remote_configuration` filter to allow merchants to provide hardcoded remote configurations and improve performance with gateway configuration caching.

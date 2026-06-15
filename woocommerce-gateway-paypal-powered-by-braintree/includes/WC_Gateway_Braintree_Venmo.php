@@ -65,8 +65,8 @@ class WC_Gateway_Braintree_Venmo extends WC_Gateway_Braintree {
 			WC_Braintree::VENMO_GATEWAY_ID,
 			wc_braintree(),
 			array(
-				'method_title'       => __( 'Braintree (Venmo)', 'woocommerce-gateway-paypal-powered-by-braintree' ),
-				'method_description' => __( 'Allow customers to securely pay using their Venmo account via Braintree.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+				'method_title'       => __( 'PayPal Enterprise Payments (Venmo)', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+				'method_description' => __( 'Allow customers to securely pay using their Venmo account via PayPal Enterprise Payments.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
 				'supports'           => array(
 					self::FEATURE_PRODUCTS,
 					self::FEATURE_PAYMENT_FORM,

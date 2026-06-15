@@ -47,8 +47,8 @@ class WC_Gateway_Braintree_SEPA extends WC_Gateway_Braintree {
 			WC_Braintree::SEPA_GATEWAY_ID,
 			wc_braintree(),
 			array(
-				'method_title'       => __( 'Braintree (SEPA)', 'woocommerce-gateway-paypal-powered-by-braintree' ),
-				'method_description' => __( 'Allow customers to securely pay using SEPA Direct Debit via Braintree.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+				'method_title'       => __( 'PayPal Enterprise Payments (SEPA)', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+				'method_description' => __( 'Allow customers to securely pay using SEPA Direct Debit via PayPal Enterprise Payments.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
 				'supports'           => array(
 					self::FEATURE_PRODUCTS,
 					self::FEATURE_PAYMENT_FORM,

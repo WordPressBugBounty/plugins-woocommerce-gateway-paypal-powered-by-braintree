@@ -1,20 +1,20 @@
 <?php
 /**
- * Plugin Name: Braintree for WooCommerce Payment Gateway
+ * Plugin Name: PayPal Enterprise Payments (formerly Braintree) for WooCommerce
  * Requires Plugins: woocommerce
  * Plugin URI: https://docs.woocommerce.com/document/woocommerce-gateway-paypal-powered-by-braintree/
  * Documentation URI: https://docs.woocommerce.com/document/woocommerce-gateway-paypal-powered-by-braintree/
- * Description: Receive credit card or PayPal payments using Braintree for WooCommerce.  A server with cURL, SSL support, and a valid SSL certificate is required (for security reasons) for this gateway to function. Requires PHP 7.4+
+ * Description: Accept credit cards, PayPal, Apple Pay, Google Pay, Venmo, ACH Direct Debit, BNPL, and local payment methods with PayPal Enterprise Payments (formerly Braintree) for WooCommerce. A server with cURL, SSL support, and a valid SSL certificate is required (for security reasons) for this gateway to function. Requires PHP 7.4+
  * Author: WooCommerce
  * Author URI: http://woocommerce.com/
- * Version: 3.10.0
+ * Version: 3.11.0
  * Text Domain: woocommerce-gateway-paypal-powered-by-braintree
  * Domain Path: /i18n/languages/
  *
  * Requires at least: 6.8
  * Tested up to: 7.0
- * WC requires at least: 10.5
- * WC tested up to: 10.7
+ * WC requires at least: 10.6
+ * WC tested up to: 10.8
  * Requires PHP: 7.4
  * PHP tested up to: 8.4
  *
@@ -61,13 +61,13 @@ class WC_PayPal_Braintree_Loader {
 	const MINIMUM_WP_VERSION = '6.8';
 
 	/** minimum WooCommerce version required by this plugin */
-	const MINIMUM_WC_VERSION = '10.5';
+	const MINIMUM_WC_VERSION = '10.6';
 
 	/** SkyVerge plugin framework version used by this plugin */
 	const FRAMEWORK_VERSION = '6.0.1';
 
 	/** the plugin name, for displaying notices */
-	const PLUGIN_NAME = 'Braintree for WooCommerce';
+	const PLUGIN_NAME = 'PayPal Enterprise Payments';
 
 
 	/** @var \WC_PayPal_Braintree_Loader the singleton instance of the class */
@@ -168,7 +168,7 @@ class WC_PayPal_Braintree_Loader {
 
 		// if the legacy plugin is active, let the admin know
 		if ( function_exists( 'wc_braintree' ) ) {
-			$this->add_admin_notice( 'bad_environment', 'error', __( 'Braintree for WooCommerce is inactive. Please deactivate the retired WooCommerce Braintree plugin.', 'woocommerce-gateway-paypal-powered-by-braintree' ) );
+			$this->add_admin_notice( 'bad_environment', 'error', __( 'PayPal Enterprise Payments is inactive. Please deactivate the retired WooCommerce Braintree plugin.', 'woocommerce-gateway-paypal-powered-by-braintree' ) );
 			return;
 		}
 
@@ -185,7 +185,7 @@ class WC_PayPal_Braintree_Loader {
 			add_action( 'admin_notices', static function() {
 
 				echo '<div class="error"><p>';
-				esc_html_e( 'Braintree for WooCommerce is inactive because WooCommerce is not installed.', 'woocommerce-gateway-paypal-powered-by-braintree' );
+				esc_html_e( 'PayPal Enterprise Payments is inactive because WooCommerce is not installed.', 'woocommerce-gateway-paypal-powered-by-braintree' );
 				echo '</p></div>';
 
 			} );
@@ -287,10 +287,10 @@ class WC_PayPal_Braintree_Loader {
 
 		// check the PHP version
 		if ( version_compare( PHP_VERSION, self::MINIMUM_PHP_VERSION, '<' ) ) {
-			/* translators: Placeholders: %1$s - braintree version, %2$s - phpversion() */
+			/* translators: Placeholders: %1$s - minimum PHP version required, %2$s - current PHP version */
 			$message = sprintf( __( 'The minimum PHP version required for this plugin is %1$s. You are running %2$s.', 'woocommerce-gateway-paypal-powered-by-braintree' ), WC_PAYPAL_BRAINTREE_MIN_PHP_VER, phpversion() );
 
-			$prefix = ( $during_activation ) ? 'The plugin could not be activated. ' : 'Braintree for WooCommerce has been deactivated. ';
+			$prefix = ( $during_activation ) ? 'The plugin could not be activated. ' : 'PayPal Enterprise Payments has been deactivated. ';
 
 			$message = $prefix . $message;
 		}
@@ -533,9 +533,9 @@ class WC_PayPal_Braintree_Loader {
 				<div class='notice notice-error'>
 					<p>
 						<?php
-						echo printf( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+						printf( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 							/* translators: Placeholders: %1$s - <strong> tag, %2$s - </strong> tag */
-							esc_html__( '%1$sWarning:%2$s Deleting a user will also delete the user\'s payment method saved on Braintree account.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+							esc_html__( '%1$sWarning:%2$s Deleting a user will also delete the user\'s payment method saved on your PayPal Enterprise Payments account.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
 							'<strong>',
 							'</strong>'
 						);
@@ -628,7 +628,7 @@ class WC_PayPal_Braintree_Loader {
 	/**
 	 * Filter callback to add a custom feature setting to the WooCommerce Features page.
 	 *
-	 * Adds an "Enable early access Braintree payment methods" option to the WooCommerce
+	 * Adds an "Enable early access PayPal Enterprise Payments methods" option to the WooCommerce
 	 * Features settings page.
 	 *
 	 * @since 3.5.0
@@ -638,12 +638,12 @@ class WC_PayPal_Braintree_Loader {
 	 */
 	public function add_enable_early_access_to_woocommerce_feature_setting( $settings ) {
 		$settings[] = [
-			'title'    => __( 'Braintree Payment Gateway', 'woocommerce-gateway-paypal-powered-by-braintree' ),
-			'desc'     => __( 'Enable early access Braintree payment methods', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+			'title'    => __( 'PayPal Enterprise Payments', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+			'desc'     => __( 'Enable early access payment methods', 'woocommerce-gateway-paypal-powered-by-braintree' ),
 			'id'       => \WC_Braintree\WC_Braintree_Feature_Flags::EARLY_ACCESS_OPTION_NAME,
 			'default'  => 'no',
 			'type'     => 'checkbox',
-			'desc_tip' => __( 'Enable this option to make new Braintree payment methods available while they are in early release.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+			'desc_tip' => __( 'Enable this option to make new payment methods available while they are in early release.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
 		];
 
 		return $settings;

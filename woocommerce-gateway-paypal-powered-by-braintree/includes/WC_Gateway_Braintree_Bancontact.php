@@ -44,8 +44,8 @@ class WC_Gateway_Braintree_Bancontact extends WC_Gateway_Braintree_Local_Payment
 		parent::__construct(
 			WC_Braintree::BANCONTACT_GATEWAY_ID,
 			[
-				'method_title'       => __( 'Braintree (Bancontact)', 'woocommerce-gateway-paypal-powered-by-braintree' ),
-				'method_description' => __( 'Allow customers to pay using Bancontact via Braintree.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+				'method_title'       => __( 'PayPal Enterprise Payments (Bancontact)', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+				'method_description' => __( 'Allow customers to pay using Bancontact via PayPal Enterprise Payments.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
 				'currencies'         => [ 'EUR' ],
 			]
 		);

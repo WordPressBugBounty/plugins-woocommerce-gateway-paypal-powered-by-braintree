@@ -44,8 +44,8 @@ class WC_Gateway_Braintree_Blik extends WC_Gateway_Braintree_Local_Payment {
 		parent::__construct(
 			WC_Braintree::BLIK_GATEWAY_ID,
 			[
-				'method_title'       => __( 'Braintree (BLIK)', 'woocommerce-gateway-paypal-powered-by-braintree' ),
-				'method_description' => __( 'Allow customers to pay using BLIK via Braintree.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+				'method_title'       => __( 'PayPal Enterprise Payments (BLIK)', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+				'method_description' => __( 'Allow customers to pay using BLIK via PayPal Enterprise Payments.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
 				'currencies'         => [ 'PLN' ],
 			]
 		);

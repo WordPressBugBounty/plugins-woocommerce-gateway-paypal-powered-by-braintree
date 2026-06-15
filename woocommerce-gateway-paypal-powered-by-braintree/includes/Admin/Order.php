@@ -157,7 +157,7 @@ class Order {
 		$plugin         = \WC_Braintree\WC_Braintree::instance();
 
 		if ( ! in_array( $payment_method, [ $plugin::CREDIT_CARD_GATEWAY_ID, $plugin::PAYPAL_GATEWAY_ID ], true ) ) {
-			wp_send_json_error( [ 'message' => __( 'Not a Braintree order', 'woocommerce-gateway-paypal-powered-by-braintree' ) ] );
+			wp_send_json_error( [ 'message' => __( 'Not a PayPal Enterprise Payments order', 'woocommerce-gateway-paypal-powered-by-braintree' ) ] );
 		}
 
 		// Get transaction ID.

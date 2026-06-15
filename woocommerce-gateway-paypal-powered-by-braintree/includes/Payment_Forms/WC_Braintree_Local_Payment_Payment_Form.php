@@ -194,6 +194,12 @@ class WC_Braintree_Local_Payment_Payment_Form extends WC_Braintree_Payment_Form 
 
 		$gateway    = $this->get_gateway();
 		$gateway_id = $gateway->get_id();
+
+		// On pay-for-order, the JS handler reads billing data from the DOM. The
+		// usual checkout billing fields aren't rendered there, so emit the
+		// order's billing/shipping as hidden inputs. The helper is a no-op on
+		// regular checkout.
+		$this->render_pay_page_billing_inputs();
 		?>
 
 		<p class="wc-braintree-lpm-instructions">
