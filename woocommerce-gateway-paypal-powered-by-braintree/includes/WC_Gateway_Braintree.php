@@ -25,8 +25,8 @@
 namespace WC_Braintree;
 
 use Braintree;
-use SkyVerge\WooCommerce\PluginFramework\v6_0_1 as Framework;
-use SkyVerge\WooCommerce\PluginFramework\v6_0_1\Helpers\OrderHelper;
+use SkyVerge\WooCommerce\PluginFramework\v6_2_1 as Framework;
+use SkyVerge\WooCommerce\PluginFramework\v6_2_1\Helpers\OrderHelper;
 use WC_Braintree\API\WC_Braintree_API;
 use WC_Order;
 
@@ -2135,8 +2135,63 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 			}
 		}
 
+		// Clear OAuth history when the merchant intentionally opts into or configures a manual
+		// API key connection (including after a lost OAuth token, when the disconnect UI is gone).
+		$sanitized_fields = $this->maybe_clear_oauth_history_on_manual_connection( $sanitized_fields );
+
 		return $sanitized_fields;
 		// phpcs:enable
+	}
+
+	/**
+	 * Clears the OAuth connection history marker when saving a manual connection.
+	 *
+	 * @since 3.11.1
+	 *
+	 * @param array $sanitized_fields Sanitized settings fields about to be saved.
+	 * @return array
+	 */
+	protected function maybe_clear_oauth_history_on_manual_connection( array $sanitized_fields ): array {
+
+		$opting_into_manual        = isset( $sanitized_fields['connect_manually'] ) && 'yes' === $sanitized_fields['connect_manually'];
+		$saving_manual_credentials = $this->sanitized_fields_have_manual_credentials( $sanitized_fields );
+
+		if ( ! $opting_into_manual && ! $saving_manual_credentials ) {
+			return $sanitized_fields;
+		}
+
+		delete_option( 'wc_braintree_was_oauth_connected' );
+
+		// Persist the manual flag when credentials are saved without the checkbox present
+		// (e.g. after OAuth token loss, when the Auth connect/disconnect UI is unavailable).
+		if ( $saving_manual_credentials ) {
+			$sanitized_fields['connect_manually'] = 'yes';
+		}
+
+		return $sanitized_fields;
+	}
+
+	/**
+	 * Determines whether sanitized settings include a complete set of manual API credentials.
+	 *
+	 * @since 3.11.1
+	 *
+	 * @param array $sanitized_fields Sanitized settings fields.
+	 * @return bool
+	 */
+	protected function sanitized_fields_have_manual_credentials( array $sanitized_fields ): bool {
+
+		$environment = isset( $sanitized_fields['environment'] ) ? $sanitized_fields['environment'] : $this->get_environment();
+
+		if ( self::ENVIRONMENT_SANDBOX === $environment ) {
+			return ! empty( $sanitized_fields['sandbox_merchant_id'] )
+				&& ! empty( $sanitized_fields['sandbox_public_key'] )
+				&& ! empty( $sanitized_fields['sandbox_private_key'] );
+		}
+
+		return ! empty( $sanitized_fields['merchant_id'] )
+			&& ! empty( $sanitized_fields['public_key'] )
+			&& ! empty( $sanitized_fields['private_key'] );
 	}
 
 

@@ -24,8 +24,8 @@
 
 namespace WC_Braintree;
 
-use SkyVerge\WooCommerce\PluginFramework\v6_0_1 as Framework;
-use SkyVerge\WooCommerce\PluginFramework\v6_0_1\Helpers\OrderHelper;
+use SkyVerge\WooCommerce\PluginFramework\v6_2_1 as Framework;
+use SkyVerge\WooCommerce\PluginFramework\v6_2_1\Helpers\OrderHelper;
 use WC_Braintree\Payment_Forms\WC_Braintree_Hosted_Fields_Payment_Form;
 use WC_Order;
 
@@ -209,7 +209,7 @@ class WC_Gateway_Braintree_Credit_Card extends WC_Gateway_Braintree {
 			}
 
 			// Load Fastlane SDK and handler script if enabled.
-			if ( $this->is_fastlane_enabled() ) {
+			if ( $this->is_fastlane_enabled() && $this->should_enqueue_gateway_assets() ) {
 				wp_enqueue_script( 'braintree-js-fastlane', 'https://js.braintreegateway.com/web/' . WC_Braintree::BRAINTREE_JS_SDK_VERSION . '/js/fastlane.min.js', array( 'braintree-js-client' ), WC_Braintree::VERSION, true );
 
 				// Load asset file for Fastlane script dependencies.
@@ -810,7 +810,7 @@ class WC_Gateway_Braintree_Credit_Card extends WC_Gateway_Braintree {
 
 	/**
 	 * Add an async attribute to the braintree-data.js script tag, there's no
-	 * way to do this when enqueing so it must be done manually here
+	 * way to do this when enqueuing so it must be done manually here
 	 *
 	 * @since 3.0.0
 	 * @param string $url cleaned URL from esc_url().

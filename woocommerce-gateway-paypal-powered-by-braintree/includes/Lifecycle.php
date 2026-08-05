@@ -24,7 +24,7 @@
 
 namespace WC_Braintree;
 
-use SkyVerge\WooCommerce\PluginFramework\v6_0_1 as Framework;
+use SkyVerge\WooCommerce\PluginFramework\v6_2_1 as Framework;
 use \WC_Braintree\WC_Gateway_Braintree;
 
 defined( 'ABSPATH' ) or exit;
@@ -186,6 +186,10 @@ class Lifecycle extends Framework\Plugin\Lifecycle {
 
 			$this->upgrade_to_3_7_0();
 		}
+
+		// Idempotent: ensure Auth-connected stores get the history marker used by the
+		// missing-credentials notice. Safe to run on every upgrade path.
+		$this->maybe_backfill_was_oauth_connected();
 	}
 
 
@@ -397,5 +401,27 @@ class Lifecycle extends Framework\Plugin\Lifecycle {
 		}
 
 		Logger::info( 'Completed upgrade for 3.7.0' );
+	}
+
+	/**
+	 * Backfills the OAuth connection history marker when an access token is already present.
+	 *
+	 * Lets the missing-credentials notice distinguish unexpected token loss from
+	 * fresh installs, mid-setup, and deliberate disconnects for stores that Auth-connected
+	 * before `wc_braintree_was_oauth_connected` existed.
+	 *
+	 * @since 3.11.1
+	 */
+	protected function maybe_backfill_was_oauth_connected() {
+
+		if ( '' === get_option( 'wc_braintree_auth_access_token', '' ) ) {
+			return;
+		}
+
+		if ( 'yes' === get_option( 'wc_braintree_was_oauth_connected', '' ) ) {
+			return;
+		}
+
+		update_option( 'wc_braintree_was_oauth_connected', 'yes' );
 	}
 }

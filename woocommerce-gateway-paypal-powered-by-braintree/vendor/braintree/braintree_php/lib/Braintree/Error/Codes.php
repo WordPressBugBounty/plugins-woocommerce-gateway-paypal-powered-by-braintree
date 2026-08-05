@@ -43,8 +43,6 @@ class Codes
     const ADDRESS_STREET_ADDRESS_IS_TOO_LONG                           = '81812';
     const ADDRESS_TOO_MANY_ADDRESSES_PER_CUSTOMER                      = '91818';
 
-    const ADJUSTMENT_AMOUNT_MUST_BE_GREATER_THAN_ZERO                   = '95605';
-
     const ANDROID_PAY_CARDS_ARE_NOT_ACCEPTED                                = '83708';
 
     const APPLE_PAY_CARDS_ARE_NOT_ACCEPTED                                  = '83501';
@@ -69,6 +67,15 @@ class Codes
     const APPLE_PAY_INVALID_TOKEN                                           = '83520';
     const APPLE_PAY_PRIVATE_KEY_MISMATCH                                    = '93521';
     const APPLE_PAY_KEY_MISMATCH_STORING_CERTIFICATE                        = '93522';
+    const APPLE_PAY_NETWORK_TRANSACTION_ID_NOT_ALLOWED                      = '93532';
+    const APPLE_PAY_OPTIONS_VERIFICATION_AMOUNT_FORMAT_IS_INVALID           = '93534';
+    const APPLE_PAY_OPTIONS_VERIFICATION_AMOUNT_CANNOT_BE_NEGATIVE          = '93535';
+    const APPLE_PAY_OPTIONS_VERIFICATION_AMOUNT_NOT_SUPPORTED_BY_PROCESSOR  = '93536';
+    const APPLE_PAY_OPTIONS_VERIFICATION_AMOUNT_IS_TOO_LARGE                = '93537';
+    const APPLE_PAY_OPTIONS_VERIFICATION_ACCOUNT_TYPE_IS_INVALID            = '93538';
+    const APPLE_PAY_OPTIONS_VERIFICATION_MERCHANT_ACCOUNT_ID_IS_INVALID     = '93540';
+    const APPLE_PAY_OPTIONS_VERIFICATION_MERCHANT_ACCOUNT_IS_SUSPENDED      = '93541';
+    const APPLE_PAY_OPTIONS_VERIFICATION_ACCOUNT_TYPE_NOT_SUPPORTED         = '93543';
 
     const AUTHORIZATION_FINGERPRINT_INVALID_CREATED_AT                   = '93204';
     const AUTHORIZATION_FINGERPRINT_INVALID_FORMAT                       = '93202';
@@ -208,6 +215,12 @@ class Codes
     const DOCUMENT_UPLOAD_FILE_IS_EMPTY                  = '84906';
 
     const EXCHANGE_RATE_QUOTE_ID_IS_TOO_LONG  = '915229';
+    const API_REQUEST_KEY_TOO_LONG = '915230';
+    const API_REQUEST_KEY_NOT_ALLOWED = '915231';
+    const API_REQUEST_KEY_CAN_BE_REUSED_ONLY_WITH_THE_SAME_REQUEST = '915232';
+    const API_REQUEST_KEY_IS_IN_FLIGHT = '915233';
+    const API_REQUEST_KEY_WITH_FAILED_REQUEST = '915234';
+    const API_REQUEST_KEY_SERVER_ERROR = '915235';
 
     const FAILED_AUTH_ADJUSTMENT_ALLOW_RETRY                    = '95603';
     const FAILED_AUTH_ADJUSTMENT_HARD_DECLINE                   = '95602';
@@ -584,6 +597,7 @@ class Codes
     const TRANSACTION_PAYPAL_NOT_ENABLED                                              = '91576';
     const TRANSACTION_PAY_PAL_AUTH_EXPIRED                                            = '91579';
     const TRANSACTION_PAY_PAL_VAULT_RECORD_MISSING_DATA                               = '91583';
+    const TRANSACTION_PROCESSING_MERCHANT_CATEGORY_CODE_IS_INVALID                    = '915265';
     const TRANSACTION_PROCESSOR_AUTHORIZATION_CODE_CANNOT_BE_SET                      = '91519';
     const TRANSACTION_PROCESSOR_AUTHORIZATION_CODE_IS_INVALID                         = '81520';
     const TRANSACTION_PROCESSOR_DOES_NOT_SUPPORT_AUTHS                                = '915104';
@@ -638,6 +652,21 @@ class Codes
     const TRANSACTION_US_BANK_ACCOUNT_NOT_VERIFIED                                    = '915172';
 
     const TRANSACTION_TRANSACTION_SOURCE_IS_INVALID                                   = '915133';
+
+
+    const TRANSFER_DETAILS_NOT_APPLICABLE                                             = '97501'; //Deprecated
+    const TRANSFER_DETAILS_NOT_AVAILABLE                                              = '97510'; //Deprecated
+    const TRANSACTION_TRANSFER_DETAILS_NOT_APPLICABLE                                 = '97511';
+    const TRANSACTION_TRANSFER_DETAILS_NOT_AVAILABLE                                  = '97510';
+    const TRANSACTION_TRANSFER_RECEIVER_ACCOUNT_REFERENCE_NUMBER_IS_NOT_VALID         = '97509';
+    const TRANSACTION_TRANSFER_RECEIVER_FIRST_NAME_IS_NOT_VALID                       = '97507';
+    const TRANSACTION_TRANSFER_RECEIVER_LAST_NAME_IS_NOT_VALID                        = '97508';
+    const TRANSACTION_TRANSFER_RECEIVER_TAX_ID_IS_NOT_VALID                           = '97506';
+    const TRANSACTION_TRANSFER_SENDER_ACCOUNT_REFERENCE_NUMBER_IS_NOT_VALID           = '97505';
+    const TRANSACTION_TRANSFER_SENDER_FIRST_NAME_IS_NOT_VALID                         = '97503';
+    const TRANSACTION_TRANSFER_SENDER_LAST_NAME_IS_NOT_VALID                          = '97504';
+    const TRANSACTION_TRANSFER_SENDER_TAX_ID_IS_NOT_VALID                             = '97502';
+    const TRANSACTION_TRANSFER_TYPE_INVALID                                           = '97501';
 
     const US_BANK_ACCOUNT_VERIFICATION_NOT_CONFIRMABLE                      = '96101';
     const US_BANK_ACCOUNT_VERIFICATION_MUST_BE_MICRO_TRANSFERS_VERIFICATION = '96102';

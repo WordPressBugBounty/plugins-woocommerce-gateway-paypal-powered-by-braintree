@@ -1,10 +1,10 @@
 === PayPal Enterprise Payments (formerly Braintree) for WooCommerce ===
 Contributors: woocommerce, automattic, skyverge
 Tags: paypal, braintree, woocommerce, payments, ecommerce
-Requires at least: 6.8
+Requires at least: 6.9
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 3.11.0
+Stable tag: 3.11.1
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
@@ -89,6 +89,24 @@ First, [review our documentation](https://woocommerce.com/document/woocommerce-g
 6. Checkout with PayPal directly from the product page
 
 == Changelog ==
+
+= 3.11.1 - 2026-08-05 =
+* Fix - Credit Card 3DS no longer triggers with validation errors on the block checkout page.
+* Fix - Prevent a warning on the block checkout caused by the classic Fastlane script loading when it shouldn't.
+* Fix - Warn merchants when PayPal Enterprise Payments connection settings are in a conflicting state after a database sync.
+* Fix - Show a non-dismissible admin notice when previously stored OAuth credentials are missing, and ask merchants to contact support to reconnect.
+* Dev - Upgrade SkyVerge Framework from 6.0.1 to 6.2.1.
+* Dev - Bump WooCommerce "tested up to" version 11.0.
+* Dev - Bump WooCommerce minimum supported version to 10.8.
+* Dev - Bump WordPress minimum supported version to 6.9.
+* Dev - Remove stub cart_contains_subscription() method in WC_Gateway_Braintree_Venmo.
+* Dev - Update the Apple Pay, Credit Card, PayPal, and Venmo block checkout integrations to use current WooCommerce Blocks checkout hooks instead of deprecated ones.
+* Dev - Miscellaneous improvements to PHPUnit tests.
+* Dev - Refactor E2E workflow to use matrix strategy.
+* Dev - Upgrade Node.js from v20 to v24 and npm from v10 to v11.
+* Dev - Update Composer dependencies to modernize developer experience.
+* Dev - Add a spell-check GitHub Actions workflow and fix typos.
+* Dev - Update WPCS to 3.4.1 to pick up the fix for GHSA-3pwp-g2mj-5p3v.
 
 = 3.11.0 - 2026-06-15 =
 * Update - Rebrand the plugin title and related display surfaces from "Braintree" to "PayPal Enterprise Payments".
@@ -178,6 +196,6 @@ First, [review our documentation](https://woocommerce.com/document/woocommerce-g
 * Dev - Bump WooCommerce minimum supported version to 10.3.
 * Dev - Upgrade woocommerce/plugin-check-action to v1.1.5.
 * Dev - Automatic formatting on pre-commit.
-* Dev - Format codebase with wp-scipts.
+* Dev - Format codebase with wp-scripts.
 
 [See changelog for all versions](https://plugins.svn.wordpress.org/woocommerce-gateway-paypal-powered-by-braintree/trunk/changelog.txt).

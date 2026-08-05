@@ -7,14 +7,14 @@
  * Description: Accept credit cards, PayPal, Apple Pay, Google Pay, Venmo, ACH Direct Debit, BNPL, and local payment methods with PayPal Enterprise Payments (formerly Braintree) for WooCommerce. A server with cURL, SSL support, and a valid SSL certificate is required (for security reasons) for this gateway to function. Requires PHP 7.4+
  * Author: WooCommerce
  * Author URI: http://woocommerce.com/
- * Version: 3.11.0
+ * Version: 3.11.1
  * Text Domain: woocommerce-gateway-paypal-powered-by-braintree
  * Domain Path: /i18n/languages/
  *
- * Requires at least: 6.8
+ * Requires at least: 6.9
  * Tested up to: 7.0
- * WC requires at least: 10.6
- * WC tested up to: 10.8
+ * WC requires at least: 10.8
+ * WC tested up to: 11.0
  * Requires PHP: 7.4
  * PHP tested up to: 8.4
  *
@@ -58,13 +58,13 @@ class WC_PayPal_Braintree_Loader {
 	const MINIMUM_PHP_VERSION = '7.4';
 
 	/** minimum WordPress version required by this plugin */
-	const MINIMUM_WP_VERSION = '6.8';
+	const MINIMUM_WP_VERSION = '6.9';
 
 	/** minimum WooCommerce version required by this plugin */
-	const MINIMUM_WC_VERSION = '10.6';
+	const MINIMUM_WC_VERSION = '10.8';
 
 	/** SkyVerge plugin framework version used by this plugin */
-	const FRAMEWORK_VERSION = '6.0.1';
+	const FRAMEWORK_VERSION = '6.2.1';
 
 	/** the plugin name, for displaying notices */
 	const PLUGIN_NAME = 'PayPal Enterprise Payments';

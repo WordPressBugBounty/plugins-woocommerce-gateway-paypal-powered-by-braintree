@@ -2,17 +2,17 @@
     "packages": [
         {
             "name": "braintree/braintree_php",
-            "version": "6.28.0",
-            "version_normalized": "6.28.0.0",
+            "version": "6.34.0",
+            "version_normalized": "6.34.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/braintree/braintree_php.git",
-                "reference": "f8693ee85b232c6fe4599100cdaba2c07ca34b79"
+                "reference": "c33b11f24cda5faf61fc0d47bbc8ef3a60b6547a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/braintree/braintree_php/zipball/f8693ee85b232c6fe4599100cdaba2c07ca34b79",
-                "reference": "f8693ee85b232c6fe4599100cdaba2c07ca34b79",
+                "url": "https://api.github.com/repos/braintree/braintree_php/zipball/c33b11f24cda5faf61fc0d47bbc8ef3a60b6547a",
+                "reference": "c33b11f24cda5faf61fc0d47bbc8ef3a60b6547a",
                 "shasum": ""
             },
             "require": {
@@ -27,7 +27,7 @@
                 "phpunit/phpunit": "^9.0",
                 "squizlabs/php_codesniffer": "^3.0"
             },
-            "time": "2025-08-05T18:53:15+00:00",
+            "time": "2026-04-30T19:56:09+00:00",
             "type": "library",
             "installation-source": "dist",
             "autoload": {
@@ -48,23 +48,23 @@
             "description": "Braintree PHP Client Library",
             "support": {
                 "issues": "https://github.com/braintree/braintree_php/issues",
-                "source": "https://github.com/braintree/braintree_php/tree/6.28.0"
+                "source": "https://github.com/braintree/braintree_php/tree/6.34.0"
             },
             "install-path": "../braintree/braintree_php"
         },
         {
             "name": "skyverge/wc-plugin-framework",
-            "version": "6.0.1",
-            "version_normalized": "6.0.1.0",
+            "version": "6.2.1",
+            "version_normalized": "6.2.1.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/godaddy-wordpress/wc-plugin-framework.git",
-                "reference": "4e841396c8bef8dfa66d3db08f17f0ca657758bb"
+                "reference": "bcbf433a783abce508369db6540f3916ef4917f6"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/godaddy-wordpress/wc-plugin-framework/zipball/4e841396c8bef8dfa66d3db08f17f0ca657758bb",
-                "reference": "4e841396c8bef8dfa66d3db08f17f0ca657758bb",
+                "url": "https://api.github.com/repos/godaddy-wordpress/wc-plugin-framework/zipball/bcbf433a783abce508369db6540f3916ef4917f6",
+                "reference": "bcbf433a783abce508369db6540f3916ef4917f6",
                 "shasum": ""
             },
             "require": {
@@ -78,12 +78,12 @@
                 "lucatume/wp-browser": "3.0.5",
                 "phpcompatibility/php-compatibility": "9.3.5"
             },
-            "time": "2026-02-17T14:16:48+00:00",
+            "time": "2026-05-18T13:39:19+00:00",
             "type": "library",
             "installation-source": "dist",
             "autoload": {
                 "psr-4": {
-                    "SkyVerge\\WooCommerce\\PluginFramework\\v6_0_1\\": "woocommerce/"
+                    "SkyVerge\\WooCommerce\\PluginFramework\\v6_2_1\\": "woocommerce/"
                 },
                 "classmap": [
                     "woocommerce/admin",
@@ -110,7 +110,7 @@
             "description": "The official SkyVerge WooCommerce plugin framework",
             "support": {
                 "issues": "https://github.com/godaddy-wordpress/wc-plugin-framework/issues",
-                "source": "https://github.com/godaddy-wordpress/wc-plugin-framework/tree/6.0.1"
+                "source": "https://github.com/godaddy-wordpress/wc-plugin-framework/tree/6.2.1"
             },
             "install-path": "../skyverge/wc-plugin-framework"
         }

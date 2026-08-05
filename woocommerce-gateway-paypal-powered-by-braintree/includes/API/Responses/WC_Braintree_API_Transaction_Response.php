@@ -24,7 +24,7 @@
 
 namespace WC_Braintree\API\Responses;
 
-use SkyVerge\WooCommerce\PluginFramework\v6_0_1 as Framework;
+use SkyVerge\WooCommerce\PluginFramework\v6_2_1 as Framework;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -147,7 +147,7 @@ abstract class WC_Braintree_API_Transaction_Response extends WC_Braintree_API_Re
 
 
 	/**
-	 * Get the risk decision for this transaction, one of: 'not evaulated',
+	 * Get the risk decision for this transaction, one of: 'not evaluated',
 	 * 'approve', 'review', 'decline'
 	 *
 	 * @since 3.0.0

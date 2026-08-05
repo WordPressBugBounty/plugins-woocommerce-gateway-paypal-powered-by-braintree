@@ -6,20 +6,20 @@
  * while maintaining backwards compatibility with PHP 7.4+.
  *
  * @package   SkyVerge/WooCommerce/Payment-Gateway/Classes
- * @since     x.x.x
+ * @since     6.0.0
  */
 
-namespace SkyVerge\WooCommerce\PluginFramework\v6_0_1\Payment_Gateway;
+namespace SkyVerge\WooCommerce\PluginFramework\v6_2_1\Payment_Gateway;
 
 /**
  * Dynamic property storage handler for WooCommerce order objects.
  *
  * This class provides a way to store dynamic properties on order objects without using
  * dynamic properties (deprecated in PHP 8.2+) while maintaining backwards compatibility
- * with PHP 7.4+. It uses WeakMap for PHP 8.0+ and falls back to dynamic properties
- * for PHP 7.4+.
+ * with PHP 7.4+. It uses WeakMap for PHP 8.2+ and falls back to dynamic properties
+ * for PHP versions prior to 8.2 (for example, PHP 7.4, 8.0, and 8.1).
  *
- * @since x.x.x
+ * @since 6.0.0
  *
  * @example
  * ```php
@@ -34,24 +34,27 @@ namespace SkyVerge\WooCommerce\PluginFramework\v6_0_1\Payment_Gateway;
  */
 class Dynamic_Props {
 	/**
-	 * Storage container for dynamic properties using WeakMap in PHP 8.0+.
+	 * Storage container for dynamic properties using WeakMap in PHP 8.2+.
 	 *
 	 * Uses WeakMap to store properties without memory leaks, as WeakMap allows garbage
 	 * collection of its keys when they're no longer referenced elsewhere.
 	 *
-	 * @since x.x.x
+	 * @since 6.0.0
 	 * @var   \WeakMap<object, \stdClass>|null
 	 */
-	private static ?\WeakMap $map = null; // phpcs:ignore PHPCompatibility.Classes.NewClasses.weakmapFound -- conditionally used for PHP 8.0+
+	private static ?\WeakMap $map = null; // phpcs:ignore PHPCompatibility.Classes.NewClasses.weakmapFound -- conditionally used for PHP 8.2+
+
+	/** @var bool|null Cached result for whether to use WeakMap storage. */
+	private static ?bool $use_weak_map = null;
 
 	/**
 	 * Sets a property on the order object.
 	 *
-	 * Stores a dynamic property either using WeakMap (PHP 8.0+) or direct property
+	 * Stores a dynamic property either using WeakMap (PHP 8.2+) or direct property
 	 * access (PHP 7.4+). The storage method is automatically determined based on
 	 * PHP version and WeakMap availability.
 	 *
-	 * @since  x.x.x
+	 * @since  6.0.0
 	 *
 	 * @param  \WC_Order $order The order object to store data on.
 	 * @param  string    $key   The property key.
@@ -82,7 +85,7 @@ class Dynamic_Props {
 	 * Retrieves a stored dynamic property using the appropriate storage method
 	 * based on PHP version. Supports nested property access.
 	 *
-	 * @since  x.x.x
+	 * @since  6.0.0
 	 *
 	 * @param  \WC_Order $order      The order object to retrieve data from.
 	 * @param  string    $key        The property key.
@@ -100,6 +103,9 @@ class Dynamic_Props {
 	public static function get( \WC_Order $order, string $key, $nested_key = null, $default = null ) {
 		if ( self::use_weak_map() ) {
 			self::init_weak_map();
+			if ( ! isset( self::$map[ $order ] ) ) {
+				return $default;
+			}
 			if ( is_null( $nested_key ) ) {
 				return self::$map[ $order ]->{ $key } ?? $default;
 			} else {
@@ -119,7 +125,7 @@ class Dynamic_Props {
 	 * Removes a stored dynamic property using the appropriate storage method
 	 * based on PHP version.
 	 *
-	 * @since  x.x.x
+	 * @since  6.0.0
 	 *
 	 * @param  \WC_Order $order The order object to unset data from.
 	 * @param  string    $key   The property key to remove.
@@ -128,7 +134,9 @@ class Dynamic_Props {
 	public static function unset( \WC_Order &$order, string $key ): void {
 		if ( self::use_weak_map() ) {
 			self::init_weak_map();
-			unset( self::$map[ $order ]->{ $key } );
+			if ( isset( self::$map[ $order ] ) ) {
+				unset( self::$map[ $order ]->{ $key } );
+			}
 		} else {
 			unset( $order->{ $key } );
 		}
@@ -139,13 +147,13 @@ class Dynamic_Props {
 	 *
 	 * @return bool True if Dynamic_Props class should be used, false otherwise.
 	 */
-	private static function use_dynamic_props_class(): bool {
+	protected static function use_dynamic_props_class(): bool {
 		static $use_dynamic_props_class = null;
 		if ( null === $use_dynamic_props_class ) {
 			/**
 			 * Filters whether to use Dynamic_Props class for storing order data.
 			 *
-			 * @since x.x.x
+			 * @since 6.0.0
 			 *
 			 * @var bool Whether to Dynamic_Props class for storing order data.
 			 */
@@ -157,20 +165,22 @@ class Dynamic_Props {
 	/**
 	 * Checks if WeakMap should be used based on PHP version.
 	 *
-	 * Determines whether to use WeakMap storage based on PHP version (8.0+)
+	 * Determines whether to use WeakMap storage based on PHP version (8.2+)
 	 * and WeakMap class availability. Result is cached for performance.
 	 *
-	 * @since  x.x.x
+	 * @NOTE: We specifically target PHP 8.2+ here, even though WeakMap is available in 8.0+, because there is at least one
+	 * WeakMap bug in older versions of PHP (8.0.x and 8.1.x) that can trigger fatal errors. This is fully resolved in PHP 8.2+.
+	 * @link https://github.com/php/php-src/pull/8995
+	 *
+	 * @since  6.0.0
 	 * @return bool True if WeakMap should be used, false otherwise.
 	 */
 	private static function use_weak_map(): bool {
-		static $use_weak_map = null;
-
-		if ( null === $use_weak_map ) {
-			$use_weak_map = version_compare( PHP_VERSION, '8.0', '>=' ) && self::use_dynamic_props_class();
+		if ( null === self::$use_weak_map ) {
+			self::$use_weak_map = version_compare( PHP_VERSION, '8.2', '>=' ) && self::use_dynamic_props_class();
 		}
 
-		return $use_weak_map;
+		return self::$use_weak_map;
 	}
 
 	/**
@@ -179,12 +189,12 @@ class Dynamic_Props {
 	 * Ensures the WeakMap storage is initialized only once when needed.
 	 * This lazy initialization helps with performance and memory usage.
 	 *
-	 * @since  x.x.x
+	 * @since  6.0.0
 	 * @return void
 	 */
 	private static function init_weak_map(): void {
 		if ( null === self::$map ) {
-			// phpcs:ignore PHPCompatibility.Classes.NewClasses.weakmapFound -- conditionally used for PHP 8.0+
+			// phpcs:ignore PHPCompatibility.Classes.NewClasses.weakmapFound -- conditionally used for PHP 8.2+
 			self::$map = new \WeakMap();
 		}
 	}

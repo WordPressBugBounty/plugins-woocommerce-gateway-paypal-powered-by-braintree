@@ -24,8 +24,8 @@
 
 namespace WC_Braintree;
 
-use SkyVerge\WooCommerce\PluginFramework\v6_0_1 as Framework;
-use SkyVerge\WooCommerce\PluginFramework\v6_0_1\SV_WC_Payment_Gateway_Payment_Token;
+use SkyVerge\WooCommerce\PluginFramework\v6_2_1 as Framework;
+use SkyVerge\WooCommerce\PluginFramework\v6_2_1\SV_WC_Payment_Gateway_Payment_Token;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -38,7 +38,7 @@ class WC_Braintree extends Framework\SV_WC_Payment_Gateway_Plugin {
 
 
 	/** plugin version number */
-	const VERSION = '3.11.0'; // WRCS: DEFINED_VERSION.
+	const VERSION = '3.11.1'; // WRCS: DEFINED_VERSION.
 
 	/** Braintree JS SDK version  */
 	const BRAINTREE_JS_SDK_VERSION = '3.129.1';
@@ -252,6 +252,33 @@ class WC_Braintree extends Framework\SV_WC_Payment_Gateway_Plugin {
 		} )();
 		</script>
 		<?php
+	}
+
+	/**
+	 * Overrides the SkyVerge framework's translation loader for the plugin textdomain.
+	 *
+	 * WordPress 6.5 introduced optimized .l10n.php translation files, and WP 6.7
+	 * loads plugin translations just-in-time from the `Text Domain` / `Domain Path`
+	 * plugin headers. The framework's legacy routing hard-codes a `.mo` path in
+	 * `WP_LANG_DIR` and calls `load_plugin_textdomain()` on the `init` hook for
+	 * the plugin textdomain, bypassing WP's native .l10n.php discovery and preempting
+	 * JIT loading.
+	 *
+	 * We skip the framework call for the plugin's own textdomain (WP Core handles
+	 * it natively from the plugin header, preferring .l10n.php when available), but
+	 * we still load the framework textdomain because it has no plugin header for
+	 * WP's JIT loader to discover.
+	 *
+	 * @since 3.11.1
+	 */
+	public function load_translations() {
+		// Load the framework's own textdomain — it has no plugin header so WP
+		// Core's just-in-time loader cannot discover it on its own.
+		$this->load_framework_textdomain();
+
+		// Intentionally do NOT call load_plugin_textdomain() for the plugin's
+		// own textdomain — WP 6.7+ loads it natively via the plugin headers,
+		// preferring the optimized .l10n.php file format.
 	}
 
 	/**
@@ -524,6 +551,7 @@ class WC_Braintree extends Framework\SV_WC_Payment_Gateway_Plugin {
 		if ( $access_token ) {
 
 			update_option( 'wc_braintree_auth_access_token', $access_token );
+			update_option( 'wc_braintree_was_oauth_connected', 'yes' );
 
 			list( $token_key, $environment, $merchant_id, $raw_token ) = explode( '$', $access_token );
 
@@ -591,6 +619,7 @@ class WC_Braintree extends Framework\SV_WC_Payment_Gateway_Plugin {
 		delete_option( 'wc_braintree_auth_access_token' );
 		delete_option( 'wc_braintree_auth_environment' );
 		delete_option( 'wc_braintree_auth_merchant_id' );
+		delete_option( 'wc_braintree_was_oauth_connected' );
 
 		wp_safe_redirect( add_query_arg( 'wc_braintree_disconnected', true, $this->get_settings_url() ) );
 		exit;
@@ -691,6 +720,24 @@ class WC_Braintree extends Framework\SV_WC_Payment_Gateway_Plugin {
 
 		// show any dependency notices
 		parent::add_admin_notices();
+
+		$this->maybe_add_missing_oauth_credentials_notice();
+
+		if ( $this->has_conflicting_connection_settings() ) {
+			$this->get_admin_notice_handler()->add_admin_notice(
+				sprintf(
+					/* translators: Placeholders: %1$s - <a> tag, %2$s - </a> tag */
+					esc_html__( 'Your PayPal Enterprise Payments connection settings are in a conflicting state and payments will fail until this is resolved. This usually happens after syncing your database from a staging environment. Please %1$sopen a support ticket%2$s to get this fixed. Do not disconnect your account, as that will delete your OAuth credentials.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+					'<a href="' . esc_url( $this->get_woocommerce_support_url() ) . '" target="_blank" rel="noopener noreferrer">',
+					'</a>'
+				),
+				'connection-settings-conflict-notice',
+				array(
+					'dismissible'  => false,
+					'notice_class' => 'notice-error',
+				)
+			);
+		}
 
 		/** @var \WC_Gateway_Braintree_Credit_Card $credit_card_gateway */
 		$credit_card_gateway = $this->get_gateway( self::CREDIT_CARD_GATEWAY_ID );
@@ -798,6 +845,110 @@ class WC_Braintree extends Framework\SV_WC_Payment_Gateway_Plugin {
 
 		// Merchant account availability check for gateways.
 		$this->maybe_add_merchant_account_availability_notice();
+	}
+
+	/**
+	 * Determines whether OAuth credentials are missing for a store that was previously connected via OAuth.
+	 *
+	 * Relies on the persistent `wc_braintree_was_oauth_connected` marker (set on Auth connect
+	 * or via the Lifecycle upgrade backfill; cleared on deliberate disconnect or when switching
+	 * to a manual API key connection) so "credentials unexpectedly lost" can be distinguished
+	 * from fresh installs, mid-setup, deliberate disconnects, and intentional migration to
+	 * manual credentials.
+	 *
+	 * @since 3.11.1
+	 *
+	 * @return bool
+	 */
+	public function are_oauth_credentials_missing(): bool {
+
+		/**
+		 * Credit card gateway instance.
+		 *
+		 * @var \WC_Gateway_Braintree_Credit_Card $credit_card_gateway
+		 */
+		$credit_card_gateway = $this->get_gateway( self::CREDIT_CARD_GATEWAY_ID );
+
+		// OAuth connection is only available for US stores transacting in USD.
+		if ( ! $credit_card_gateway->can_connect() ) {
+			return false;
+		}
+
+		// OAuth credentials are present.
+		if ( $credit_card_gateway->is_connected() ) {
+			return false;
+		}
+
+		// Merchant opted into manual connection or already has API keys configured — treat as a
+		// deliberate exit from OAuth (same as disconnect). The history marker is cleared on
+		// settings save, not here, to avoid a DB write on every admin_notices pass.
+		if ( $credit_card_gateway->is_connected_manually() || $credit_card_gateway->is_configured() ) {
+			return false;
+		}
+
+		// Never successfully Auth-connected (or deliberately disconnected / moved to manual).
+		if ( 'yes' !== get_option( 'wc_braintree_was_oauth_connected', '' ) ) {
+			return false;
+		}
+
+		return '' === get_option( 'wc_braintree_auth_access_token', '' );
+	}
+
+	/**
+	 * Adds an admin notice when OAuth credentials are missing.
+	 *
+	 * @since 3.11.1
+	 *
+	 * @return void
+	 */
+	private function maybe_add_missing_oauth_credentials_notice(): void {
+
+		if ( ! $this->are_oauth_credentials_missing() ) {
+			return;
+		}
+
+		$this->get_admin_notice_handler()->add_admin_notice(
+			sprintf(
+				/* translators: Placeholders: %1$s - <strong> tag, %2$s - </strong> tag, %3$s - <a> tag, %4$s - </a> tag */
+				esc_html__( '%1$sPayPal Enterprise Payments connection lost.%2$s Your store was connected using OAuth, and those credentials are no longer available. Braintree does not issue API keys for OAuth-connected accounts, so entering keys manually in the settings will not restore payments. Please %3$sopen a support ticket%4$s so our team can help you reconnect your account.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+				'<strong>',
+				'</strong>',
+				'<a href="' . esc_url( $this->get_woocommerce_support_url() ) . '" target="_blank" rel="noopener noreferrer">',
+				'</a>'
+			),
+			'oauth-credentials-missing-notice',
+			array(
+				'dismissible'  => false,
+				'notice_class' => 'notice-error',
+			)
+		);
+	}
+
+	/**
+	 * Determines whether the plugin has conflicting connection settings.
+	 *
+	 * This occurs when an OAuth access token exists but connect_manually is
+	 * enabled in gateway settings, often after syncing a database from staging.
+	 *
+	 * @since 3.11.1
+	 *
+	 * @return bool
+	 */
+	public function has_conflicting_connection_settings() {
+
+		if ( empty( get_option( 'wc_braintree_auth_access_token', '' ) ) ) {
+			return false;
+		}
+
+		foreach ( array( self::CREDIT_CARD_GATEWAY_ID, self::PAYPAL_GATEWAY_ID ) as $gateway_id ) {
+			$settings = $this->get_gateway_settings( $gateway_id );
+
+			if ( isset( $settings['connect_manually'] ) && 'yes' === $settings['connect_manually'] ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	/**
@@ -1087,6 +1238,18 @@ class WC_Braintree extends Framework\SV_WC_Payment_Gateway_Plugin {
 	 */
 	public function get_support_url() {
 		return 'https://wordpress.org/support/plugin/woocommerce-gateway-paypal-powered-by-braintree/';
+	}
+
+
+	/**
+	 * Gets the URL for opening a WooCommerce.com support.
+	 *
+	 * @since 3.11.1
+	 *
+	 * @return string
+	 */
+	public function get_woocommerce_support_url() {
+		return 'https://woocommerce.com/my-account/contact-support/';
 	}
 
 

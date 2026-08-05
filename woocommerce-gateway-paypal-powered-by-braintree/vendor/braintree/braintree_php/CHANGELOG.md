@@ -1,5 +1,51 @@
 # Changelog
 
+## 6.34.0
+* Add support for apple pay card verifications
+
+## 6.33.1
+* Fixes syntax error in `Version.php` file
+
+## 6.33.0
+* Add Local Payment Context support with `LocalPaymentGateway->create()` and `LocalPaymentGateway->find()` methods
+* Add support for MBWAY and CRYPTO payment types
+* Add `acquirerReferenceNumber` to transaction search object
+* Remove merchant create functionality
+* Remove `accountFundingTransaction` from `Transaction` request
+* Add `apiRequestKey` (idempotency) support for `Transaction::sale()`, `Transaction::credit()`, `Transaction::submitForSettlement()`, `Transaction::submitForPartialSettlement()`, `Transaction::void()`, and `Transaction::refund()`
+* Add `surchargeAmount` to transaction object
+
+## 6.32.0
+* Add JsonSerializable interface to Instance class for proper JSON encoding support
+* Fix PHP 8.5 curl_close() deprecation warning by using version-conditional cleanup
+* Add `acceptPartialAuthorization` to `TransactionGateway` and `partiallyAuthorized` to `Transaction`
+* Deprecate transactions for `visa_checkout_card` and maintain search functionality
+* Add `achType` to `options` -> `usBankAccount` in `Transaction::sale()`
+* Add `achType` and `requestedAchType` to `Transaction`
+
+## 6.31.0
+* Filter CreditCardVerification::search() to only return credit card verifications
+* Add `middleName` to sender and receiver, and `dateOfBirth` to sender in transfer on `Transaction`
+* Remove unused error code `AdjustmentAmountMustBeGreaterThanZero`
+
+## 6.30.0
+* Add `processingMerchantCategoryCode` to `TransactionGateway`
+* Add missing `transfer` validation error codes in `Transaction`
+
+## 6.29.0
+* Add Bank Account Instant Verification functionality
+* Add `BankAccountInstantVerificationGateway` for creating JWT tokens
+* Add `BankAccountInstantVerificationJwt` and `BankAccountInstantVerificationJwtRequest` classes
+* Add `bankAccountInstantVerification()` method to main Gateway class
+* Add ACH mandate support for US Bank Account transactions
+* Add `achMandateText` and `achMandateAcceptedAt` fields to Transaction and PaymentMethod create signatures
+* Add `usBankAccount` parameter support for ACH mandate details
+* Add `INSTANT_VERIFICATION_ACCOUNT_VALIDATION` as a new US Bank Account verification method
+* Add `sender` and `receiver` to `transfer` in `Transaction`
+* Add `achRejectReason` field to `Transaction`
+* Add `isDeviceToken` and `merchantTokenIdentifier` to `ApplePayCard` and `ApplePayDetails`
+* Add `paymentAccountReference` to `ApplePayCardDetails`, `GooglePayCardDetails`, `CreditCardDetails` and `CreditCardVerification`
+
 ## 6.28.0
 * Add `upcomingRetryDate` to Transaction
 * Add `remainingFileEvidenceStorage` to `Dispute`

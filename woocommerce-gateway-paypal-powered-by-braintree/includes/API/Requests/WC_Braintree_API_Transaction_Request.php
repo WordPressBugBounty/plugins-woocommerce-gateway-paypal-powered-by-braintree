@@ -24,8 +24,8 @@
 
 namespace WC_Braintree\API\Requests;
 
-use SkyVerge\WooCommerce\PluginFramework\v6_0_1 as Framework;
-use SkyVerge\WooCommerce\PluginFramework\v6_0_1\Helpers\OrderHelper;
+use SkyVerge\WooCommerce\PluginFramework\v6_2_1 as Framework;
+use SkyVerge\WooCommerce\PluginFramework\v6_2_1\Helpers\OrderHelper;
 use WC_Braintree\API\WC_Braintree_API;
 use WC_Braintree\WC_Braintree;
 

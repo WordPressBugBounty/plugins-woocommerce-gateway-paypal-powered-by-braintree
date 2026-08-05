@@ -7,7 +7,7 @@
 
 namespace WC_Braintree;
 
-use SkyVerge\WooCommerce\PluginFramework\v6_0_1 as Framework;
+use SkyVerge\WooCommerce\PluginFramework\v6_2_1 as Framework;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -158,7 +158,7 @@ final class WC_Gateway_Braintree_Credit_Card_Blocks_Support extends WC_Gateway_B
 				'button_style'             => $google_pay->get_button_style(),
 				'card_types'               => $google_pay->get_supported_networks(),
 				// This is needed because of a bug in the Google Pay Skyverge library.
-				// The method get_supported_networks() used above retrun [] if the processing gateway is not set; however there is no such check in get_available_countries().
+				// The method get_supported_networks() used above return [] if the processing gateway is not set; however there is no such check in get_available_countries().
 				'countries'                => $google_pay->get_processing_gateway() ? $google_pay->get_available_countries() : [],
 				'currencies'               => [ get_woocommerce_currency() ],
 				'flags'                    => [

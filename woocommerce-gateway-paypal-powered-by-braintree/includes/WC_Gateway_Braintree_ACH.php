@@ -25,7 +25,7 @@
 namespace WC_Braintree;
 
 use Automattic\WooCommerce\Enums\OrderStatus;
-use SkyVerge\WooCommerce\PluginFramework\v6_0_1\Helpers\OrderHelper;
+use SkyVerge\WooCommerce\PluginFramework\v6_2_1\Helpers\OrderHelper;
 
 defined( 'ABSPATH' ) or exit;
 

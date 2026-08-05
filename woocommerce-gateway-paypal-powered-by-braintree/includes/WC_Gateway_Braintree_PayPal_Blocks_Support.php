@@ -71,7 +71,7 @@ final class WC_Gateway_Braintree_PayPal_Blocks_Support extends WC_Gateway_Braint
 				'button_width'             => $gateway->get_button_width( $gateway->get_button_size() ),
 				'debug'                    => $gateway->debug_log(),
 				'messaging_logo_type'      => $gateway->get_pay_later_messaging_logo_type(),
-				'messaging_logo_position'  => $gateway->get_pay_later_messaging_logo_postion(),
+				'messaging_logo_position'  => $gateway->get_pay_later_messaging_logo_position(),
 				'messaging_text_color'     => $gateway->get_pay_later_messaging_text_color(),
 				'is_checkout_confirmation' => $is_checkout_confirmation,
 				'paypal_customer_details'  => WC()->session ? WC()->session->get( 'wc_braintree_paypal_cart_customer_details', array() ) : array(),

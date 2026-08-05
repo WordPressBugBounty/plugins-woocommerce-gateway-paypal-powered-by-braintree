@@ -516,19 +516,6 @@ class WC_Gateway_Braintree_Venmo extends WC_Gateway_Braintree {
 	}
 
 	/**
-	 * Checks if the cart contains a subscription product.
-	 *
-	 * @since 3.6.0
-	 *
-	 * @return bool
-	 */
-	public function cart_contains_subscription() { // phpcs:ignore Generic.CodeAnalysis.UselessOverridingMethod.Found 
-		// Call parent method, but keep this method as it existed in this class before the parent,
-		// so we want to keep the older @since method documentation for this method.
-		return parent::cart_contains_subscription();
-	}
-
-	/**
 	 * Checks if an order contains a subscription.
 	 *
 	 * @since 3.6.0

@@ -24,7 +24,7 @@
 
 namespace WC_Braintree\Apple_Pay;
 
-use SkyVerge\WooCommerce\PluginFramework\v6_0_1 as Framework;
+use SkyVerge\WooCommerce\PluginFramework\v6_2_1 as Framework;
 use WC_Braintree\Apple_Pay\Frontend;
 use WC_Braintree\Apple_Pay\API\Payment_Response;
 use WC_Braintree\Integrations\AvaTax;
@@ -210,7 +210,7 @@ class Apple_Pay extends Framework\SV_WC_Payment_Gateway_Apple_Pay {
 	 * @return array
 	 * @throws \Exception When Apple Payment fails.
 	 * @throws Framework\SV_WC_Payment_Gateway_Exception For invalid response data.
-	 * @throws Framework\SV_WC_Payment_Gateway_Exception When there is a gatway processing error.
+	 * @throws Framework\SV_WC_Payment_Gateway_Exception When there is a gateway processing error.
 	 */
 	public function process_payment() {
 

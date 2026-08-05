@@ -24,7 +24,7 @@
 
 namespace WC_Braintree;
 
-use SkyVerge\WooCommerce\PluginFramework\v6_0_1\Helpers\OrderHelper;
+use SkyVerge\WooCommerce\PluginFramework\v6_2_1\Helpers\OrderHelper;
 use WC_Braintree\PayPal\Buttons;
 use WC_Braintree\WC_Payment_Token_Braintree_PayPal;
 use WC_Braintree\Payment_Forms\WC_Braintree_PayPal_Payment_Form;
@@ -907,10 +907,26 @@ class WC_Gateway_Braintree_PayPal extends WC_Gateway_Braintree {
 	 * Gets the configured logo position for the Pay Later messaging component.
 	 *
 	 * @since 2.5.0
+	 * @deprecated 3.11.1 Use get_pay_later_messaging_logo_position() instead.
+	 *
+	 * @return string
+	 *
+	 * typos:disable
+	 */
+	public function get_pay_later_messaging_logo_postion() {
+		wc_deprecated_function( __METHOD__, '3.11.1', 'Use get_pay_later_messaging_logo_position() instead.' );
+		return $this->get_option( 'pay_later_messaging_logo_position' );
+	}
+	/* typos:enable */
+
+	/**
+	 * Gets the configured logo position for the Pay Later messaging component.
+	 *
+	 * @since 3.11.1
 	 *
 	 * @return string
 	 */
-	public function get_pay_later_messaging_logo_postion() {
+	public function get_pay_later_messaging_logo_position() {
 
 		return $this->get_option( 'pay_later_messaging_logo_position' );
 	}
@@ -1142,7 +1158,7 @@ class WC_Gateway_Braintree_PayPal extends WC_Gateway_Braintree {
 
 		$attributes = [
 			'data-pp-style-logo-type'     => $this->get_pay_later_messaging_logo_type(),
-			'data-pp-style-logo-position' => $this->get_pay_later_messaging_logo_postion(),
+			'data-pp-style-logo-position' => $this->get_pay_later_messaging_logo_position(),
 			'data-pp-style-text-color'    => $this->get_pay_later_messaging_text_color(),
 		];
 
