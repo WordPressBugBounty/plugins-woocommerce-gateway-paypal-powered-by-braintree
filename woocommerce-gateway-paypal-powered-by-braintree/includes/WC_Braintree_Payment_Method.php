@@ -24,7 +24,7 @@
 
 namespace WC_Braintree;
 
-use SkyVerge\WooCommerce\PluginFramework\v6_2_1 as Framework;
+use SkyVerge\WooCommerce\PluginFramework\v6_2_4 as Framework;
 use WC_Braintree\WC_Payment_Token_Braintree_PayPal;
 use WC_Braintree\WC_Payment_Token_Braintree_Venmo;
 

@@ -1,5 +1,15 @@
 *** Changelog ***
 
+= 3.11.2 - 2026-09-08 =
+* Fix - Improvements to the admin payment token editor.
+* Fix - Stop showing the conflicting connection settings notice when a store is correctly configured with manual API credentials and only an unused OAuth token remains.
+* Dev - Upgrade SkyVerge Framework from 6.2.1 to 6.2.4.
+* Dev - Update the E2E test setup to seed subscription products using the WooCommerce Subscriptions 9.0 purchase-options model.
+* Dev - Bump WordPress "Tested up to" to 7.1.
+* Dev - Bump WooCommerce "tested up to" version 11.1.
+* Dev - Bump WooCommerce minimum supported version to 10.9.
+* Dev - Update the PHP_CodeSniffer development dependency to 3.13.6.
+
 = 3.11.1 - 2026-08-05 =
 * Fix - Credit Card 3DS no longer triggers with validation errors on the block checkout page.
 * Fix - Prevent a warning on the block checkout caused by the classic Fastlane script loading when it shouldn't.

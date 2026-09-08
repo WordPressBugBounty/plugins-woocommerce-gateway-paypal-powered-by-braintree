@@ -25,8 +25,8 @@
 namespace WC_Braintree\API;
 
 use Braintree\Result\Error;
-use SkyVerge\WooCommerce\PluginFramework\v6_2_1 as Framework;
-use SkyVerge\WooCommerce\PluginFramework\v6_2_1\Helpers\OrderHelper;
+use SkyVerge\WooCommerce\PluginFramework\v6_2_4 as Framework;
+use SkyVerge\WooCommerce\PluginFramework\v6_2_4\Helpers\OrderHelper;
 use WC_Braintree\API\Responses\WC_Braintree_API_Merchant_Configuration_Response;
 use WC_Braintree\API\Requests\WC_Braintree_API_Client_Token_Request;
 use WC_Braintree\API\Requests\WC_Braintree_API_Transaction_Request;

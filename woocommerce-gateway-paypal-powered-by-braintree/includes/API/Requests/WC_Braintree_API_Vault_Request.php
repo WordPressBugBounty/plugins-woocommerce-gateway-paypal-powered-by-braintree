@@ -25,7 +25,7 @@
 namespace WC_Braintree\API\Requests;
 
 use Braintree\Result\UsBankAccountVerification;
-use SkyVerge\WooCommerce\PluginFramework\v6_2_1\Helpers\OrderHelper;
+use SkyVerge\WooCommerce\PluginFramework\v6_2_4\Helpers\OrderHelper;
 
 defined( 'ABSPATH' ) or exit;
 

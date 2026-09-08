@@ -24,8 +24,8 @@
 
 namespace WC_Braintree\Integrations;
 
-use SkyVerge\WooCommerce\PluginFramework\v6_2_1 as Framework;
-use SkyVerge\WooCommerce\PluginFramework\v6_2_1\Helpers\OrderHelper;
+use SkyVerge\WooCommerce\PluginFramework\v6_2_4 as Framework;
+use SkyVerge\WooCommerce\PluginFramework\v6_2_4\Helpers\OrderHelper;
 
 defined( 'ABSPATH' ) or exit;
 

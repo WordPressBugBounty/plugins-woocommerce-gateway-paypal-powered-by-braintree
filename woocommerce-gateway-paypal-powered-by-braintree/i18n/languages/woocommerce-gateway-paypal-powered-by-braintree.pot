@@ -2,21 +2,21 @@
 # This file is distributed under the same license as the PayPal Enterprise Payments (formerly Braintree) for WooCommerce plugin.
 msgid ""
 msgstr ""
-"Project-Id-Version: PayPal Enterprise Payments (formerly Braintree) for WooCommerce 3.11.1\n"
+"Project-Id-Version: PayPal Enterprise Payments (formerly Braintree) for WooCommerce 3.11.2\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/woocommerce-gateway-paypal-powered-by-braintree\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-08-05T08:28:53+00:00\n"
+"POT-Creation-Date: 2026-09-08T14:59:25+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: woocommerce-gateway-paypal-powered-by-braintree\n"
 
 #. Plugin Name of the plugin
 #: woocommerce-gateway-paypal-powered-by-braintree.php:3
-#: includes/WC_Braintree.php:1204
+#: includes/WC_Braintree.php:1212
 msgid "PayPal Enterprise Payments (formerly Braintree) for WooCommerce"
 msgstr ""
 
@@ -520,29 +520,29 @@ msgid "Your PayPal Enterprise Payments connection settings are in a conflicting 
 msgstr ""
 
 #. translators: Placeholders: %1$s - <a> tag, %2$s - </a> tag
-#: includes/WC_Braintree.php:750
+#: includes/WC_Braintree.php:747
 #, php-format
 msgid "Heads up! You've enabled advanced fraud tools for PayPal Enterprise Payments. Please make sure that advanced fraud tools are also enabled in your account. Need help? See the %1$sdocumentation%2$s."
 msgstr ""
 
 #. translators: Placeholders: %1$s - <a> tag, %2$s - </a> tag
-#: includes/WC_Braintree.php:768
+#: includes/WC_Braintree.php:765
 #, php-format
 msgid "PayPal Enterprise Payments is almost ready. To get started, %1$sconnect your PayPal Enterprise Payments account%2$s."
 msgstr ""
 
 #. translators: Placeholders: %1$s - <a> tag, %2$s - </a> tag
-#: includes/WC_Braintree.php:780
+#: includes/WC_Braintree.php:777
 #, php-format
 msgid "Upgrade successful! WooCommerce Braintree deactivated, and PayPal Enterprise Payments has been %1$sconfigured with your previous settings%2$s."
 msgstr ""
 
-#: includes/WC_Braintree.php:793
+#: includes/WC_Braintree.php:790
 msgid "WooCommerce is not being forced over SSL -- Using PayPal Enterprise Payments requires that checkout be forced over SSL."
 msgstr ""
 
 #. translators: Placeholders: %1$s - gateway title, %2$s - accepted currency/currencies, %3$s - current currency code, %4$s - <a> tag, %5$s - </a> tag, %6$s - <a> tag, %7$s - </a> tag
-#: includes/WC_Braintree.php:819
+#: includes/WC_Braintree.php:816
 #, php-format
 msgid "%1$s gateway only accepts payments in %2$s, but your store currency is currently set to %3$s. %4$sChange the store currency%5$s to enable this gateway at checkout. Alternatively, you can %6$sdisable this gateway%7$s."
 msgid_plural "%1$s gateway only accepts payments in one of the following currencies: %2$s, but your store currency is currently set to %3$s. %4$sChange the store currency%5$s to enable this gateway at checkout. Alternatively, you can %6$sdisable this gateway%7$s."
@@ -550,40 +550,40 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: Placeholders: %1$s - <strong> tag, %2$s - </strong> tag, %3$s - <a> tag, %4$s - </a> tag
-#: includes/WC_Braintree.php:913
+#: includes/WC_Braintree.php:910
 #, php-format
 msgid "%1$sPayPal Enterprise Payments connection lost.%2$s Your store was connected using OAuth, and those credentials are no longer available. Braintree does not issue API keys for OAuth-connected accounts, so entering keys manually in the settings will not restore payments. Please %3$sopen a support ticket%4$s so our team can help you reconnect your account."
 msgstr ""
 
 #. translators: Placeholders: %1$s - gateway title (e.g. "PayPal Enterprise Payments (Przelewy24)"), %2$s - supported currencies (e.g. "EUR, PLN"), %3$s - <a> tag, %4$s - </a> tag
-#: includes/WC_Braintree.php:984
+#: includes/WC_Braintree.php:992
 #, php-format
 msgid "%1$s requires a Merchant Account ID configured for %2$s. %3$sConfigure a Merchant Account ID%4$s to enable this gateway at checkout."
 msgstr ""
 
 #. translators: Placeholders: %1$s - credential source gateway title, %2$s - current payment method title. Both have a format like "PayPal Enterprise Payments (PayPal)" or "PayPal Enterprise Payments (Credit Card)".
-#: includes/WC_Braintree.php:1096
+#: includes/WC_Braintree.php:1104
 #, php-format
 msgid "%1$s cannot process transactions, as none of the merchant accounts for the credentials from %2$s support this payment method."
 msgstr ""
 
 #. translators: Placeholders: %1$s - other gateway title, %2$s - the current gateway title. Both have the format "PayPal Enterprise Payments (PayPal)" or "PayPal Enterprise Payments (Venmo)".
-#: includes/WC_Braintree.php:1109
+#: includes/WC_Braintree.php:1117
 #, php-format
 msgid "Try using the credentials for %1$s to see if that account supports %2$s."
 msgstr ""
 
 #. translators: Placeholders: %1$s - payment gateway name tag, %2$s - <a> tag, %3$s - </a> tag
-#: includes/WC_Braintree.php:1153
+#: includes/WC_Braintree.php:1161
 #, php-format
 msgid "%1$s: Heads up! Your %2$s dynamic descriptor is invalid and will not be used. Need help? See the %3$sdocumentation%4$s."
 msgstr ""
 
-#: includes/WC_Braintree.php:1294
+#: includes/WC_Braintree.php:1302
 msgid "Configure Credit Card"
 msgstr ""
 
-#: includes/WC_Braintree.php:1294
+#: includes/WC_Braintree.php:1302
 msgid "Configure PayPal"
 msgstr ""
 

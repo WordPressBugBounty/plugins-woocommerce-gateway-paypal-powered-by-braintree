@@ -25,8 +25,8 @@
 namespace WC_Braintree;
 
 use Braintree;
-use SkyVerge\WooCommerce\PluginFramework\v6_2_1 as Framework;
-use SkyVerge\WooCommerce\PluginFramework\v6_2_1\Helpers\OrderHelper;
+use SkyVerge\WooCommerce\PluginFramework\v6_2_4 as Framework;
+use SkyVerge\WooCommerce\PluginFramework\v6_2_4\Helpers\OrderHelper;
 use WC_Braintree\API\WC_Braintree_API;
 use WC_Order;
 

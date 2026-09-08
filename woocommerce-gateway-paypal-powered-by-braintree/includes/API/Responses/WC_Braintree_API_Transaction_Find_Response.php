@@ -25,7 +25,7 @@
 namespace WC_Braintree\API\Responses;
 
 use Braintree\Transaction;
-use SkyVerge\WooCommerce\PluginFramework\v6_2_1 as Framework;
+use SkyVerge\WooCommerce\PluginFramework\v6_2_4 as Framework;
 
 defined( 'ABSPATH' ) or exit;
 

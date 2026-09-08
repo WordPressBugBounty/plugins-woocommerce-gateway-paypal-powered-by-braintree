@@ -24,7 +24,7 @@
 
 namespace WC_Braintree\API\Responses;
 
-use SkyVerge\WooCommerce\PluginFramework\v6_2_1 as Framework;
+use SkyVerge\WooCommerce\PluginFramework\v6_2_4 as Framework;
 use WC_Braintree\API\WC_Braintree_API_Response_Message_Helper;
 
 defined( 'ABSPATH' ) or exit;

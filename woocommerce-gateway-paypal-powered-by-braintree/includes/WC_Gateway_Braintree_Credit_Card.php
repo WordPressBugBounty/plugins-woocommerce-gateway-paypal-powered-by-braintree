@@ -24,8 +24,8 @@
 
 namespace WC_Braintree;
 
-use SkyVerge\WooCommerce\PluginFramework\v6_2_1 as Framework;
-use SkyVerge\WooCommerce\PluginFramework\v6_2_1\Helpers\OrderHelper;
+use SkyVerge\WooCommerce\PluginFramework\v6_2_4 as Framework;
+use SkyVerge\WooCommerce\PluginFramework\v6_2_4\Helpers\OrderHelper;
 use WC_Braintree\Payment_Forms\WC_Braintree_Hosted_Fields_Payment_Form;
 use WC_Order;
 

@@ -24,7 +24,7 @@
 
 namespace WC_Braintree\Google_Pay;
 
-use SkyVerge\WooCommerce\PluginFramework\v6_2_1 as Framework;
+use SkyVerge\WooCommerce\PluginFramework\v6_2_4 as Framework;
 use WC_Braintree\WC_Braintree;
 use WC_Braintree\WC_Braintree_Express_Checkout_Frontend;
 

@@ -2,9 +2,9 @@
 Contributors: woocommerce, automattic, skyverge
 Tags: paypal, braintree, woocommerce, payments, ecommerce
 Requires at least: 6.9
-Tested up to: 7.0
+Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 3.11.1
+Stable tag: 3.11.2
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
@@ -89,6 +89,16 @@ First, [review our documentation](https://woocommerce.com/document/woocommerce-g
 6. Checkout with PayPal directly from the product page
 
 == Changelog ==
+
+= 3.11.2 - 2026-09-08 =
+* Fix - Improvements to the admin payment token editor.
+* Fix - Stop showing the conflicting connection settings notice when a store is correctly configured with manual API credentials and only an unused OAuth token remains.
+* Dev - Upgrade SkyVerge Framework from 6.2.1 to 6.2.4.
+* Dev - Update the E2E test setup to seed subscription products using the WooCommerce Subscriptions 9.0 purchase-options model.
+* Dev - Bump WordPress "Tested up to" to 7.1.
+* Dev - Bump WooCommerce "tested up to" version 11.1.
+* Dev - Bump WooCommerce minimum supported version to 10.9.
+* Dev - Update the PHP_CodeSniffer development dependency to 3.13.6.
 
 = 3.11.1 - 2026-08-05 =
 * Fix - Credit Card 3DS no longer triggers with validation errors on the block checkout page.

@@ -24,8 +24,8 @@
 
 namespace WC_Braintree;
 
-use SkyVerge\WooCommerce\PluginFramework\v6_2_1 as Framework;
-use SkyVerge\WooCommerce\PluginFramework\v6_2_1\SV_WC_Payment_Gateway_Payment_Token;
+use SkyVerge\WooCommerce\PluginFramework\v6_2_4 as Framework;
+use SkyVerge\WooCommerce\PluginFramework\v6_2_4\SV_WC_Payment_Gateway_Payment_Token;
 
 defined( 'ABSPATH' ) or exit;
 
@@ -38,7 +38,7 @@ class WC_Braintree extends Framework\SV_WC_Payment_Gateway_Plugin {
 
 
 	/** plugin version number */
-	const VERSION = '3.11.1'; // WRCS: DEFINED_VERSION.
+	const VERSION = '3.11.2'; // WRCS: DEFINED_VERSION.
 
 	/** Braintree JS SDK version  */
 	const BRAINTREE_JS_SDK_VERSION = '3.129.1';
@@ -732,10 +732,7 @@ class WC_Braintree extends Framework\SV_WC_Payment_Gateway_Plugin {
 					'</a>'
 				),
 				'connection-settings-conflict-notice',
-				array(
-					'dismissible'  => false,
-					'notice_class' => 'notice-error',
-				)
+				array( 'notice_class' => 'notice-error' )
 			);
 		}
 
@@ -917,18 +914,20 @@ class WC_Braintree extends Framework\SV_WC_Payment_Gateway_Plugin {
 				'</a>'
 			),
 			'oauth-credentials-missing-notice',
-			array(
-				'dismissible'  => false,
-				'notice_class' => 'notice-error',
-			)
+			array( 'notice_class' => 'notice-error' )
 		);
 	}
 
 	/**
 	 * Determines whether the plugin has conflicting connection settings.
 	 *
-	 * This occurs when an OAuth access token exists but connect_manually is
-	 * enabled in gateway settings, often after syncing a database from staging.
+	 * This occurs when an OAuth access token exists but connect_manually is enabled in gateway
+	 * settings without a usable set of API credentials, so neither connection method can process
+	 * payments. Often the result of syncing a database from staging.
+	 *
+	 * A manual connection backed by complete API credentials is a supported setup — merchants who
+	 * migrate from OAuth to API keys keep the now-unused token in the options table — so it is not
+	 * reported as a conflict.
 	 *
 	 * @since 3.11.1
 	 *
@@ -943,9 +942,18 @@ class WC_Braintree extends Framework\SV_WC_Payment_Gateway_Plugin {
 		foreach ( array( self::CREDIT_CARD_GATEWAY_ID, self::PAYPAL_GATEWAY_ID ) as $gateway_id ) {
 			$settings = $this->get_gateway_settings( $gateway_id );
 
-			if ( isset( $settings['connect_manually'] ) && 'yes' === $settings['connect_manually'] ) {
-				return true;
+			if ( ! isset( $settings['connect_manually'] ) || 'yes' !== $settings['connect_manually'] ) {
+				continue;
 			}
+
+			$gateway = $this->get_gateway( $gateway_id );
+
+			// The gateway can transact on its manual credentials, so the leftover token is harmless.
+			if ( $gateway instanceof WC_Gateway_Braintree && $gateway->is_configured() ) {
+				continue;
+			}
+
+			return true;
 		}
 
 		return false;

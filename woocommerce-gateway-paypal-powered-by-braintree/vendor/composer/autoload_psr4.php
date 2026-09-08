@@ -7,6 +7,6 @@ $baseDir = dirname($vendorDir);
 
 return array(
     'WC_Braintree\\' => array($baseDir . '/includes'),
-    'SkyVerge\\WooCommerce\\PluginFramework\\v6_2_1\\' => array($vendorDir . '/skyverge/wc-plugin-framework/woocommerce'),
+    'SkyVerge\\WooCommerce\\PluginFramework\\v6_2_4\\' => array($vendorDir . '/skyverge/wc-plugin-framework/woocommerce'),
     'Braintree\\' => array($vendorDir . '/braintree/braintree_php/lib/Braintree'),
 );

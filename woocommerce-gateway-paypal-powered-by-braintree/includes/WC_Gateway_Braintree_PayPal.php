@@ -24,7 +24,7 @@
 
 namespace WC_Braintree;
 
-use SkyVerge\WooCommerce\PluginFramework\v6_2_1\Helpers\OrderHelper;
+use SkyVerge\WooCommerce\PluginFramework\v6_2_4\Helpers\OrderHelper;
 use WC_Braintree\PayPal\Buttons;
 use WC_Braintree\WC_Payment_Token_Braintree_PayPal;
 use WC_Braintree\Payment_Forms\WC_Braintree_PayPal_Payment_Form;
