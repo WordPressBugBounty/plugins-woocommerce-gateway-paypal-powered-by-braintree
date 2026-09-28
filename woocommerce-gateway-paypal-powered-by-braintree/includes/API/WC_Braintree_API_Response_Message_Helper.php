@@ -56,32 +56,36 @@ class WC_Braintree_API_Response_Message_Helper extends Framework\SV_WC_Payment_G
 	 * @var array
 	 */
 	protected $decline_codes = array(
-		'cvv'  => 'csc_mismatch',
-		'avs'  => 'avs_mismatch',
-		'2000' => 'card_declined',
-		'2001' => 'insufficient_funds',
-		'2002' => 'credit_limit_reached',
-		'2003' => 'card_declined',
-		'2004' => 'card_expired',
-		'2005' => 'card_number_invalid',
-		'2006' => 'card_expiry_invalid',
-		'2007' => 'card_type_invalid',
-		'2008' => 'card_number_invalid',
-		'2010' => 'csc_mismatch',
-		'2012' => 'card_declined',
-		'2013' => 'card_declined',
-		'2014' => 'card_declined',
-		'2016' => 'error',
-		'2017' => 'card_declined',
-		'2018' => 'card_declined',
-		'2023' => 'card_type_not_accepted',
-		'2024' => 'card_type_not_accepted',
-		'2038' => 'card_declined',
-		'2046' => 'card_declined',
-		'2056' => 'credit_limit_reached',
-		'2059' => 'avs_mismatch',
-		'2060' => 'avs_mismatch',
-		'2075' => 'paypal_closed',
+		'cvv'            => 'csc_mismatch',
+		'avs'            => 'avs_mismatch',
+		// gateway rejection: the transaction requires 3D Secure authentication (options.three_d_secure.required) and it was not completed successfully.
+		'three_d_secure' => 'authentication_required',
+		'2000'           => 'card_declined',
+		'2001'           => 'insufficient_funds',
+		'2002'           => 'credit_limit_reached',
+		'2003'           => 'card_declined',
+		'2004'           => 'card_expired',
+		'2005'           => 'card_number_invalid',
+		'2006'           => 'card_expiry_invalid',
+		'2007'           => 'card_type_invalid',
+		'2008'           => 'card_number_invalid',
+		'2010'           => 'csc_mismatch',
+		'2012'           => 'card_declined',
+		'2013'           => 'card_declined',
+		'2014'           => 'card_declined',
+		'2016'           => 'error',
+		'2017'           => 'card_declined',
+		'2018'           => 'card_declined',
+		'2023'           => 'card_type_not_accepted',
+		'2024'           => 'card_type_not_accepted',
+		'2038'           => 'card_declined',
+		'2046'           => 'card_declined',
+		'2056'           => 'credit_limit_reached',
+		'2059'           => 'avs_mismatch',
+		'2060'           => 'avs_mismatch',
+		'2075'           => 'paypal_closed',
+		// soft decline (see https://developer.paypal.com/braintree/docs/reference/general/processor-responses/authorization-responses/#2099): the issuer requires 3D Secure authentication for this transaction to succeed.
+		'2099'           => 'authentication_required',
 	);
 
 
@@ -145,6 +149,10 @@ class WC_Braintree_API_Response_Message_Helper extends Framework\SV_WC_Payment_G
 
 			case 'paypal_closed':
 				$message = esc_html__( 'Sorry, we cannot process your transaction. The PayPal account is either locked or closed. Please use a different account or a different payment method.', 'woocommerce-gateway-paypal-powered-by-braintree' );
+				break;
+
+			case 'authentication_required':
+				$message = esc_html__( 'Your card issuer requires additional verification for this payment. Please try again to complete the extra verification step.', 'woocommerce-gateway-paypal-powered-by-braintree' );
 				break;
 
 			default:

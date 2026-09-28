@@ -4,7 +4,7 @@ Tags: paypal, braintree, woocommerce, payments, ecommerce
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 3.11.2
+Stable tag: 3.12.0
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
@@ -89,6 +89,21 @@ First, [review our documentation](https://woocommerce.com/document/woocommerce-g
 6. Checkout with PayPal directly from the product page
 
 == Changelog ==
+
+= 3.12.0 - 2026-09-28 =
+* Add - Allow merchants to disable the forced 3D Secure challenge on one-off credit card transactions so Braintree's 3D Secure Rules Manager can grant SCA exemptions (LVE/TRA) or skip 3D Secure where eligible.
+* Fix - Credit Card 3DS no longer triggers with validation errors on the checkout page for Classic Checkout flow.
+* Fix - Credit Card and PayPal gateways now load correctly on pages using the Classic Checkout block when block checkout is the default.
+* Fix - Show actionable guidance when PayPal sandbox mode is missing a linked PayPal sandbox account, and prevent stale payment error notices from blocking block-based checkout after a failed payment.
+* Fix - Show a clear, actionable message and force a new 3D Secure challenge on retry when a credit card payment is declined because card authentication was required.
+* Fix - Restore manual entry for the Merchant Account ID field when no eligible accounts are found, and hide local payment methods at checkout when they have no usable merchant account for their currency.
+* Fix - Prevent the merchant account ID dropdown from auto-selecting and saving the first account when none was chosen.
+* Fix - Google Pay now properly collects customer phone number on orders.
+* Fix - Default the credentials source to an already configured gateway when a gateway has no Braintree credentials of its own.
+* Fix - Filters the payment method title for the admin order screen to remove any HTML tags.
+* Fix - The Google Pay button on the Cart and Checkout blocks now responds to clicks and opens the Google Pay window.
+* Fix - Shipping options and totals now update to match the address selected in the Google Pay window on the Cart and Checkout blocks.
+* Dev - Align PHP and JS translator comments for the Test badge " mode" suffix so POT generation no longer warns.
 
 = 3.11.2 - 2026-09-08 =
 * Fix - Improvements to the admin payment token editor.

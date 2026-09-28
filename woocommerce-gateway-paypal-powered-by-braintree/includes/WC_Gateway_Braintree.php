@@ -24,6 +24,7 @@
 
 namespace WC_Braintree;
 
+use Automattic\WooCommerce\Blocks\Utils\CartCheckoutUtils;
 use Braintree;
 use SkyVerge\WooCommerce\PluginFramework\v6_2_4 as Framework;
 use SkyVerge\WooCommerce\PluginFramework\v6_2_4\Helpers\OrderHelper;
@@ -297,9 +298,12 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 		$params = array(
 			'merchant_accounts_by_currency' => $merchant_account_configuration_params['merchant_accounts_by_currency'],
 			'current_values_by_currency'    => $merchant_account_configuration_params['current_values_by_currency'],
+			'merchant_accounts_fetch_error' => $merchant_account_configuration_params['merchant_accounts_fetch_error'],
 			'gateway_id'                    => $this->get_id(),
 			'invalid_merchant_account_text' => esc_html__( 'This merchant account ID is invalid or not available for the selected currency.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
-			'no_merchant_account_text'      => esc_html__( 'No merchant account ID available for the selected currency.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+			'no_merchant_account_text'      => esc_html__( 'No merchant account ID was found for the selected currency. You can still enter a merchant account ID manually.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+			'fetch_error_text'              => esc_html__( "We couldn't check for eligible merchant accounts due to a temporary error. You can still enter a merchant account ID manually.", 'woocommerce-gateway-paypal-powered-by-braintree' ),
+			'select_merchant_account_text'  => esc_html__( 'Select a merchant account ID', 'woocommerce-gateway-paypal-powered-by-braintree' ),
 			'default_label_text'            => esc_html__( '[default]', 'woocommerce-gateway-paypal-powered-by-braintree' ),
 			'invalid_label_text'            => esc_html__( '[invalid]', 'woocommerce-gateway-paypal-powered-by-braintree' ),
 			/* translators: %s: currency code, e.g. USD, EUR, GBP, AUD */
@@ -356,12 +360,14 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 			return array(
 				'merchant_accounts_by_currency' => array(),
 				'current_values_by_currency'    => array(),
+				'merchant_accounts_fetch_error' => true,
 			);
 		}
 
 		return array(
 			'merchant_accounts_by_currency' => $merchant_accounts_by_currency,
 			'current_values_by_currency'    => $current_values_by_currency,
+			'merchant_accounts_fetch_error' => (bool) $remote_config->get_merchant_accounts_fetch_error(),
 		);
 	}
 
@@ -490,6 +496,38 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 			$utils_deps    = array_merge( $utils_deps, $utils_asset['dependencies'] ?? array() );
 		}
 		wp_register_script( 'wc-braintree-utils', $this->get_plugin()->get_plugin_url() . '/assets/js/frontend/wc-braintree-utils.min.js', $utils_deps, $utils_version, true );
+	}
+
+
+	/**
+	 * Determines whether the front end gateway assets should load.
+	 *
+	 * Extends the parent to also load assets on pages that use the Classic Checkout block
+	 * (woocommerce/classic-shortcode with shortcode="checkout"), which the framework's
+	 * condition does not account for when block checkout is the default.
+	 *
+	 * @since 3.12.0
+	 * @return bool
+	 */
+	protected function should_enqueue_gateway_assets(): bool {
+
+		if ( parent::should_enqueue_gateway_assets() ) {
+			return true;
+		}
+
+		if ( is_singular() ) {
+			$post_id = get_queried_object_id();
+
+			if ( $post_id ) {
+				$post_content = (string) get_post_field( 'post_content', $post_id );
+
+				if ( false !== strpos( $post_content, '<!-- wp:woocommerce/classic-shortcode' ) && class_exists( CartCheckoutUtils::class ) ) {
+					return CartCheckoutUtils::has_block_variation( 'woocommerce/classic-shortcode', 'shortcode', 'checkout', $post_content );
+				}
+			}
+		}
+
+		return false;
 	}
 
 
@@ -1061,17 +1099,8 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 				continue;
 			}
 
-			// Check which environments this gateway has credentials for.
-			$has_production = ! empty( $gateway_settings['merchant_id'] )
-				&& ! empty( $gateway_settings['public_key'] )
-				&& ! empty( $gateway_settings['private_key'] );
-
-			$has_sandbox = ! empty( $gateway_settings['sandbox_merchant_id'] )
-				&& ! empty( $gateway_settings['sandbox_public_key'] )
-				&& ! empty( $gateway_settings['sandbox_private_key'] );
-
 			// Only add gateway if it has credentials for at least one environment.
-			if ( $has_production || $has_sandbox ) {
+			if ( $this->settings_have_credentials( $gateway_settings ) ) {
 				$gateway = $this->get_plugin()->get_gateway( $gateway_id );
 
 				$source_options[ $gateway_id ] = sprintf(
@@ -1096,7 +1125,7 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 		// Only show dropdown if there are options.
 		if ( ! empty( $source_options ) ) {
 			// Determine default source.
-			$default_source = $this->can_gateway_store_credentials() ? 'manual' : key( $source_options );
+			$default_source = $this->get_default_credentials_source( $source_options );
 
 			$form_fields['inherit_settings_source'] = array(
 				'title'       => $this->can_gateway_store_credentials()
@@ -1167,6 +1196,184 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 		}
 
 		return $form_fields;
+	}
+
+
+	/**
+	 * Determines whether a gateway settings array holds a complete set of Braintree API credentials.
+	 *
+	 * A set is only considered complete when the merchant ID, public key and private
+	 * key are all present for the same environment.
+	 *
+	 * @since 3.12.0
+	 *
+	 * @param array|mixed $settings    Gateway settings array, as returned by SV_WC_Payment_Gateway_Plugin::get_gateway_settings().
+	 * @param string      $environment Optional. Environment to check. Defaults to an empty string, meaning any environment.
+	 * @return bool
+	 */
+	private function settings_have_credentials( $settings, string $environment = '' ): bool {
+
+		if ( ! is_array( $settings ) ) {
+			return false;
+		}
+
+		$environments = '' === $environment
+			? array( self::ENVIRONMENT_PRODUCTION, self::ENVIRONMENT_SANDBOX )
+			: array( $environment );
+
+		foreach ( $environments as $environment_id ) {
+
+			// Sandbox credentials are stored under prefixed keys.
+			$prefix = self::ENVIRONMENT_SANDBOX === $environment_id ? 'sandbox_' : '';
+
+			if (
+				! empty( $settings[ $prefix . 'merchant_id' ] )
+				&& ! empty( $settings[ $prefix . 'public_key' ] )
+				&& ! empty( $settings[ $prefix . 'private_key' ] )
+			) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+
+	/**
+	 * Determines the default value for the `inherit_settings_source` field.
+	 *
+	 * This default is only ever used by WooCommerce when the gateway has no saved
+	 * value for the field, so an explicitly saved value always wins.
+	 *
+	 * The rules, in order:
+	 *
+	 * 1. A gateway that cannot store its own credentials must inherit, so a source
+	 *    gateway is always chosen for it.
+	 * 2. A gateway that can store its own credentials keeps defaulting to `manual`
+	 *    when it already has a complete set of credentials of its own, or when this
+	 *    gateway itself is connected through Braintree Auth (an access token exists
+	 *    and this gateway is not set to connect manually), since credentials then
+	 *    come from the token rather than the gateway settings.
+	 * 3. Otherwise the gateway has no way of its own to talk to Braintree, so a
+	 *    configured source gateway is used instead of an empty manual form. Only
+	 *    sources that are usable are eligible: inheriting copies the source's
+	 *    environment along with its keys, so a source only counts when its
+	 *    credentials are complete for the environment it is itself set to.
+	 *    Among those, a source whose environment matches the one this gateway is
+	 *    set to use is preferred, and remaining ties are broken by the declared
+	 *    source order from get_available_credential_source_gateways() (Credit
+	 *    Card, then PayPal) rather than by incidental array order.
+	 * 4. When no source is usable, a gateway that can store its own credentials
+	 *    falls back to `manual` rather than being pointed at a source that cannot
+	 *    connect. A gateway that cannot store credentials has no manual option to
+	 *    fall back to, so it keeps selecting the first source as it always has.
+	 *
+	 * @since 3.12.0
+	 *
+	 * @param array $source_options The credentials source options, keyed by option value.
+	 * @return string
+	 */
+	private function get_default_credentials_source( array $source_options ): string {
+
+		$own_settings = $this->get_plugin()->get_gateway_settings( $this->get_id() );
+
+		if ( $this->can_gateway_store_credentials() ) {
+
+			// Mirrors is_connected_manually(), but reads the saved `connect_manually`
+			// value straight from $own_settings instead of the $this->connect_manually
+			// property: form fields are initialized before settings are loaded, so that
+			// property is not populated yet the first time this method runs.
+			$connects_manually = ! $this->can_connect() || ( is_array( $own_settings ) && 'yes' === ( $own_settings['connect_manually'] ?? 'no' ) );
+
+			// Keep manual entry as the default whenever this gateway can already
+			// reach Braintree on its own. Never flip a configured gateway.
+			if ( $this->settings_have_credentials( $own_settings ) || ( $this->is_connected() && ! $connects_manually ) ) {
+				return 'manual';
+			}
+		}
+
+		$candidates = array_values( array_diff( array_keys( $source_options ), array( 'manual' ) ) );
+
+		if ( empty( $candidates ) ) {
+			return 'manual';
+		}
+
+		// Inheriting copies the source gateway's environment along with its keys
+		// (see $shared_settings_names), so a source is only usable when its
+		// credentials are complete for the environment it is itself set to.
+		$usable = array();
+
+		foreach ( $candidates as $gateway_id ) {
+
+			$source_settings = $this->get_plugin()->get_gateway_settings( $gateway_id );
+
+			if ( $this->settings_have_credentials( $source_settings, $this->get_settings_environment( $source_settings ) ) ) {
+				$usable[] = $gateway_id;
+			}
+		}
+
+		if ( empty( $usable ) ) {
+
+			// Never point a gateway that can enter its own credentials at a source
+			// that cannot connect: leave it on the manual form instead.
+			if ( $this->can_gateway_store_credentials() ) {
+				return 'manual';
+			}
+
+			// A gateway that cannot store credentials has no such fallback, so keep
+			// selecting the first source, as this field has always done. Return
+			// immediately rather than falling into the environment-preference pass
+			// below, which operates on usable sources and would otherwise pick a
+			// later, equally-unusable candidate whose declared environment happens
+			// to match this gateway's.
+			return (string) reset( $candidates );
+		}
+
+		// Prefer a usable source that already runs in this gateway's environment.
+		$environment = $this->get_settings_environment( $own_settings );
+		$preferred   = array();
+
+		foreach ( $usable as $gateway_id ) {
+
+			if ( $environment === $this->get_settings_environment( $this->get_plugin()->get_gateway_settings( $gateway_id ) ) ) {
+				$preferred[] = $gateway_id;
+			}
+		}
+
+		if ( empty( $preferred ) ) {
+			$preferred = $usable;
+		}
+
+		// Break remaining ties using the declared source gateway order.
+		foreach ( $this->get_available_credential_source_gateways() as $gateway_id ) {
+
+			if ( in_array( $gateway_id, $preferred, true ) ) {
+				return (string) $gateway_id;
+			}
+		}
+
+		return (string) reset( $preferred );
+	}
+
+
+	/**
+	 * Gets the environment a gateway settings array is set to use.
+	 *
+	 * Falls back to production, which is the default for the `environment` form
+	 * field because it is the first environment returned by get_braintree_environments().
+	 *
+	 * @since 3.12.0
+	 *
+	 * @param array|mixed $settings Gateway settings array, as returned by SV_WC_Payment_Gateway_Plugin::get_gateway_settings().
+	 * @return string
+	 */
+	private function get_settings_environment( $settings ): string {
+
+		if ( is_array( $settings ) && ! empty( $settings['environment'] ) && is_string( $settings['environment'] ) ) {
+			return $settings['environment'];
+		}
+
+		return self::ENVIRONMENT_PRODUCTION;
 	}
 
 
@@ -1586,6 +1793,7 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 
 			.js-remove-merchant-account-id .dashicons-trash { margin-top: 5px; opacity: .4; } .js-remove-merchant-account-id { text-decoration: none; }
 			input.js-dynamic-descriptor-valid { border-color: #7ad03a; } input.js-dynamic-descriptor-invalid { border-color: #a00; }
+			.js-add-merchant-account-id.disabled { opacity: .5; pointer-events: none; cursor: default; }
 
 			.wc-braintree-auth.disabled {
 				opacity: 0.25;
@@ -1659,10 +1867,31 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 
 		} ).change();
 
+		/**
+		 * Disable the "Add merchant account ID for {currency}" button when the currently
+		 * selected currency already has a merchant account ID field on the page, since
+		 * clicking it again would be a no-op and otherwise looks like a stale/broken control.
+		 */
+		function updateAddMerchantAccountButtonState() {
+			var currency = $( 'select#wc_braintree_merchant_account_id_currency' ).val();
+
+			if ( ! currency ) {
+				return;
+			}
+
+			var fieldName    = 'woocommerce_' + wc_braintree_admin_params.gateway_id + '_merchant_account_id[' + currency.toLowerCase() + ']';
+			var alreadyAdded = $( 'input[name="' + fieldName + '"], select[name="' + fieldName + '"]' ).length > 0;
+
+			$( '.js-add-merchant-account-id' ).toggleClass( 'disabled', alreadyAdded );
+		}
+
 		// sync add merchant account ID button text to selected currency
 		$( 'select#wc_braintree_merchant_account_id_currency' ).change( function() {
 			$( '.js-add-merchant-account-id' ).text( '<?php esc_html_e( 'Add merchant account ID for ', 'woocommerce-gateway-paypal-powered-by-braintree' ); ?>' + $( this ).val() )
+			updateAddMerchantAccountButtonState();
 		} );
+
+		updateAddMerchantAccountButtonState();
 
 		/**
 		 * Render merchant account HTML for a given currency.
@@ -1681,7 +1910,8 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 			var merchantAccounts = params.merchant_accounts_by_currency[ currencyCode ] || [];
 			var currentValue = params.current_values_by_currency[ currencyCode ] || '';
 			var hasAccounts = merchantAccounts.length > 0;
-			var isInvalid = currentValue && ! merchantAccounts.some( function( account ) {
+			var fetchError = params.merchant_accounts_fetch_error;
+			var isInvalid = currentValue && ! fetchError && ! merchantAccounts.some( function( account ) {
 				return account.id === currentValue;
 			} );
 
@@ -1731,12 +1961,11 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 				errorInputElement.id = id;
 				errorInputElement.value = currentValue;
 				errorInputElement.placeholder = '';
-				errorInputElement.disabled = true;
 				errorDivElement.appendChild( errorInputElement );
 
 				const errorParagraphElement = document.createElement( 'p' );
 				errorParagraphElement.className = 'description wc-braintree-merchant-account-error';
-				errorParagraphElement.innerText = isInvalid ? params.invalid_merchant_account_text : params.no_merchant_account_text;
+				errorParagraphElement.innerText = fetchError ? params.fetch_error_text : ( isInvalid ? params.invalid_merchant_account_text : params.no_merchant_account_text );
 				errorDivElement.appendChild( errorParagraphElement );
 			} else {
 				const controlsDivElement = document.createElement( 'div' );
@@ -1748,6 +1977,13 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 				selectElement.className = 'wc-enhanced-select js-merchant-account-id-input js-merchant-account-id-select' + ( isInvalid ? ' error' : '' );
 				selectElement.name = name;
 				selectElement.id = id;
+
+				const placeholderOptionElement = document.createElement( 'option' );
+				selectElement.appendChild( placeholderOptionElement );
+				placeholderOptionElement.value = '';
+				placeholderOptionElement.innerText = params.select_merchant_account_text || '';
+				placeholderOptionElement.selected = ! currentValue;
+
 				if ( isInvalid ) {
 					selectElement.dataset.invalidValue = currentValue;
 
@@ -1798,7 +2034,7 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 			var currency = $( 'select#wc_braintree_merchant_account_id_currency' ).val();
 			var $button = $( this );
 
-			if ( ! currency ) {
+			if ( ! currency || $button.hasClass( 'disabled' ) ) {
 				return;
 			}
 
@@ -1825,6 +2061,8 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 			if ( $( trElement ).find( 'select.wc-enhanced-select' ).length ) {
 				$( trElement ).find( 'select.wc-enhanced-select' ).selectWoo();
 			}
+
+			updateAddMerchantAccountButtonState();
 		} );
 
 		// delete existing merchant account ID
@@ -1833,6 +2071,7 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 
 			$( this ).closest( 'tr' ).delay( 50 ).fadeOut( 400, function() {
 				$( this ).remove();
+				updateAddMerchantAccountButtonState();
 			} );
 		} );
 
@@ -1933,9 +2172,11 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 
 		$remote_config     = $this->get_remote_config();
 		$merchant_accounts = $remote_config->find_eligible_merchant_accounts_by_currency_and_payment_gateway( $currency_code, $this->get_id() );
+		$fetch_error       = $remote_config->get_merchant_accounts_fetch_error();
 
 		$current_value = $this->get_option( "merchant_account_id_{$currency_code}" );
-		$is_invalid    = ! $this->is_current_merchant_account_id_valid( $current_value );
+		// An unset/empty value is not invalid — it simply means no account was chosen.
+		$is_invalid = ! empty( $current_value ) && ! $this->is_current_merchant_account_id_valid( $current_value );
 
 		$invalidity_reason = $is_invalid ? $this->get_current_id_invalidity_reason( $current_value, $currency_code ) : '';
 
@@ -1952,17 +2193,19 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 						<?php if ( count( $merchant_accounts ) === 0 ) : ?>
 							<?php
 							$input_class = 'input-text regular-input js-merchant-account-id-input';
-							if ( $is_invalid ) {
+							if ( $is_invalid && ! $fetch_error ) {
 								$input_class .= ' error';
 							}
 							?>
 							<div>
-								<input class="<?php echo esc_attr( $input_class ); ?>" type="text" name="<?php printf( 'woocommerce_%s_merchant_account_id[%s]', esc_attr( $this->get_id() ), esc_attr( $currency_code ) ); ?>" id="<?php echo esc_attr( $id ); ?>" value="<?php echo esc_attr( $current_value ); ?>" placeholder="" disabled ?>
+								<input class="<?php echo esc_attr( $input_class ); ?>" type="text" name="<?php printf( 'woocommerce_%s_merchant_account_id[%s]', esc_attr( $this->get_id() ), esc_attr( $currency_code ) ); ?>" id="<?php echo esc_attr( $id ); ?>" value="<?php echo esc_attr( $current_value ); ?>" placeholder="" />
 								<p class="description wc-braintree-merchant-account-error">
-									<?php if ( $is_invalid ) : ?>
+									<?php if ( $fetch_error ) : ?>
+										<?php esc_html_e( "We couldn't check for eligible merchant accounts due to a temporary error. You can still enter a merchant account ID manually.", 'woocommerce-gateway-paypal-powered-by-braintree' ); ?>
+									<?php elseif ( $is_invalid ) : ?>
 										<?php echo esc_html( $invalidity_reason ); ?>
-									<?php elseif ( count( $merchant_accounts ) === 0 ) : ?>
-										<?php esc_html_e( 'No merchant account ID available for the selected currency.', 'woocommerce-gateway-paypal-powered-by-braintree' ); ?>
+									<?php else : ?>
+										<?php esc_html_e( 'No merchant account ID was found for the selected currency. You can still enter a merchant account ID manually.', 'woocommerce-gateway-paypal-powered-by-braintree' ); ?>
 									<?php endif; ?>
 								</p>
 							</div>
@@ -1974,7 +2217,8 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 									$select_class .= ' error';
 								}
 								?>
-								<select class="<?php echo esc_attr( $select_class ); ?>" name="<?php printf( 'woocommerce_%s_merchant_account_id[%s]', esc_attr( $this->get_id() ), esc_attr( $currency_code ) ); ?>" id="<?php echo esc_attr( $id ); ?>" <?php echo $is_invalid && ! empty( $current_value ) ? 'data-invalid-value="' . esc_attr( $current_value ) . '"' : ''; ?>>
+								<select class="<?php echo esc_attr( $select_class ); ?>" name="<?php printf( 'woocommerce_%s_merchant_account_id[%s]', esc_attr( $this->get_id() ), esc_attr( $currency_code ) ); ?>" id="<?php echo esc_attr( $id ); ?>" <?php echo $is_invalid ? 'data-invalid-value="' . esc_attr( $current_value ) . '"' : ''; ?>>
+									<option value="" <?php selected( empty( $current_value ) ); ?>><?php esc_html_e( 'Select a merchant account ID', 'woocommerce-gateway-paypal-powered-by-braintree' ); ?></option>
 									<?php if ( $is_invalid ) : ?>
 										<option value="<?php echo esc_attr( $current_value ); ?>" selected="selected"><?php echo esc_html( $current_value ) . ' [invalid]'; ?></option>
 									<?php endif; ?>
@@ -2103,19 +2347,21 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 
 		$merchant_account_id_field_key = sprintf( 'woocommerce_%s_merchant_account_id', $this->get_id() );
 
-		// add merchant account IDs.
-		if ( ! empty( $_POST[ $merchant_account_id_field_key ] ) ) {
+		// Add merchant account IDs. A malformed request could submit a scalar, which array_map() cannot handle.
+		if ( ! empty( $_POST[ $merchant_account_id_field_key ] ) && is_array( $_POST[ $merchant_account_id_field_key ] ) ) {
 
 			$currency_codes = array_keys( get_woocommerce_currencies() );
 
-			// Sanitize merchant account IDs.
-			$merchant_account_ids = array_map( 'sanitize_text_field', $_POST[ $merchant_account_id_field_key ] );
+			// Unslash before sanitizing: WordPress adds slashes to all request data.
+			$merchant_account_ids = array_map( 'sanitize_text_field', wp_unslash( $_POST[ $merchant_account_id_field_key ] ) );
 
-			// Filter merchant account IDs to only valid currencies.
+			// Filter merchant account IDs to only valid currencies with a chosen account.
+			// Empty values (placeholder option) must not be persisted — matching the old
+			// free-text field behavior where an unset value stayed blank.
 			$merchant_account_ids = array_filter(
 				$merchant_account_ids,
 				static function ( $merchant_account_id, $currency ) use ( $currency_codes ) {
-					return in_array( strtoupper( $currency ), $currency_codes, true );
+					return '' !== $merchant_account_id && in_array( strtoupper( $currency ), $currency_codes, true );
 				},
 				ARRAY_FILTER_USE_BOTH
 			);
@@ -2127,10 +2373,17 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 					continue;
 				}
 
+				$merchant_account_id = trim( $merchant_account_id );
+
+				// Skip the empty placeholder option.
+				if ( '' === $merchant_account_id ) {
+					continue;
+				}
+
 				$merchant_account_key = 'merchant_account_id_' . strtolower( esc_sql( $currency ) );
 
 				// add to persisted fields.
-				$sanitized_fields[ $merchant_account_key ] = wp_kses_post( trim( stripslashes( $merchant_account_id ) ) );
+				$sanitized_fields[ $merchant_account_key ] = wp_kses_post( $merchant_account_id );
 				$this->settings[ $merchant_account_key ]   = $sanitized_fields[ $merchant_account_key ];
 			}
 		}
@@ -2138,6 +2391,14 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 		// Clear OAuth history when the merchant intentionally opts into or configures a manual
 		// API key connection (including after a lost OAuth token, when the disconnect UI is gone).
 		$sanitized_fields = $this->maybe_clear_oauth_history_on_manual_connection( $sanitized_fields );
+
+		// Local payment gateways cache their credentials source's default merchant account currency
+		// (see WC_Gateway_Braintree_Local_Payment::get_default_merchant_account_currency()), keyed by
+		// get_credentials_source() rather than get_id() - which is this gateway's own ID only when its
+		// credentials are manual, and the *inherited-from* gateway's ID otherwise. Use the same
+		// resolution here so saving settings on either the credentials-holding gateway or a gateway
+		// that inherits from it invalidates the correct cache entry instead of a key nothing reads.
+		delete_transient( 'wc_braintree_default_maid_currency_' . $this->get_credentials_source() );
 
 		return $sanitized_fields;
 		// phpcs:enable
@@ -3039,18 +3300,29 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 				if ( ! empty( $messages ) ) {
 					$result['message'] = implode( '. ', $messages );
 				}
+
+				// The Store API surfaces the failure via the result message and never renders
+				// session notices, so clear the harvested notices (e.g. the one added by
+				// mark_order_as_failed()) to keep them from resurfacing as stale errors on
+				// later requests. Classic checkout still renders them on the next page load.
+				if ( WC()->is_store_api_request() ) {
+					wc_clear_notices();
+				}
 			}
 		}
 
 		// Replace error message for status code 91564 (Cannot use a paymentMethodNonce more than once).
 		if ( isset( $result['message'] ) && false !== strpos( $result['message'], 'Status code 91564:' ) ) {
-			wc_clear_notices();
-			// Add custom user-friendly notice.
-			wc_add_notice(
-				esc_html__( 'An error occurred while processing your payment, please reload the page and try again, or try an alternate payment method.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
-				'error'
-			);
-			// No need to update the result, we just want to replace the customer facing message.
+			$user_friendly_message = esc_html__( 'An error occurred while processing your payment, please reload the page and try again, or try an alternate payment method.', 'woocommerce-gateway-paypal-powered-by-braintree' );
+
+			// Store API uses the result array; classic checkout also needs the message in result.
+			$result['message'] = $user_friendly_message;
+
+			// Session notices are for classic checkout only; Store API uses the result/response.
+			if ( ! WC()->is_store_api_request() ) {
+				wc_clear_notices();
+				wc_add_notice( $user_friendly_message, 'error' );
+			}
 		}
 
 		return $result;
@@ -3119,7 +3391,6 @@ class WC_Gateway_Braintree extends Framework\SV_WC_Payment_Gateway_Direct {
 	public function needs_setup() {
 		return ! $this->is_configured();
 	}
-
 
 	/** Webhook Methods *******************************************************/
 

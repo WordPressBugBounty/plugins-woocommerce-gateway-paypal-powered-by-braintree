@@ -2,21 +2,21 @@
 # This file is distributed under the same license as the PayPal Enterprise Payments (formerly Braintree) for WooCommerce plugin.
 msgid ""
 msgstr ""
-"Project-Id-Version: PayPal Enterprise Payments (formerly Braintree) for WooCommerce 3.11.2\n"
-"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/woocommerce-gateway-paypal-powered-by-braintree\n"
+"Project-Id-Version: PayPal Enterprise Payments (formerly Braintree) for WooCommerce 3.12.0\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/target-repo\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-09-08T14:59:25+00:00\n"
+"POT-Creation-Date: 2026-09-28T11:38:26+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: woocommerce-gateway-paypal-powered-by-braintree\n"
 
 #. Plugin Name of the plugin
 #: woocommerce-gateway-paypal-powered-by-braintree.php:3
-#: includes/WC_Braintree.php:1212
+#: includes/WC_Braintree.php:1268
 msgid "PayPal Enterprise Payments (formerly Braintree) for WooCommerce"
 msgstr ""
 
@@ -158,8 +158,13 @@ msgstr ""
 msgid "Braintree cannot verify your server's SSL certificate. Please contact your hosting provider or try again later."
 msgstr ""
 
-#: includes/API/WC_Braintree_API_Response_Message_Helper.php:147
+#: includes/API/WC_Braintree_API_Response_Message_Helper.php:151
 msgid "Sorry, we cannot process your transaction. The PayPal account is either locked or closed. Please use a different account or a different payment method."
+msgstr ""
+
+#: includes/API/WC_Braintree_API_Response_Message_Helper.php:155
+#: includes/WC_Gateway_Braintree_Credit_Card.php:1420
+msgid "Your card issuer requires additional verification for this payment. Please try again to complete the extra verification step."
 msgstr ""
 
 #: includes/Apple_Pay/Apple_Pay.php:120
@@ -197,18 +202,18 @@ msgid "Apple Pay payment failed. %s"
 msgstr ""
 
 #: includes/Apple_Pay/Apple_Pay.php:382
-#: includes/Google_Pay/Google_Pay.php:297
+#: includes/Google_Pay/Google_Pay.php:301
 msgid "Email address is required to create an account."
 msgstr ""
 
 #: includes/Apple_Pay/Apple_Pay.php:386
-#: includes/Google_Pay/Google_Pay.php:301
+#: includes/Google_Pay/Google_Pay.php:305
 msgid "An account with this email address already exists. Please log in to continue."
 msgstr ""
 
 #. translators: %s: error message from user creation
 #: includes/Apple_Pay/Apple_Pay.php:404
-#: includes/Google_Pay/Google_Pay.php:326
+#: includes/Google_Pay/Google_Pay.php:330
 #, php-format
 msgid "Could not create user account: %s"
 msgstr ""
@@ -234,12 +239,12 @@ msgstr ""
 msgid "Google Pay payment authorized."
 msgstr ""
 
-#: includes/Google_Pay/Google_Pay.php:225
+#: includes/Google_Pay/Google_Pay.php:229
 msgid "Gateway processing error."
 msgstr ""
 
 #. Translators: Placeholders: %s - the error message
-#: includes/Google_Pay/Google_Pay.php:243
+#: includes/Google_Pay/Google_Pay.php:247
 #, php-format
 msgid "Google Pay payment failed. %s"
 msgstr ""
@@ -393,7 +398,7 @@ msgid "Security Code"
 msgstr ""
 
 #: includes/Payment_Forms/WC_Braintree_Hosted_Fields_Payment_Form.php:173
-#: includes/WC_Gateway_Braintree_Credit_Card.php:1143
+#: includes/WC_Gateway_Braintree_Credit_Card.php:1423
 msgid "We cannot process your order with the payment information that you provided. Please use an alternate payment method."
 msgstr ""
 
@@ -419,7 +424,11 @@ msgstr ""
 msgid "Please click the \"PayPal\" button below to log into your PayPal account before adding your payment method."
 msgstr ""
 
-#: includes/Payment_Forms/WC_Braintree_PayPal_Payment_Form.php:255
+#: includes/Payment_Forms/WC_Braintree_PayPal_Payment_Form.php:124
+msgid "PayPal cannot be used in sandbox mode until a PayPal sandbox account is linked to your Braintree sandbox account in the Braintree Control Panel."
+msgstr ""
+
+#: includes/Payment_Forms/WC_Braintree_PayPal_Payment_Form.php:257
 msgid "Use a new PayPal account"
 msgstr ""
 
@@ -436,19 +445,18 @@ msgstr ""
 
 #: includes/PayPal/Buttons/Abstract_Button.php:586
 #: includes/Venmo/Buttons/Abstract_Button.php:450
-#: includes/WC_Gateway_Braintree.php:1252
+#: includes/WC_Gateway_Braintree.php:1459
 msgid "Cancel"
 msgstr ""
 
 #. translators: visible short-form badge label; paired with a screen-reader-only " mode" suffix that together read as "Test mode"
-#: includes/Test_Mode_Badge.php:49
+#: includes/Test_Mode_Badge.php:78
 #: client/blocks/shared/test-mode-notice/test-badge.js:12
 msgid "Test"
 msgstr ""
 
-#. translators: screen-reader-only suffix to the "Test" badge — full reading is "Test mode"
 #. translators: suffix to the "Test" badge label, announced only to screen readers
-#: includes/Test_Mode_Badge.php:52
+#: includes/Test_Mode_Badge.php:81
 #: client/blocks/shared/test-mode-notice/test-badge.js:16
 msgid " mode"
 msgstr ""
@@ -466,7 +474,7 @@ msgid "An error occurred while processing the Venmo button callback."
 msgstr ""
 
 #: includes/WC_Braintree.php:207
-#: includes/WC_Gateway_Braintree.php:1546
+#: includes/WC_Gateway_Braintree.php:1753
 #: client/blocks/shared/test-mode-notice/copyable-card-number.js:85
 msgid "Copied!"
 msgstr ""
@@ -550,40 +558,50 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: Placeholders: %1$s - <strong> tag, %2$s - </strong> tag, %3$s - <a> tag, %4$s - </a> tag
-#: includes/WC_Braintree.php:910
+#: includes/WC_Braintree.php:913
 #, php-format
 msgid "%1$sPayPal Enterprise Payments connection lost.%2$s Your store was connected using OAuth, and those credentials are no longer available. Braintree does not issue API keys for OAuth-connected accounts, so entering keys manually in the settings will not restore payments. Please %3$sopen a support ticket%4$s so our team can help you reconnect your account."
 msgstr ""
 
 #. translators: Placeholders: %1$s - gateway title (e.g. "PayPal Enterprise Payments (Przelewy24)"), %2$s - supported currencies (e.g. "EUR, PLN"), %3$s - <a> tag, %4$s - </a> tag
-#: includes/WC_Braintree.php:992
+#: includes/WC_Braintree.php:995
 #, php-format
 msgid "%1$s requires a Merchant Account ID configured for %2$s. %3$sConfigure a Merchant Account ID%4$s to enable this gateway at checkout."
 msgstr ""
 
 #. translators: Placeholders: %1$s - credential source gateway title, %2$s - current payment method title. Both have a format like "PayPal Enterprise Payments (PayPal)" or "PayPal Enterprise Payments (Credit Card)".
-#: includes/WC_Braintree.php:1104
+#: includes/WC_Braintree.php:1093
 #, php-format
 msgid "%1$s cannot process transactions, as none of the merchant accounts for the credentials from %2$s support this payment method."
 msgstr ""
 
 #. translators: Placeholders: %1$s - other gateway title, %2$s - the current gateway title. Both have the format "PayPal Enterprise Payments (PayPal)" or "PayPal Enterprise Payments (Venmo)".
-#: includes/WC_Braintree.php:1117
+#: includes/WC_Braintree.php:1106
 #, php-format
 msgid "Try using the credentials for %1$s to see if that account supports %2$s."
 msgstr ""
 
+#. translators: Placeholders: %1$s - gateway title, %2$s - link to Braintree documentation
+#: includes/WC_Braintree.php:1177
+#, php-format
+msgid "%1$s cannot be used in sandbox mode until a PayPal sandbox account is linked to your Braintree sandbox account. Link a PayPal sandbox account under Settings > Processing > PayPal in the Braintree sandbox Control Panel. See %2$s for details."
+msgstr ""
+
+#: includes/WC_Braintree.php:1179
+msgid "the Braintree documentation"
+msgstr ""
+
 #. translators: Placeholders: %1$s - payment gateway name tag, %2$s - <a> tag, %3$s - </a> tag
-#: includes/WC_Braintree.php:1161
+#: includes/WC_Braintree.php:1217
 #, php-format
 msgid "%1$s: Heads up! Your %2$s dynamic descriptor is invalid and will not be used. Need help? See the %3$sdocumentation%4$s."
 msgstr ""
 
-#: includes/WC_Braintree.php:1302
+#: includes/WC_Braintree.php:1358
 msgid "Configure Credit Card"
 msgstr ""
 
-#: includes/WC_Braintree.php:1302
+#: includes/WC_Braintree.php:1358
 msgid "Configure PayPal"
 msgstr ""
 
@@ -665,292 +683,302 @@ msgstr ""
 msgid "Please contact the customer to resolve the payment issue."
 msgstr ""
 
-#: includes/WC_Gateway_Braintree.php:301
-#: includes/WC_Gateway_Braintree.php:2038
+#: includes/WC_Gateway_Braintree.php:303
+#: includes/WC_Gateway_Braintree.php:2282
 msgid "This merchant account ID is invalid or not available for the selected currency."
 msgstr ""
 
-#: includes/WC_Gateway_Braintree.php:302
-#: includes/WC_Gateway_Braintree.php:1965
-msgid "No merchant account ID available for the selected currency."
+#: includes/WC_Gateway_Braintree.php:304
+#: includes/WC_Gateway_Braintree.php:2208
+msgid "No merchant account ID was found for the selected currency. You can still enter a merchant account ID manually."
 msgstr ""
 
-#: includes/WC_Gateway_Braintree.php:303
+#: includes/WC_Gateway_Braintree.php:305
+#: includes/WC_Gateway_Braintree.php:2204
+msgid "We couldn't check for eligible merchant accounts due to a temporary error. You can still enter a merchant account ID manually."
+msgstr ""
+
+#: includes/WC_Gateway_Braintree.php:306
+#: includes/WC_Gateway_Braintree.php:2221
+msgid "Select a merchant account ID"
+msgstr ""
+
+#: includes/WC_Gateway_Braintree.php:307
 msgid "[default]"
 msgstr ""
 
-#: includes/WC_Gateway_Braintree.php:304
+#: includes/WC_Gateway_Braintree.php:308
 msgid "[invalid]"
 msgstr ""
 
 #. translators: %s: currency code, e.g. USD, EUR, GBP, AUD
-#: includes/WC_Gateway_Braintree.php:306
-#: includes/WC_Gateway_Braintree.php:1932
+#: includes/WC_Gateway_Braintree.php:310
+#: includes/WC_Gateway_Braintree.php:2171
 #, php-format
 msgid "Merchant Account ID (%s)"
 msgstr ""
 
-#: includes/WC_Gateway_Braintree.php:307
-#: includes/WC_Gateway_Braintree.php:2001
+#: includes/WC_Gateway_Braintree.php:311
+#: includes/WC_Gateway_Braintree.php:2245
 msgid "Remove this merchant account ID"
 msgstr ""
 
-#: includes/WC_Gateway_Braintree.php:558
-#: includes/WC_Gateway_Braintree_Credit_Card.php:1150
+#: includes/WC_Gateway_Braintree.php:596
+#: includes/WC_Gateway_Braintree_Credit_Card.php:1388
 msgid "Oops, there was a temporary payment error. Please try another payment method or contact us to complete your transaction."
 msgstr ""
 
-#: includes/WC_Gateway_Braintree.php:926
+#: includes/WC_Gateway_Braintree.php:964
 msgid "Merchant ID"
 msgstr ""
 
-#: includes/WC_Gateway_Braintree.php:929
+#: includes/WC_Gateway_Braintree.php:967
 msgid "The Merchant ID for your Braintree account."
 msgstr ""
 
-#: includes/WC_Gateway_Braintree.php:932
+#: includes/WC_Gateway_Braintree.php:970
 msgid "Public Key"
 msgstr ""
 
-#: includes/WC_Gateway_Braintree.php:935
+#: includes/WC_Gateway_Braintree.php:973
 msgid "The Public Key for your Braintree account."
 msgstr ""
 
-#: includes/WC_Gateway_Braintree.php:938
+#: includes/WC_Gateway_Braintree.php:976
 msgid "Private Key"
 msgstr ""
 
-#: includes/WC_Gateway_Braintree.php:941
+#: includes/WC_Gateway_Braintree.php:979
 msgid "The Private Key for your Braintree account."
 msgstr ""
 
-#: includes/WC_Gateway_Braintree.php:945
+#: includes/WC_Gateway_Braintree.php:983
 msgid "Sandbox Merchant ID"
 msgstr ""
 
-#: includes/WC_Gateway_Braintree.php:948
+#: includes/WC_Gateway_Braintree.php:986
 msgid "The Merchant ID for your Braintree sandbox account."
 msgstr ""
 
-#: includes/WC_Gateway_Braintree.php:951
+#: includes/WC_Gateway_Braintree.php:989
 msgid "Sandbox Public Key"
 msgstr ""
 
-#: includes/WC_Gateway_Braintree.php:954
+#: includes/WC_Gateway_Braintree.php:992
 msgid "The Public Key for your Braintree sandbox account."
 msgstr ""
 
-#: includes/WC_Gateway_Braintree.php:957
+#: includes/WC_Gateway_Braintree.php:995
 msgid "Sandbox Private Key"
 msgstr ""
 
-#: includes/WC_Gateway_Braintree.php:960
+#: includes/WC_Gateway_Braintree.php:998
 msgid "The Private Key for your Braintree sandbox account."
 msgstr ""
 
-#: includes/WC_Gateway_Braintree.php:968
+#: includes/WC_Gateway_Braintree.php:1006
 msgid "Webhook Info"
 msgstr ""
 
-#: includes/WC_Gateway_Braintree.php:973
+#: includes/WC_Gateway_Braintree.php:1011
 msgid "Merchant Account IDs"
 msgstr ""
 
 #. translators: 1: Opening link tag to documentation. 2: Closing link tag.
-#: includes/WC_Gateway_Braintree.php:977
+#: includes/WC_Gateway_Braintree.php:1015
 #, php-format
 msgid "Enter additional merchant account IDs if you do not want to use your Braintree account default. %1$sLearn more about merchant account IDs%2$s"
 msgstr ""
 
-#: includes/WC_Gateway_Braintree.php:985
+#: includes/WC_Gateway_Braintree.php:1023
 msgid "Dynamic Descriptors"
 msgstr ""
 
 #. translators: Placeholders: %1$s - </p> tag (intended to precede the opening tag to account for Settings API markup), %2$s - <p> tag, %3$s - <a> tag, %4$s - </a> tag
-#: includes/WC_Gateway_Braintree.php:988
+#: includes/WC_Gateway_Braintree.php:1026
 #, php-format
 msgid "Dynamic descriptors define what will appear on your customers' credit card statements for a specific purchase. Contact Braintree to enable these for your account.%1$s %2$sPlease ensure that you have %3$sread the documentation on dynamic descriptors%4$s and are using an accepted format."
 msgstr ""
 
-#: includes/WC_Gateway_Braintree.php:991
+#: includes/WC_Gateway_Braintree.php:1029
 msgid "Name"
 msgstr ""
 
-#: includes/WC_Gateway_Braintree.php:994
+#: includes/WC_Gateway_Braintree.php:1032
 msgid "The value in the business name field of a customer's statement. Company name/DBA section must be either 3, 7 or 12 characters and the product descriptor can be up to 18, 14, or 9 characters respectively (with an * in between for a total descriptor name of 22 characters)."
 msgstr ""
 
-#: includes/WC_Gateway_Braintree.php:998
+#: includes/WC_Gateway_Braintree.php:1036
 msgid "Phone"
 msgstr ""
 
-#: includes/WC_Gateway_Braintree.php:1001
+#: includes/WC_Gateway_Braintree.php:1039
 msgid "The value in the phone number field of a customer's statement. Phone must be exactly 10 characters and can only contain numbers, dashes, parentheses and periods."
 msgstr ""
 
-#: includes/WC_Gateway_Braintree.php:1005
+#: includes/WC_Gateway_Braintree.php:1043
 msgid "URL"
 msgstr ""
 
-#: includes/WC_Gateway_Braintree.php:1008
+#: includes/WC_Gateway_Braintree.php:1046
 msgid "The value in the URL/web address field of a customer's statement. The URL must be 13 characters or less."
 msgstr ""
 
-#: includes/WC_Gateway_Braintree.php:1038
+#: includes/WC_Gateway_Braintree.php:1076
 msgid "Connection Settings"
 msgstr ""
 
-#: includes/WC_Gateway_Braintree.php:1048
+#: includes/WC_Gateway_Braintree.php:1086
 msgid "Manual credentials"
 msgstr ""
 
 #. translators: %s: Gateway title
-#: includes/WC_Gateway_Braintree.php:1079
+#: includes/WC_Gateway_Braintree.php:1108
 #, php-format
 msgid "Use credentials from %s"
 msgstr ""
 
-#: includes/WC_Gateway_Braintree.php:1103
+#: includes/WC_Gateway_Braintree.php:1132
 msgid "Credentials source"
 msgstr ""
 
-#: includes/WC_Gateway_Braintree.php:1104
+#: includes/WC_Gateway_Braintree.php:1133
 msgid "Use credentials from"
 msgstr ""
 
-#: includes/WC_Gateway_Braintree.php:1108
+#: includes/WC_Gateway_Braintree.php:1137
 msgid "Choose whether to enter Braintree API credentials manually or use credentials from another gateway."
 msgstr ""
 
-#: includes/WC_Gateway_Braintree.php:1109
+#: includes/WC_Gateway_Braintree.php:1138
 msgid "Select which gateway's Braintree API credentials to use."
 msgstr ""
 
-#: includes/WC_Gateway_Braintree.php:1122
+#: includes/WC_Gateway_Braintree.php:1151
 msgid "Credentials Required"
 msgstr ""
 
 #. translators: %1$s - opening strong tag, %2$s - closing strong tag, %3$s - opening Credit Card link tag, %4$s - closing link tag, %5$s - opening PayPal link tag
-#: includes/WC_Gateway_Braintree.php:1126
+#: includes/WC_Gateway_Braintree.php:1155
 #, php-format
 msgid "%1$sNo Braintree credentials available.%2$s Please configure your Braintree API credentials in the %3$sCredit Card%4$s or %5$sPayPal%4$s gateway settings first. This gateway will use the credentials from one of those gateways."
 msgstr ""
 
-#: includes/WC_Gateway_Braintree.php:1158
+#: includes/WC_Gateway_Braintree.php:1187
 msgid "Enter connection credentials manually"
 msgstr ""
 
-#: includes/WC_Gateway_Braintree.php:1201
+#: includes/WC_Gateway_Braintree.php:1408
 msgid "Connect/Disconnect"
 msgstr ""
 
-#: includes/WC_Gateway_Braintree.php:1206
+#: includes/WC_Gateway_Braintree.php:1413
 msgid "You just connected your PayPal Enterprise Payments account to WooCommerce. You can start taking payments now."
 msgstr ""
 
-#: includes/WC_Gateway_Braintree.php:1207
+#: includes/WC_Gateway_Braintree.php:1414
 msgid "Once you have processed a payment, PayPal will review your application for final approval. Before you ship any goods make sure you have received a final approval for your PayPal Enterprise Payments account."
 msgstr ""
 
-#: includes/WC_Gateway_Braintree.php:1208
+#: includes/WC_Gateway_Braintree.php:1415
 msgid "Questions? We are a phone call away: 1-855-489-0345."
 msgstr ""
 
-#: includes/WC_Gateway_Braintree.php:1221
+#: includes/WC_Gateway_Braintree.php:1428
 msgid "Disconnect from PayPal Enterprise Payments"
 msgstr ""
 
-#: includes/WC_Gateway_Braintree.php:1232
+#: includes/WC_Gateway_Braintree.php:1439
 #: woocommerce-gateway-paypal-powered-by-braintree.php:641
 msgid "PayPal Enterprise Payments"
 msgstr ""
 
-#: includes/WC_Gateway_Braintree.php:1234
+#: includes/WC_Gateway_Braintree.php:1441
 msgid "Close modal panel and cancel"
 msgstr ""
 
 #. translators: Placeholders %1$s - opening HTML <a> link tag, closing HTML </a> link tag
-#: includes/WC_Gateway_Braintree.php:1242
+#: includes/WC_Gateway_Braintree.php:1449
 #, php-format
 msgid "Heads up! Once you disconnect, you'll need to use your %1$sBraintree API keys%2$s to reconnect. Do you want to proceed with disconnecting?"
 msgstr ""
 
-#: includes/WC_Gateway_Braintree.php:1256
+#: includes/WC_Gateway_Braintree.php:1463
 msgid "Disconnect"
 msgstr ""
 
 #. translators: %s: currency code
-#: includes/WC_Gateway_Braintree.php:1480
+#: includes/WC_Gateway_Braintree.php:1687
 #, php-format
 msgid "Add merchant account ID for %s"
 msgstr ""
 
-#: includes/WC_Gateway_Braintree.php:1487
+#: includes/WC_Gateway_Braintree.php:1694
 msgid "Add merchant account ID"
 msgstr ""
 
-#: includes/WC_Gateway_Braintree.php:1537
+#: includes/WC_Gateway_Braintree.php:1744
 msgid "Webhook URL"
 msgstr ""
 
-#: includes/WC_Gateway_Braintree.php:1546
-#: includes/WC_Gateway_Braintree.php:1548
+#: includes/WC_Gateway_Braintree.php:1753
+#: includes/WC_Gateway_Braintree.php:1755
 msgid "Copy"
 msgstr ""
 
-#: includes/WC_Gateway_Braintree.php:1552
+#: includes/WC_Gateway_Braintree.php:1759
 msgid "This is the URL that Braintree uses to send notifications for order status updates and payment processing."
 msgstr ""
 
 #. translators: 1: Opening link tag to webhooks documentation. 2: Closing link tag.
-#: includes/WC_Gateway_Braintree.php:1558
+#: includes/WC_Gateway_Braintree.php:1765
 #, php-format
 msgid "You can configure it in your Braintree Dashboard. %1$sLearn more%2$s"
 msgstr ""
 
-#: includes/WC_Gateway_Braintree.php:1664
+#: includes/WC_Gateway_Braintree.php:1890
 msgid "Add merchant account ID for "
 msgstr ""
 
-#: includes/WC_Gateway_Braintree.php:1988
+#: includes/WC_Gateway_Braintree.php:2232
 msgid " [default]"
 msgstr ""
 
-#: includes/WC_Gateway_Braintree.php:2043
+#: includes/WC_Gateway_Braintree.php:2287
 msgid "The merchant account does not exist."
 msgstr ""
 
 #. translators: %1$s: currency code
-#: includes/WC_Gateway_Braintree.php:2048
+#: includes/WC_Gateway_Braintree.php:2292
 #, php-format
 msgid "The merchant account does not support %1$s as a currency."
 msgstr ""
 
 #. translators: %1$s: payment method title
-#: includes/WC_Gateway_Braintree.php:2053
+#: includes/WC_Gateway_Braintree.php:2297
 #, php-format
 msgid "The merchant account does not accept payments for %1$s."
 msgstr ""
 
-#: includes/WC_Gateway_Braintree.php:2691
+#: includes/WC_Gateway_Braintree.php:2952
 msgid "Production"
 msgstr ""
 
-#: includes/WC_Gateway_Braintree.php:2692
+#: includes/WC_Gateway_Braintree.php:2953
 #: includes/WC_Gateway_Braintree_PayPal.php:607
 msgid "Sandbox"
 msgstr ""
 
-#: includes/WC_Gateway_Braintree.php:3017
+#: includes/WC_Gateway_Braintree.php:3278
 msgid "The transaction failed."
 msgstr ""
 
-#: includes/WC_Gateway_Braintree.php:3050
+#: includes/WC_Gateway_Braintree.php:3316
 msgid "An error occurred while processing your payment, please reload the page and try again, or try an alternate payment method."
 msgstr ""
 
 #. translators: Placeholders: %s - payment gateway title (such as Authorize.net, Braintree, etc)
-#: includes/WC_Gateway_Braintree.php:3070
+#: includes/WC_Gateway_Braintree.php:3342
 #, php-format
 msgid "%s Order completely refunded."
 msgstr ""
@@ -1037,119 +1065,137 @@ msgstr ""
 msgid "Pay securely using BLIK"
 msgstr ""
 
-#: includes/WC_Gateway_Braintree_Credit_Card.php:158
+#: includes/WC_Gateway_Braintree_Credit_Card.php:192
 msgid "PayPal Enterprise Payments (Credit Card)"
 msgstr ""
 
-#: includes/WC_Gateway_Braintree_Credit_Card.php:159
+#: includes/WC_Gateway_Braintree_Credit_Card.php:193
 msgid "Allow customers to securely pay using their credit card via PayPal Enterprise Payments."
 msgstr ""
 
-#: includes/WC_Gateway_Braintree_Credit_Card.php:273
+#: includes/WC_Gateway_Braintree_Credit_Card.php:335
 msgid "First name contains unsupported characters"
 msgstr ""
 
-#: includes/WC_Gateway_Braintree_Credit_Card.php:274
+#: includes/WC_Gateway_Braintree_Credit_Card.php:336
 msgid "Last name contains unsupported characters"
 msgstr ""
 
-#: includes/WC_Gateway_Braintree_Credit_Card.php:317
+#: includes/WC_Gateway_Braintree_Credit_Card.php:379
 msgid "Basic"
 msgstr ""
 
-#: includes/WC_Gateway_Braintree_Credit_Card.php:318
+#: includes/WC_Gateway_Braintree_Credit_Card.php:380
 msgid "Advanced (must also enable advanced fraud tools in your Braintree control panel)"
 msgstr ""
 
-#: includes/WC_Gateway_Braintree_Credit_Card.php:323
+#: includes/WC_Gateway_Braintree_Credit_Card.php:385
 msgid "Kount Direct (need to contact Braintree support to activate this)"
 msgstr ""
 
-#: includes/WC_Gateway_Braintree_Credit_Card.php:330
+#: includes/WC_Gateway_Braintree_Credit_Card.php:392
 msgid "Fraud Settings"
 msgstr ""
 
-#: includes/WC_Gateway_Braintree_Credit_Card.php:334
+#: includes/WC_Gateway_Braintree_Credit_Card.php:396
 msgid "Fraud Tool"
 msgstr ""
 
-#: includes/WC_Gateway_Braintree_Credit_Card.php:337
+#: includes/WC_Gateway_Braintree_Credit_Card.php:399
 msgid "Select the fraud tool you want to use. Basic is enabled by default and requires no additional configuration. Advanced requires you to enable advanced fraud tools in your Braintree control panel. To use Kount Direct you must contact Braintree support."
 msgstr ""
 
 #. translators: Placeholders %1$s - opening HTML <a> link tag, closing HTML </a> link tag
-#: includes/WC_Gateway_Braintree_Credit_Card.php:339
+#: includes/WC_Gateway_Braintree_Credit_Card.php:401
 #, php-format
 msgid "Read more details on fraud and verification tools in the extension %1$sdocumentation%2$s."
 msgstr ""
 
-#: includes/WC_Gateway_Braintree_Credit_Card.php:343
+#: includes/WC_Gateway_Braintree_Credit_Card.php:405
 msgid "Kount merchant ID"
 msgstr ""
 
-#: includes/WC_Gateway_Braintree_Credit_Card.php:346
+#: includes/WC_Gateway_Braintree_Credit_Card.php:408
 msgid "Speak with your account management team at Braintree to get this."
 msgstr ""
 
-#: includes/WC_Gateway_Braintree_Credit_Card.php:353
+#: includes/WC_Gateway_Braintree_Credit_Card.php:415
 msgid "PayPal Fastlane"
 msgstr ""
 
-#: includes/WC_Gateway_Braintree_Credit_Card.php:358
+#: includes/WC_Gateway_Braintree_Credit_Card.php:420
 msgid "Enable Fastlane"
 msgstr ""
 
-#: includes/WC_Gateway_Braintree_Credit_Card.php:360
+#: includes/WC_Gateway_Braintree_Credit_Card.php:422
 msgid "Enable Fastlane when available"
 msgstr ""
 
-#: includes/WC_Gateway_Braintree_Credit_Card.php:361
+#: includes/WC_Gateway_Braintree_Credit_Card.php:423
 msgid "Fastlane must be activated in your PayPal Fastlane Dashboard. This setting only controls whether Fastlane is used on your site once it is enabled in PayPal."
 msgstr ""
 
-#: includes/WC_Gateway_Braintree_Credit_Card.php:391
+#: includes/WC_Gateway_Braintree_Credit_Card.php:453
 msgid "3D Secure"
 msgstr ""
 
 #. translators: Placeholders %1$s - opening HTML <a> link tag, closing HTML </a> link tag
-#: includes/WC_Gateway_Braintree_Credit_Card.php:394
+#: includes/WC_Gateway_Braintree_Credit_Card.php:456
 #, php-format
 msgid "3D Secure benefits cardholders and merchants by providing an additional layer of verification using Verified by Visa, MasterCard SecureCode, and American Express SafeKey. %1$sLearn more about 3D Secure%2$s."
 msgstr ""
 
-#: includes/WC_Gateway_Braintree_Credit_Card.php:397
+#: includes/WC_Gateway_Braintree_Credit_Card.php:459
 msgid "Level"
 msgstr ""
 
-#: includes/WC_Gateway_Braintree_Credit_Card.php:400
+#: includes/WC_Gateway_Braintree_Credit_Card.php:462
 msgid "Only accept payments when the liability is shifted"
 msgstr ""
 
-#: includes/WC_Gateway_Braintree_Credit_Card.php:403
+#: includes/WC_Gateway_Braintree_Credit_Card.php:465
 msgid "Standard"
 msgstr ""
 
-#: includes/WC_Gateway_Braintree_Credit_Card.php:404
+#: includes/WC_Gateway_Braintree_Credit_Card.php:466
 msgid "Strict"
 msgstr ""
 
-#: includes/WC_Gateway_Braintree_Credit_Card.php:408
+#: includes/WC_Gateway_Braintree_Credit_Card.php:470
 msgid "Supported Card Types"
 msgstr ""
 
-#: includes/WC_Gateway_Braintree_Credit_Card.php:411
+#: includes/WC_Gateway_Braintree_Credit_Card.php:473
 msgid "3D Secure validation will only occur for these cards."
 msgstr ""
 
-#: includes/WC_Gateway_Braintree_Credit_Card.php:433
+#: includes/WC_Gateway_Braintree_Credit_Card.php:478
+msgid "Always Request Challenge"
+msgstr ""
+
+#: includes/WC_Gateway_Braintree_Credit_Card.php:480
+msgid "Always request a 3D Secure challenge for one-off transactions"
+msgstr ""
+
+#. translators: Placeholders %1$s - opening HTML <a> link tag, %2$s - closing HTML </a> link tag
+#: includes/WC_Gateway_Braintree_Credit_Card.php:482
+#, php-format
+msgid "When disabled, one-off transactions are handled by your Braintree %1$s3D Secure Rules Manager%2$s, which can grant Low Value or TRA exemptions and skip 3D Secure where eligible. Card-on-file setup, such as subscription sign-ups and saving a card for future use, will still always request a challenge regardless of this setting. Note that a granted exemption does not shift chargeback liability to Braintree."
+msgstr ""
+
+#: includes/WC_Gateway_Braintree_Credit_Card.php:503
 msgid "Card Verification (CSC)"
 msgstr ""
 
-#: includes/WC_Gateway_Braintree_Credit_Card.php:434
+#: includes/WC_Gateway_Braintree_Credit_Card.php:504
 msgid "Display and Require the Card Security Code (CVV/CID) field on checkout"
 msgstr ""
 
-#: includes/WC_Gateway_Braintree_Credit_Card.php:1193
+#: includes/WC_Gateway_Braintree_Credit_Card.php:1533
+msgid "Cookie check failed"
+msgstr ""
+
+#: includes/WC_Gateway_Braintree_Credit_Card.php:1579
 msgid "Manage Fastlane in PayPal Dashboard"
 msgstr ""
 
@@ -1218,7 +1264,7 @@ msgid "Pay securely using iDEAL | Wero"
 msgstr ""
 
 #. translators: %s - Local payment method display name (e.g. "BLIK", "Przelewy24").
-#: includes/WC_Gateway_Braintree_Local_Payment.php:398
+#: includes/WC_Gateway_Braintree_Local_Payment.php:464
 #, php-format
 msgid "%s (PayPal Enterprise Payments Local Payment Method)"
 msgstr ""
@@ -1662,12 +1708,12 @@ msgid "PayPal Enterprise Payments ACH Direct Debit Payment Method"
 msgstr ""
 
 #: client/blocks/apple-pay/components/braintree-apple-pay-express.js:72
-#: client/blocks/google-pay/components/braintree-google-pay-express.js:75
+#: client/blocks/google-pay/components/braintree-google-pay-express.js:71
 msgid "Payment scripts not loaded. Please refresh the page."
 msgstr ""
 
 #: client/blocks/apple-pay/components/braintree-apple-pay-express.js:109
-#: client/blocks/google-pay/components/braintree-google-pay-express.js:149
+#: client/blocks/google-pay/components/braintree-google-pay-express.js:145
 msgid "Failed to initialize payment method"
 msgstr ""
 
@@ -1683,7 +1729,7 @@ msgid "Something went wrong calculating shipping cost. Please refresh the page a
 msgstr ""
 
 #: client/blocks/apple-pay/components/braintree-apple-pay-express.js:359
-#: client/blocks/google-pay/components/braintree-google-pay-express.js:337
+#: client/blocks/google-pay/components/braintree-google-pay-express.js:334
 msgid "Payment failed. Please try again."
 msgstr ""
 
@@ -1758,11 +1804,11 @@ msgstr ""
 msgid "PayPal Enterprise Payments Credit Card Payment Method"
 msgstr ""
 
-#: client/blocks/credit-card/utils.js:179
+#: client/blocks/credit-card/utils.js:180
 msgid "MM / YY"
 msgstr ""
 
-#: client/blocks/credit-card/utils.js:193
+#: client/blocks/credit-card/utils.js:194
 msgid "CSC"
 msgstr ""
 
@@ -1775,11 +1821,11 @@ msgstr ""
 msgid "Switch to guest checkout"
 msgstr ""
 
-#: client/blocks/google-pay/components/braintree-google-pay-express.js:179
+#: client/blocks/google-pay/components/braintree-google-pay-express.js:175
 msgid "Payment failed. Please refresh the page and try again."
 msgstr ""
 
-#: client/blocks/google-pay/components/braintree-google-pay-express.js:324
+#: client/blocks/google-pay/components/braintree-google-pay-express.js:321
 msgid "Cannot ship to the selected address."
 msgstr ""
 

@@ -38,7 +38,7 @@ class WC_Braintree extends Framework\SV_WC_Payment_Gateway_Plugin {
 
 
 	/** plugin version number */
-	const VERSION = '3.11.2'; // WRCS: DEFINED_VERSION.
+	const VERSION = '3.12.0'; // WRCS: DEFINED_VERSION.
 
 	/** Braintree JS SDK version  */
 	const BRAINTREE_JS_SDK_VERSION = '3.129.1';
@@ -842,6 +842,9 @@ class WC_Braintree extends Framework\SV_WC_Payment_Gateway_Plugin {
 
 		// Merchant account availability check for gateways.
 		$this->maybe_add_merchant_account_availability_notice();
+
+		// Check that a PayPal sandbox account is linked when the PayPal gateway is in sandbox mode.
+		$this->maybe_add_paypal_sandbox_linked_account_notice();
 	}
 
 	/**
@@ -1017,24 +1020,10 @@ class WC_Braintree extends Framework\SV_WC_Payment_Gateway_Plugin {
 	 */
 	private function lpm_gateway_has_merchant_account( WC_Gateway_Braintree_Local_Payment $gateway ) {
 
-		// Check if any supported currency has a gateway-specific MAID configured.
 		foreach ( $gateway->get_supported_currencies() as $currency ) {
-			if ( $gateway->get_merchant_account_id( $currency ) ) {
+			if ( $gateway->has_eligible_merchant_account_for_currency( $currency ) ) {
 				return true;
 			}
-		}
-
-		// No gateway-specific MAID. Check if the default MAID's currency matches.
-		try {
-			$remote_config    = WC_Braintree_Remote_Configuration::get_remote_configuration( $gateway->get_credentials_source() );
-			$default_account  = $remote_config->get_default_merchant_account();
-			$default_currency = $default_account ? $default_account->get_currency() : '';
-
-			if ( in_array( $default_currency, $gateway->get_supported_currencies(), true ) ) {
-				return true;
-			}
-		} catch ( \Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
-			// If remote config fails, we can't verify — assume no MAID to be safe.
 		}
 
 		return false;
@@ -1126,6 +1115,73 @@ class WC_Braintree extends Framework\SV_WC_Payment_Gateway_Plugin {
 			array(
 				'dismissible'  => false,
 				'notice_class' => 'notice-error',
+			)
+		);
+	}
+
+	/**
+	 * Adds a notice on the PayPal gateway settings page if the gateway is in sandbox mode
+	 * but the Braintree sandbox account has no linked PayPal sandbox account.
+	 *
+	 * Without a linked PayPal sandbox account, the PayPal Checkout JS SDK refuses to
+	 * initialize and the gateway cannot be tested at checkout.
+	 *
+	 * @since 3.12.0
+	 * @return void
+	 */
+	private function maybe_add_paypal_sandbox_linked_account_notice() {
+		// We only show this notice on the PayPal gateway settings page.
+		if ( ! $this->is_plugin_settings() ) {
+			return;
+		}
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$current_section = isset( $_GET['section'] ) ? sanitize_text_field( wp_unslash( $_GET['section'] ) ) : '';
+
+		if ( self::PAYPAL_GATEWAY_ID !== $current_section ) {
+			return;
+		}
+
+		$gateway = $this->get_gateway( self::PAYPAL_GATEWAY_ID );
+
+		if ( ! $gateway || ! $gateway->is_enabled() || ! $gateway->is_configured() || ! $gateway->is_test_environment() ) {
+			return;
+		}
+
+		// Cache the linked/unlinked result briefly, keyed by the merchant ID, so a slow or
+		// flaky Braintree endpoint doesn't block the settings page render on every load.
+		$transient_key = 'wc_braintree_paypal_sandbox_account_linked_' . md5( $gateway->get_merchant_id() );
+		$is_linked     = get_transient( $transient_key );
+
+		if ( false === $is_linked ) {
+			try {
+
+				$merchant_configuration = $gateway->get_api()->get_merchant_configuration();
+
+				$is_linked = $merchant_configuration->is_paypal_sandbox_account_linked() ? 'yes' : 'no';
+
+				set_transient( $transient_key, $is_linked, 5 * MINUTE_IN_SECONDS );
+			} catch ( \Exception $e ) {
+				// If there is an error, bail without showing a notice.
+				return;
+			}
+		}
+
+		if ( 'no' !== $is_linked ) {
+			return;
+		}
+
+		$this->get_admin_notice_handler()->add_admin_notice(
+			sprintf(
+				/* translators: Placeholders: %1$s - gateway title, %2$s - link to Braintree documentation */
+				esc_html__( '%1$s cannot be used in sandbox mode until a PayPal sandbox account is linked to your Braintree sandbox account. Link a PayPal sandbox account under Settings > Processing > PayPal in the Braintree sandbox Control Panel. See %2$s for details.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+				'<strong>' . esc_html( $gateway->get_method_title() ) . '</strong>',
+				'<a target="_blank" rel="noopener noreferrer" href="https://developer.paypal.com/braintree/docs/guides/paypal/testing-go-live#linked-paypal-testing">' . esc_html__( 'the Braintree documentation', 'woocommerce-gateway-paypal-powered-by-braintree' ) . '</a>'
+			),
+			self::PAYPAL_GATEWAY_ID . '-sandbox-account-not-linked-notice',
+			array(
+				'dismissible'  => false,
+				'notice_class' => 'notice-warning',
 			)
 		);
 	}

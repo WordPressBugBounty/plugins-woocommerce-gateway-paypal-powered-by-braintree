@@ -52,5 +52,40 @@ class WC_Braintree_API_Merchant_Configuration_Response extends Framework\SV_WC_A
 	}
 
 
-	// TODO: we should be able to check for PayPal & Apple Pay too
+	/**
+	 * Determines if PayPal is enabled for the merchant account.
+	 *
+	 * @since 3.12.0
+	 *
+	 * @return bool
+	 */
+	public function is_paypal_enabled() {
+
+		return (bool) $this->paypalEnabled;
+	}
+
+
+	/**
+	 * Determines if a PayPal sandbox account is linked to the merchant's Braintree sandbox account.
+	 *
+	 * Braintree sandbox accounts without a linked PayPal sandbox account report
+	 * `environmentNoNetwork: true` in their PayPal configuration, which causes the
+	 * PayPal Checkout JS SDK to refuse to initialize.
+	 *
+	 * @since 3.12.0
+	 *
+	 * @return bool
+	 */
+	public function is_paypal_sandbox_account_linked() {
+
+		if ( ! isset( $this->paypal->environmentNoNetwork ) ) {
+			// assume the account is linked if the configuration is incomplete, so merchants aren't shown false warnings.
+			return true;
+		}
+
+		return true !== $this->paypal->environmentNoNetwork;
+	}
+
+
+	// TODO: we should be able to check for Apple Pay too.
 }

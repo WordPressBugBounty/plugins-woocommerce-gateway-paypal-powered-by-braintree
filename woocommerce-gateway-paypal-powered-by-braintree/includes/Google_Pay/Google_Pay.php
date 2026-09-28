@@ -188,7 +188,11 @@ class Google_Pay extends Framework\Payment_Gateway\External_Checkout\Google_Pay\
 
 				$order->set_address( $billing_address, 'billing' );
 
-				$order->set_billing_phone( isset( $billing_address_data['phoneNumber'] ) ? $billing_address_data['phoneNumber'] : '' );
+				// Only overwrite the phone number when Google Pay actually returned one,
+				// so a phone already set on the order is not replaced with an empty value.
+				if ( ! empty( $billing_address_data['phoneNumber'] ) ) {
+					$order->set_billing_phone( $billing_address_data['phoneNumber'] );
+				}
 			}
 
 			$order->set_billing_email( isset( $payment_data['email'] ) ? $payment_data['email'] : '' );

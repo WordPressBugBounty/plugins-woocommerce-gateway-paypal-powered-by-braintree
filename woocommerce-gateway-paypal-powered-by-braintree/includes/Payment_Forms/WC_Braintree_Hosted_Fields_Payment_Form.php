@@ -171,6 +171,10 @@ class WC_Braintree_Hosted_Fields_Payment_Form extends WC_Braintree_Payment_Form 
 					'liability_shift_always_required' => $this->get_gateway()->is_3d_secure_liability_shift_always_required(),
 					'card_types'                      => $card_types,
 					'failure_message'                 => esc_html__( 'We cannot process your order with the payment information that you provided. Please use an alternate payment method.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+					'request_challenge_default'       => $this->get_gateway()->is_3d_secure_challenge_requested_by_default(),
+					// true when a flag set by an earlier page load is still pending, so the client knows
+					// to consult the endpoint even before it sees a checkout error of its own.
+					'force_challenge_pending'         => $this->get_gateway()->has_force_3d_secure_challenge_flag(),
 				),
 				'hosted_fields_styles' => $this->get_hosted_fields_styles(),
 				'enabled_card_types'   => $this->get_enabled_card_types(),

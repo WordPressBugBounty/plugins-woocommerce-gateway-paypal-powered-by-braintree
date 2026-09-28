@@ -277,6 +277,10 @@ abstract class WC_Gateway_Braintree_Local_Payment extends WC_Gateway_Braintree {
 			return false;
 		}
 
+		if ( ! $this->has_eligible_merchant_account_for_currency( $store_currency ) ) {
+			return false;
+		}
+
 		if ( ! WC()->customer ) {
 			return false;
 		}
@@ -296,6 +300,68 @@ abstract class WC_Gateway_Braintree_Local_Payment extends WC_Gateway_Braintree {
 		}
 
 		return true;
+	}
+
+
+	/**
+	 * Determines whether this gateway has a usable Merchant Account ID for the given currency.
+	 *
+	 * True when either a Merchant Account ID has been explicitly configured for the currency,
+	 * or the merchant account's default account's currency matches. Used to avoid offering
+	 * this gateway at checkout when Braintree would fall back to a merchant account in the
+	 * wrong currency and reject the payment.
+	 *
+	 * @since 3.12.0
+	 *
+	 * @param string $currency The currency to check.
+	 * @return bool
+	 */
+	public function has_eligible_merchant_account_for_currency( string $currency ): bool {
+
+		if ( $this->get_merchant_account_id( $currency ) ) {
+			return true;
+		}
+
+		$default_currency = $this->get_default_merchant_account_currency();
+
+		return '' !== $default_currency && strtoupper( $default_currency ) === strtoupper( $currency );
+	}
+
+
+	/**
+	 * Gets the default merchant account's currency, cached briefly to keep this out of the
+	 * request path for every checkout availability check.
+	 *
+	 * Without an explicit Merchant Account ID configured, has_eligible_merchant_account_for_currency()
+	 * would otherwise call the Braintree API on every is_available() check. Only successful lookups
+	 * are cached (and only briefly), so a transient API failure or outage is retried on the very next
+	 * check instead of hiding the gateway for the rest of the cache lifetime.
+	 *
+	 * @since 3.12.0
+	 *
+	 * @return string The default merchant account's currency, or an empty string if it couldn't be determined.
+	 */
+	private function get_default_merchant_account_currency(): string {
+
+		$transient_key = 'wc_braintree_default_maid_currency_' . $this->get_credentials_source();
+		$cached_value  = get_transient( $transient_key );
+
+		if ( false !== $cached_value ) {
+			return $cached_value;
+		}
+
+		try {
+			$default_account  = $this->get_remote_config()->get_default_merchant_account();
+			$default_currency = $default_account ? $default_account->get_currency() : '';
+		} catch ( \Exception $e ) {
+			return '';
+		}
+
+		if ( '' !== $default_currency ) {
+			set_transient( $transient_key, $default_currency, 5 * MINUTE_IN_SECONDS );
+		}
+
+		return $default_currency;
 	}
 
 

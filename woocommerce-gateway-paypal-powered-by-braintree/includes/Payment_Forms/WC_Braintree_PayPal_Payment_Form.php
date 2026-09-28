@@ -113,16 +113,18 @@ class WC_Braintree_PayPal_Payment_Form extends WC_Braintree_Payment_Form {
 		$params = array_merge(
 			$params,
 			[
-				'is_test_environment'             => $this->get_gateway()->is_test_environment(),
-				'is_paypal_pay_later_enabled'     => $this->get_gateway()->is_paypal_pay_later_enabled() && ! in_array( 'paylater', $disabled_funding_options, true ),
-				'is_paypal_card_enabled'          => $this->get_gateway()->is_paypal_card_enabled(),
-				'paypal_disabled_funding_options' => $disabled_funding_options,
-				'force_buyer_country'             => $force_buyer_country,
-				'must_login_message'              => esc_html__( 'Please click the "PayPal" button below to log into your PayPal account before placing your order.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
-				'must_login_add_method_message'   => esc_html__( 'Please click the "PayPal" button below to log into your PayPal account before adding your payment method.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
-				'button_styles'                   => wp_parse_args( $button_styles, $default_button_styles ), // ensure all expected parameters are present after filtering to avoid JS errors.
-				'cart_payment_nonce'              => $this->get_cart_nonce(),
-				'paypal_intent'                   => WC_Gateway_Braintree_PayPal::TRANSACTION_TYPE_AUTHORIZATION === $this->get_gateway()->get_transaction_type() ? 'authorize' : 'capture',
+				'is_test_environment'                      => $this->get_gateway()->is_test_environment(),
+				'is_paypal_pay_later_enabled'              => $this->get_gateway()->is_paypal_pay_later_enabled() && ! in_array( 'paylater', $disabled_funding_options, true ),
+				'is_paypal_card_enabled'                   => $this->get_gateway()->is_paypal_card_enabled(),
+				'paypal_disabled_funding_options'          => $disabled_funding_options,
+				'force_buyer_country'                      => $force_buyer_country,
+				'must_login_message'                       => esc_html__( 'Please click the "PayPal" button below to log into your PayPal account before placing your order.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+				'must_login_add_method_message'            => esc_html__( 'Please click the "PayPal" button below to log into your PayPal account before adding your payment method.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+				// sandbox mode is never customer-facing, so this message targets the merchant testing the store.
+				'sandbox_account_not_linked_error_message' => esc_html__( 'PayPal cannot be used in sandbox mode until a PayPal sandbox account is linked to your Braintree sandbox account in the Braintree Control Panel.', 'woocommerce-gateway-paypal-powered-by-braintree' ),
+				'button_styles'                            => wp_parse_args( $button_styles, $default_button_styles ), // ensure all expected parameters are present after filtering to avoid JS errors.
+				'cart_payment_nonce'                       => $this->get_cart_nonce(),
+				'paypal_intent'                            => WC_Gateway_Braintree_PayPal::TRANSACTION_TYPE_AUTHORIZATION === $this->get_gateway()->get_transaction_type() ? 'authorize' : 'capture',
 			]
 		);
 

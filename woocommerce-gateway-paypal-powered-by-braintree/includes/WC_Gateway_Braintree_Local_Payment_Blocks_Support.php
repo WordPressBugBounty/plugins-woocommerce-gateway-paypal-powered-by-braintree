@@ -48,8 +48,9 @@ final class WC_Gateway_Braintree_Local_Payment_Blocks_Support extends WC_Gateway
 	/**
 	 * Determines if this payment method should be active for Blocks.
 	 *
-	 * Checks that the gateway is enabled and that the store currency is
-	 * supported. Does NOT check billing country — that is dynamic at
+	 * Checks that the gateway is enabled, that the store currency is
+	 * supported, and that the gateway has a usable Merchant Account ID for
+	 * that currency. Does NOT check billing country — that is dynamic at
 	 * checkout and handled by JS `canMakePayment`.
 	 *
 	 * @since 3.9.0
@@ -67,7 +68,13 @@ final class WC_Gateway_Braintree_Local_Payment_Blocks_Support extends WC_Gateway
 			return false;
 		}
 
-		return in_array( get_woocommerce_currency(), $gateway->get_supported_currencies(), true );
+		$store_currency = get_woocommerce_currency();
+
+		if ( ! in_array( $store_currency, $gateway->get_supported_currencies(), true ) ) {
+			return false;
+		}
+
+		return $gateway->has_eligible_merchant_account_for_currency( $store_currency );
 	}
 
 	/**
